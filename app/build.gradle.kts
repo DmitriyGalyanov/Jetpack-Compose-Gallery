@@ -38,6 +38,8 @@ android {
 }
 
 dependencies {
+  implementation(libs.glide)
+  implementation(libs.compose)
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)

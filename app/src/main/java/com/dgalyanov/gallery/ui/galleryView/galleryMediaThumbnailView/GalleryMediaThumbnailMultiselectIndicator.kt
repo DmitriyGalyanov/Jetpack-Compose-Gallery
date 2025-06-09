@@ -1,0 +1,79 @@
+package com.dgalyanov.gallery.ui.galleryView.galleryMediaThumbnailView
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.dgalyanov.gallery.GalleryViewModel
+import com.dgalyanov.gallery.galleryContentResolver.GalleryMediaItem
+import com.dgalyanov.gallery.utils.conditional
+
+@Composable
+fun GalleryMediaThumbnailMultiselectIndicator(selectionIndex: Int) {
+  val shouldShow =
+    GalleryViewModel.LocalGalleryViewModel.current.isMultiselectEnabled.collectAsState().value
+
+  if (shouldShow) {
+    val isSelected = selectionIndex != GalleryMediaItem.NOT_SELECTED_INDEX
+
+    Box(Modifier.fillMaxSize()) {
+      Box(
+        modifier = Modifier
+          .align(Alignment.TopEnd)
+          .offset((-8).dp, 8.dp)
+          .clip(CircleShape)
+          .border(2.dp, Color.White, CircleShape)
+          .size(18.dp)
+          .conditional(isSelected) { background(Color.White) }
+      ) {
+        if (isSelected) {
+          Text(
+            (selectionIndex + 1).toString(),
+            modifier = Modifier
+              .align(Alignment.Center),
+            fontSize = 10.sp,
+            color = Color.Black,
+          )
+        }
+      }
+    }
+  }
+}
+
+@Preview
+@Composable
+fun MultiselectIndicatorPreview() {
+  val selectionIndex = 10
+
+  val galleryViewModel = remember {
+    val gvm = GalleryViewModel()
+    gvm.toggleIsMultiselectEnabled()
+    return@remember gvm
+  }
+
+  CompositionLocalProvider(GalleryViewModel.LocalGalleryViewModel provides galleryViewModel) {
+    GalleryMediaThumbnailMultiselectIndicator(selectionIndex)
+    Box(
+      Modifier
+        .size(150.dp)
+        .background(Color.Magenta)
+    ) {
+      GalleryMediaThumbnailMultiselectIndicator(selectionIndex)
+    }
+  }
+}
