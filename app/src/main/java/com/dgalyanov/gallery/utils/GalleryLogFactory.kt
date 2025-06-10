@@ -14,3 +14,5 @@ internal fun GalleryLogFactory(
     Log.d("${GALLERY_BASE_LOG_TAG}_$tag", "$messagePrefix $message")
   }
 }
+
+internal val galleryGenericLog = GalleryLogFactory("${GALLERY_BASE_LOG_TAG}_generic")

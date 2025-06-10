@@ -1,4 +1,4 @@
-package com.dgalyanov.gallery.galleryContentResolver
+package com.dgalyanov.gallery.galleryContentResolver.dataClasses
 
 import android.net.Uri
 import androidx.compose.runtime.derivedStateOf

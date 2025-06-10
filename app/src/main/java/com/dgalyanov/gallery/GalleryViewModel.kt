@@ -7,7 +7,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dgalyanov.gallery.galleryContentResolver.GalleryContentResolver
-import com.dgalyanov.gallery.galleryContentResolver.GalleryMediaItem
+import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaAlbum
+import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,38 +24,99 @@ internal class GalleryViewModel : ViewModel() {
 
   private val log = GalleryLogFactory("GalleryViewModel")
 
-  var mediaFilesList by mutableStateOf(listOf<GalleryMediaItem>())
+  var albumsList by mutableStateOf(listOf<GalleryMediaAlbum>())
+
+  var isRefreshingAlbums by mutableStateOf(false)
     private set
 
-  fun populateMediaFilesList() {
+  fun refreshAlbumsList() {
+    val logTag = "refreshAlbumsList()"
+    log("$logTag | currentAlbumsListSize: ${albumsList.size}")
+
+    isRefreshingAlbums = true
     viewModelScope.launch(Dispatchers.IO) {
-      mediaFilesList = GalleryContentResolver.getMediaFiles()
-      log(mediaFilesList.size.toString())
-      if (_previewedItem.value == null) selectItem(mediaFilesList.first())
+      albumsList = GalleryContentResolver.getMediaAlbums()
+    }.invokeOnCompletion {
+      isRefreshingAlbums = false
+      log("$logTag finished | newAlbumsListSize: ${albumsList.size}")
     }
   }
 
-  /** Selection -- START */
-  private val selectedItems = mutableListOf<GalleryMediaItem>()
+  var selectedAlbum by mutableStateOf(GalleryMediaAlbum.RecentsAlbum)
+    private set
 
-  private fun fixSelectedItemsIndices() {
-    log("fixSelectedItemsIndices")
-    selectedItems.forEachIndexed { index, item -> item.setSelectionIndex(index) }
+  fun selectAlbum(album: GalleryMediaAlbum) {
+    log("selectAlbum(album: $album) | current: $selectedAlbum")
+    if (selectedAlbum == album) return
+    selectedAlbum = album
+    getSelectedAlbumMediaFiles()
+  }
+
+  /**
+   * todo: think if should cache lists of concrete albums or just re-fetch
+   */
+  val selectedAlbumMediaItemsMap = MutableStateFlow(mapOf<Long, GalleryMediaItem>())
+
+  var isFetchingSelectedAlbumMediaFiles by mutableStateOf(false)
+    private set
+
+  /**
+   * multiple requests should not be issued simultaneously
+   */
+  fun getSelectedAlbumMediaFiles() {
+    val logTag ="getSelectedAlbumMediaFiles()"
+    log(logTag)
+
+    isFetchingSelectedAlbumMediaFiles = true
+
+    viewModelScope.launch(Dispatchers.IO) {
+      selectedAlbumMediaItemsMap.value = GalleryContentResolver.getAlbumMediaItems(selectedAlbum.id)
+
+      if (selectedItemsIds.isEmpty()) {
+        selectItem(selectedAlbumMediaItemsMap.value.values.first())
+      } else if (!isMultiselectEnabled.value) {
+        val selectedItem = selectedAlbumMediaItemsMap.value[selectedItemsIds.first()]
+        if (selectedItem != null) selectItem(selectedItem)
+        else selectItem(selectedAlbumMediaItemsMap.value.values.first())
+      } else {
+        selectedItemsIds.toList().forEachIndexed { index, id ->
+          selectedAlbumMediaItemsMap.value[id]?.setSelectionIndex(index)
+        }
+      }
+
+      if (selectedItemsIds.isEmpty()) {
+        selectItem(selectedAlbumMediaItemsMap.value.values.first())
+      }
+    }.invokeOnCompletion {
+      isFetchingSelectedAlbumMediaFiles = false
+      log("$logTag finished")
+    }
+  }
+
+  /** Items Selection -- START */
+  private val selectedItemsIds = mutableListOf<Long>()
+
+  private fun fixItemsSelection() {
+    log("fixItemsSelection() | selectedItemsIds: $selectedItemsIds")
+    selectedItemsIds.forEachIndexed { index, id ->
+      selectedAlbumMediaItemsMap.value[id]?.setSelectionIndex(index)
+    }
   }
 
   private fun clearSelectedItems(itemToRemain: GalleryMediaItem? = null) {
     val logTag =
-      "clearSelectedItems(itemToRemain: $itemToRemain) | amountOnStart: ${selectedItems.size}"
+      "clearSelectedItems(itemToRemain: $itemToRemain) | amountOnStart: ${selectedItemsIds.size}"
     log(logTag)
 
-    selectedItems.forEach {
+    selectedItemsIds.forEach {
       log("$logTag | iterating with $it")
-      if (it != itemToRemain) it.deselect()
+      if (it != itemToRemain?.id) selectedAlbumMediaItemsMap.value[it]?.deselect()
     }
-    selectedItems.retainAll(listOf(itemToRemain).toSet())
-    fixSelectedItemsIndices()
+    selectedItemsIds.retainAll(listOf(itemToRemain?.id).toSet())
 
-    log("$logTag | amountOnEnd: ${selectedItems.size}")
+    fixItemsSelection()
+
+    log("$logTag | amountOnEnd: ${selectedItemsIds.size}")
   }
 
   private val _isMultiselectEnabled = MutableStateFlow(false)
@@ -71,7 +133,7 @@ internal class GalleryViewModel : ViewModel() {
   private val _previewedItem = MutableStateFlow<GalleryMediaItem?>(null)
   val previewedItem = _previewedItem.asStateFlow()
   private fun setPreviewedItem(value: GalleryMediaItem?) {
-    log("setPreviewedItem(item: $value)")
+    log("setPreviewedItem(item: $value) | current: ${_previewedItem.value}")
     _previewedItem.value = value
   }
 
@@ -81,11 +143,11 @@ internal class GalleryViewModel : ViewModel() {
 
     if (!_isMultiselectEnabled.value) clearSelectedItems()
 
-    item.setSelectionIndex(selectedItems.size)
-    selectedItems += item
+    item.setSelectionIndex(selectedItemsIds.size)
+    selectedItemsIds += item.id
     setPreviewedItem(item)
 
-    fixSelectedItemsIndices()
+    fixItemsSelection()
   }
 
   private fun deselectItem(item: GalleryMediaItem) {
@@ -93,23 +155,26 @@ internal class GalleryViewModel : ViewModel() {
     if (!item.isSelected.value) return
 
     item.deselect()
-    selectedItems.remove(item)
+    selectedItemsIds.remove(item.id)
 
     if (_previewedItem.value == item) {
-      setPreviewedItem(if (selectedItems.isEmpty()) null else selectedItems.last())
+      val newPreviewedItem =
+        if (selectedItemsIds.isEmpty()) null
+        else selectedAlbumMediaItemsMap.value[selectedItemsIds.last()]
+      setPreviewedItem(newPreviewedItem)
     }
 
-    fixSelectedItemsIndices()
+    fixItemsSelection()
   }
 
   fun onThumbnailClick(item: GalleryMediaItem) {
     log("onThumbnailClick(item: $item)")
 
     if (_isMultiselectEnabled.value) {
-      if (selectedItems.size == MULTISELECT_LIMIT) return
+      if (selectedItemsIds.size == MULTISELECT_LIMIT) return
 
       if (item.isSelected.value) {
-        if (selectedItems.size > 1) deselectItem(item)
+        if (selectedItemsIds.size > 1) deselectItem(item)
       } else {
         selectItem(item)
       }
@@ -117,5 +182,5 @@ internal class GalleryViewModel : ViewModel() {
       selectItem(item)
     }
   }
-  /** Selection -- END */
+  /** Items Selection -- END */
 }

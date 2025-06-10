@@ -20,36 +20,38 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dgalyanov.gallery.GalleryViewModel
-import com.dgalyanov.gallery.galleryContentResolver.GalleryMediaItem
+import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
 import com.dgalyanov.gallery.utils.conditional
 
 @Composable
-fun GalleryMediaThumbnailMultiselectIndicator(selectionIndex: Int) {
-  val shouldShow =
+fun GalleryMediaThumbnailSelectionIndicator(selectionIndex: Int) {
+  val isMultiselectEnabled =
     GalleryViewModel.LocalGalleryViewModel.current.isMultiselectEnabled.collectAsState().value
 
-  if (shouldShow) {
-    val isSelected = selectionIndex != GalleryMediaItem.NOT_SELECTED_INDEX
+  val isSelected = selectionIndex != GalleryMediaItem.NOT_SELECTED_INDEX
 
-    Box(Modifier.fillMaxSize()) {
-      Box(
-        modifier = Modifier
-          .align(Alignment.TopEnd)
-          .offset((-8).dp, 8.dp)
-          .clip(CircleShape)
-          .border(2.dp, Color.White, CircleShape)
-          .size(18.dp)
-          .conditional(isSelected) { background(Color.White) }
-      ) {
-        if (isSelected) {
-          Text(
-            (selectionIndex + 1).toString(),
-            modifier = Modifier
-              .align(Alignment.Center),
-            fontSize = 10.sp,
-            color = Color.Black,
-          )
-        }
+  Box(
+    Modifier
+      .fillMaxSize()
+      .conditional(isSelected) { background(Color(255, 255, 255, 120)) }
+  ) {
+    Box(
+      contentAlignment = Alignment.Center,
+      modifier = Modifier
+        .align(Alignment.TopEnd)
+        .offset((-8).dp, 8.dp)
+        .clip(CircleShape)
+        .conditional(isMultiselectEnabled) { border(2.dp, Color.White, CircleShape) }
+        .size(18.dp)
+        .conditional(isSelected) { background(Color.White) }
+    ) {
+      if (isSelected) {
+        Text(
+          text = if (isMultiselectEnabled) (selectionIndex + 1).toString() else "✓",
+          modifier = Modifier.offset(y = (-2.5).dp),
+          fontSize = 10.sp,
+          color = Color.Black,
+        )
       }
     }
   }
@@ -57,7 +59,7 @@ fun GalleryMediaThumbnailMultiselectIndicator(selectionIndex: Int) {
 
 @Preview
 @Composable
-fun MultiselectIndicatorPreview() {
+private fun MultiselectIndicatorPreview() {
   val selectionIndex = 10
 
   val galleryViewModel = remember {
@@ -67,13 +69,13 @@ fun MultiselectIndicatorPreview() {
   }
 
   CompositionLocalProvider(GalleryViewModel.LocalGalleryViewModel provides galleryViewModel) {
-    GalleryMediaThumbnailMultiselectIndicator(selectionIndex)
+    GalleryMediaThumbnailSelectionIndicator(selectionIndex)
     Box(
       Modifier
         .size(150.dp)
         .background(Color.Magenta)
     ) {
-      GalleryMediaThumbnailMultiselectIndicator(selectionIndex)
+      GalleryMediaThumbnailSelectionIndicator(selectionIndex)
     }
   }
 }

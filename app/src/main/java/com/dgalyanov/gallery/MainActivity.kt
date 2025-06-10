@@ -8,11 +8,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import com.dgalyanov.gallery.galleryContentResolver.GalleryContentResolver
 import com.dgalyanov.gallery.galleryContentResolver.GalleryPermissionsHelper
-import com.dgalyanov.gallery.ui.galleryView.GalleryView
+import com.dgalyanov.gallery.ui.galleryView.GalleryViewProvider
 import com.dgalyanov.gallery.ui.theme.GalleryTheme
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 
@@ -35,7 +34,7 @@ class MainActivity : ComponentActivity() {
         grantResults
       )
     ) {
-      galleryViewModel.populateMediaFilesList()
+      galleryViewModel.getSelectedAlbumMediaFiles()
     }
   }
 
@@ -47,20 +46,16 @@ class MainActivity : ComponentActivity() {
 
     GalleryPermissionsHelper.init(this).requestPermissionsIfNeeded()
     if (GalleryPermissionsHelper.arePermissionsGranted.value) {
-      galleryViewModel.populateMediaFilesList()
+      galleryViewModel.getSelectedAlbumMediaFiles()
     }
 
     enableEdgeToEdge()
 
     setContent {
-      CompositionLocalProvider(
-        GalleryViewModel.LocalGalleryViewModel provides galleryViewModel
-      ) {
-        GalleryTheme {
-          Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            Box(modifier = Modifier.padding(innerPadding)) {
-              GalleryView(galleryViewModel.mediaFilesList)
-            }
+      GalleryTheme {
+        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+          Box(modifier = Modifier.padding(innerPadding)) {
+            GalleryViewProvider(galleryViewModel)
           }
         }
       }
@@ -71,10 +66,8 @@ class MainActivity : ComponentActivity() {
     super.onResume()
     log("onResume")
 
-    if (!GalleryPermissionsHelper.arePermissionsGranted.value
-      && GalleryPermissionsHelper.checkIfPermissionsAreGranted()
-    ) {
-      galleryViewModel.populateMediaFilesList()
+    if (GalleryPermissionsHelper.checkIfPermissionsAreGranted()) {
+      galleryViewModel.getSelectedAlbumMediaFiles()
     }
   }
 }
