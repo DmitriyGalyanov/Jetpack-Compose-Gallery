@@ -7,7 +7,8 @@ fun Modifier.conditional(
   ifTrue: Modifier.() -> Modifier,
 ): Modifier = if (condition) this.then(ifTrue(Modifier)) else this
 
-//fun Modifier.conditionalWithProvider(
-//  conditionProvider: () -> Boolean,
+//fun Modifier.conditionalWithElse(
+//  condition: Boolean,
 //  ifTrue: Modifier.() -> Modifier,
-//): Modifier = if (conditionProvider()) this.then(ifTrue(Modifier)) else this
+//  ifFalse: Modifier.() -> Modifier,
+//): Modifier = if (condition) this.then(ifTrue(Modifier)) else this.then(ifFalse(Modifier))

@@ -15,7 +15,7 @@ import com.dgalyanov.gallery.GalleryViewModel
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun GalleryFullSizeAssetView() {
+fun GalleryPreviewedAssetView(modifier: Modifier = Modifier) {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
   val previewedItem = galleryViewModel.previewedItem.collectAsState().value
 
@@ -23,6 +23,7 @@ fun GalleryFullSizeAssetView() {
     modifier = Modifier
       .fillMaxWidth()
       .aspectRatio(1f)
+      .then(modifier)
   ) {
     previewedItem?.let {
       GlideImage(

@@ -1,6 +1,10 @@
 package com.dgalyanov.gallery
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -24,6 +28,31 @@ internal class GalleryViewModel : ViewModel() {
 
   private val log = GalleryLogFactory("GalleryViewModel")
 
+  /** Layout Data -- START */
+  var innerPaddings by mutableStateOf(PaddingValues())
+    private set
+
+  fun updateInnerPaddings(newPaddingValues: PaddingValues) {
+    log("updateInnerPaddings(newPaddingValues: $newPaddingValues) | current: $innerPaddings")
+    if (innerPaddings == newPaddingValues) return
+    innerPaddings = newPaddingValues
+  }
+
+  var containerWidthPx by mutableIntStateOf(0)
+    private set
+  private var density by mutableFloatStateOf(1F)
+  val containerWidthDp by derivedStateOf { containerWidthPx / density }
+
+  fun updateContainerWidth(width: Int, density: Float) {
+    log("updateContainerWidth(width: $width, density: $density) | currentWidth: $containerWidthPx, currentDensity: $density | currentDensityAdjustedContainerWidth: $containerWidthDp")
+    if (containerWidthPx == width) return
+
+    this.density = density
+    this.containerWidthPx = width
+  }
+  /** Layout Data -- END */
+
+  /** Albums -- START */
   var albumsList by mutableStateOf(listOf<GalleryMediaAlbum>())
 
   var isRefreshingAlbums by mutableStateOf(false)
@@ -64,7 +93,7 @@ internal class GalleryViewModel : ViewModel() {
    * multiple requests should not be issued simultaneously
    */
   fun getSelectedAlbumMediaFiles() {
-    val logTag ="getSelectedAlbumMediaFiles()"
+    val logTag = "getSelectedAlbumMediaFiles()"
     log(logTag)
 
     isFetchingSelectedAlbumMediaFiles = true
@@ -92,6 +121,7 @@ internal class GalleryViewModel : ViewModel() {
       log("$logTag finished")
     }
   }
+  /** Albums -- END */
 
   /** Items Selection -- START */
   private val selectedItemsIds = mutableListOf<Long>()

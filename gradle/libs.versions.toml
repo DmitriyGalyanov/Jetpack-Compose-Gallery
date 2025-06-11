@@ -1,6 +1,5 @@
 [versions]
 agp = "8.9.0"
-coilCompose = "3.2.0"
 compose = "1.0.0-beta01"
 glide = "4.16.0"
 kotlin = "2.0.21"
@@ -10,8 +9,8 @@ junitVersion = "1.1.5"
 espressoCore = "3.5.1"
 lifecycleRuntimeKtx = "2.9.1"
 activityCompose = "1.10.1"
-composeBom = "2024.09.00"
-uiTooling = "1.8.2"
+composeBom = "2025.06.00"
+uiTooling = "1.9.0-alpha04"
 window = "1.4.0"
 
 [libraries]

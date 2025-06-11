@@ -1,6 +1,8 @@
 package com.dgalyanov.gallery
 
 import android.os.Bundle
+import android.util.DisplayMetrics
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -14,10 +16,18 @@ import com.dgalyanov.gallery.galleryContentResolver.GalleryPermissionsHelper
 import com.dgalyanov.gallery.ui.galleryView.GalleryViewProvider
 import com.dgalyanov.gallery.ui.theme.GalleryTheme
 import com.dgalyanov.gallery.utils.GalleryLogFactory
+import com.dgalyanov.gallery.utils.galleryGenericLog
 
 private val log = GalleryLogFactory("MainActivity")
 
 class MainActivity : ComponentActivity() {
+  private val displayMetrics: DisplayMetrics = DisplayMetrics()
+
+  /** don't call before onCreate */
+  private fun updateStoredDisplayMetrics() {
+    windowManager.defaultDisplay.getMetrics(displayMetrics)
+  }
+
   private val galleryViewModel = GalleryViewModel()
 
   override fun onRequestPermissionsResult(
@@ -42,6 +52,9 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     log("onCreate")
 
+    updateStoredDisplayMetrics()
+    galleryViewModel.updateContainerWidth(displayMetrics.widthPixels, displayMetrics.density)
+
     GalleryContentResolver.init(this)
 
     GalleryPermissionsHelper.init(this).requestPermissionsIfNeeded()
@@ -53,13 +66,21 @@ class MainActivity : ComponentActivity() {
 
     setContent {
       GalleryTheme {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-          Box(modifier = Modifier.padding(innerPadding)) {
-            GalleryViewProvider(galleryViewModel)
+        Scaffold(modifier = Modifier.fillMaxSize()) { innerPaddings ->
+          Box {
+            GalleryViewProvider(galleryViewModel, innerPaddings)
           }
         }
       }
     }
+  }
+
+  override fun onWindowAttributesChanged(params: WindowManager.LayoutParams?) {
+    super.onWindowAttributesChanged(params)
+    log("onWindowAttributesChanged(params: $params)")
+
+    updateStoredDisplayMetrics()
+    galleryViewModel.updateContainerWidth(displayMetrics.widthPixels, displayMetrics.density)
   }
 
   override fun onResume() {
