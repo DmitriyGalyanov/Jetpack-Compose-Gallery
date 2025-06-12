@@ -1,11 +1,11 @@
 package com.dgalyanov.gallery.ui.galleryView.galleryViewToolbar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.GalleryViewModel
 import com.dgalyanov.gallery.ui.galleryView.galleryViewToolbar.galleryAlbumsSheetButton.GalleryAlbumsSheetButton
 
+internal val GALLERY_VIEW_TOOLBAR_HEIGHT = 48.dp
+
 @Composable
 internal fun GalleryViewToolbar() {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
@@ -25,16 +27,16 @@ internal fun GalleryViewToolbar() {
     modifier = Modifier
       .fillMaxWidth()
       .background(Color.Black)
-      .padding(8.dp)
-      .height(40.dp)
+      .requiredHeight(GALLERY_VIEW_TOOLBAR_HEIGHT)
+      .padding(8.dp),
   ) {
     GalleryAlbumsSheetButton()
 
-    Button(
-      galleryViewModel::toggleIsMultiselectEnabled,
-      modifier = Modifier.align(Alignment.CenterEnd)
-    ) {
-      Text("Multiselect: ${if (isMultiselectEnabled) "enabled" else "disabled"}")
-    }
+    Text(
+      text = "Multiselect: ${if (isMultiselectEnabled) "enabled" else "disabled"}",
+      modifier = Modifier
+        .align(Alignment.CenterEnd)
+        .clickable(onClick = galleryViewModel::toggleIsMultiselectEnabled)
+    )
   }
 }

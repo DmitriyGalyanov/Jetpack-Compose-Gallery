@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.dgalyanov.gallery.GalleryViewModel
 import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
@@ -27,13 +26,13 @@ import kotlin.time.DurationUnit
 internal fun GalleryMediaThumbnailView(
   item: GalleryMediaItem,
   size: Dp,
+  onClick: () -> Unit,
 ) {
-  val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
-
   Box(
     modifier = Modifier
       .size(size)
-      .clickable { galleryViewModel.onThumbnailClick(item) }) {
+      .clickable(onClick = onClick)
+  ) {
     GlideImage(
       item.uri,
       contentDescription = null,

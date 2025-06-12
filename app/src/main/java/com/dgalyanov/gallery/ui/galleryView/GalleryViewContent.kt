@@ -1,5 +1,6 @@
 package com.dgalyanov.gallery.ui.galleryView
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,18 +9,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyLayoutScrollScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -27,23 +26,9 @@ import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.GalleryViewModel
 import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
 import com.dgalyanov.gallery.ui.galleryView.galleryMediaThumbnailView.GalleryMediaThumbnailView
+import com.dgalyanov.gallery.ui.galleryView.galleryViewToolbar.GALLERY_VIEW_TOOLBAR_HEIGHT
 import com.dgalyanov.gallery.ui.galleryView.galleryViewToolbar.GalleryViewToolbar
-
-private class GalleryViewContentNestedScrollConnection(
-  private val previewedAssetHeight: Int
-) : NestedScrollConnection {
-  var previewedAssetOffset by mutableIntStateOf(0)
-    private set
-
-  override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-    val previousPreviewedAssetOffset = previewedAssetOffset
-
-    previewedAssetOffset =
-      (previewedAssetOffset + available.y.toInt()).coerceIn(-previewedAssetHeight, 0)
-
-    return Offset(0f, (previewedAssetOffset - previousPreviewedAssetOffset).toFloat())
-  }
-}
+import kotlinx.coroutines.launch
 
 private const val COLUMNS_AMOUNT = 3
 
@@ -55,13 +40,19 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
 
   val thumbnailSize = galleryViewModel.containerWidthDp.dp / COLUMNS_AMOUNT
 
+  val density = LocalDensity.current
+
   val previewedAssetHeightDp = galleryViewModel.containerWidthDp.dp
-  val previewedAssetHeightPx = with(LocalDensity.current) { previewedAssetHeightDp.roundToPx() }
+  val previewedAssetHeightPx = with(density) { previewedAssetHeightDp.roundToPx() }
+
+  val scope = rememberCoroutineScope()
+  val gridState = rememberLazyGridState()
 
   val nestedScrollConnection =
     remember(previewedAssetHeightPx) {
       GalleryViewContentNestedScrollConnection(
-        previewedAssetHeightPx
+        previewedAssetHeightPx,
+        scope,
       )
     }
 
@@ -79,7 +70,9 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
         nestedScrollConnection = nestedScrollConnection
       )
 
+//       check if should extract
       LazyVerticalGrid(
+        state = gridState,
         columns = GridCells.Fixed(COLUMNS_AMOUNT),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -89,11 +82,43 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
       ) {
         stickyHeader(key = TOOLBAR_ITEM_KEY) { GalleryViewToolbar() }
 
-        items(mediaItemsList, key = { it.id }) {
+        itemsIndexed(mediaItemsList, key = { _, item -> item.id }) { index, item ->
           GalleryMediaThumbnailView(
-            item = it,
+            item = item,
             size = thumbnailSize,
-          )
+          ) {
+            // stickyHeader is the first Item, occupying index 0
+            val listItemIndex = index + 1
+            val stickyHeaderOffset = (GALLERY_VIEW_TOOLBAR_HEIGHT.value * density.density).toInt()
+
+            galleryViewModel.onThumbnailClick(item)
+
+//            https://issuetracker.google.com/issues/240449680
+//            https://issuetracker.google.com/issues/203855802
+            nestedScrollConnection.showPreviewedAsset()
+
+            scope.launch {
+              gridState.scroll {
+                val distanceToSelectedItem =
+                  LazyLayoutScrollScope(gridState, this).calculateDistanceTo(
+                    listItemIndex,
+                    -stickyHeaderOffset
+                  )
+
+                val animatable = Animatable(0F)
+                var previouslyScrolledDistance = 0F
+
+                animatable.animateTo(
+                  targetValue = distanceToSelectedItem.toFloat(),
+                  animationSpec = AUTO_SCROLL_FLOAT_ANIMATION_SPEC
+                ) {
+                  val delta = this.value - previouslyScrolledDistance
+                  gridState.dispatchRawDelta(delta)
+                  previouslyScrolledDistance = this.value
+                }
+              }
+            }
+          }
         }
       }
     }
