@@ -1,6 +1,8 @@
 package com.dgalyanov.gallery.ui.galleryView
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,11 +50,19 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
   val scope = rememberCoroutineScope()
   val gridState = rememberLazyGridState()
 
+  val gridFlingDecayAnimationSpec = rememberSplineBasedDecay<Float>()
+
   val nestedScrollConnection =
     remember(previewedAssetHeightPx) {
       GalleryViewContentNestedScrollConnection(
-        previewedAssetHeightPx,
-        scope,
+        previewedAssetHeightPx = previewedAssetHeightPx,
+        scope = scope,
+        gridState = gridState,
+        /** LazyVerticalGrid uses [ScrollableDefaults.flingBehavior], which uses [rememberSplineBasedDecay] */
+        gridFlingDecayAnimationSpec = gridFlingDecayAnimationSpec,
+        gridStickyHeaderItemsAmount = 1,
+        gridColumnsAmount = COLUMNS_AMOUNT,
+        gridItemHeightPx = (thumbnailSize * density.density).value.toInt(),
       )
     }
 
@@ -70,7 +80,6 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
         nestedScrollConnection = nestedScrollConnection
       )
 
-//       check if should extract
       LazyVerticalGrid(
         state = gridState,
         columns = GridCells.Fixed(COLUMNS_AMOUNT),
