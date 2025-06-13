@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.galleryContentResolver.GalleryPermissionsHelper
 
 @Composable
-fun EmptyGalleryView() {
+internal fun EmptyGalleryView() {
   val arePermissionsGranted = GalleryPermissionsHelper.arePermissionsGranted.collectAsState().value
   val didUserForbidPermissionsRequest =
     GalleryPermissionsHelper.didUserForbidPermissionsRequest.collectAsState().value

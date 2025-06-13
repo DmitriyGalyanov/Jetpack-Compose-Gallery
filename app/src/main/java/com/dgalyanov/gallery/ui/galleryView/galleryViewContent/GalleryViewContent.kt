@@ -1,4 +1,4 @@
-package com.dgalyanov.gallery.ui.galleryView
+package com.dgalyanov.gallery.ui.galleryView.galleryViewContent
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.rememberSplineBasedDecay
@@ -27,9 +27,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.GalleryViewModel
 import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
-import com.dgalyanov.gallery.ui.galleryView.galleryMediaThumbnailView.GalleryMediaThumbnailView
-import com.dgalyanov.gallery.ui.galleryView.galleryViewToolbar.GALLERY_VIEW_TOOLBAR_HEIGHT
-import com.dgalyanov.gallery.ui.galleryView.galleryViewToolbar.GalleryViewToolbar
+import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryMediaThumbnailView.GalleryMediaThumbnailView
+import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GALLERY_VIEW_TOOLBAR_HEIGHT
+import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GalleryViewToolbar
 import kotlinx.coroutines.launch
 
 private const val COLUMNS_AMOUNT = 3
@@ -58,6 +58,9 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
         previewedAssetHeightPx = previewedAssetHeightPx,
         scope = scope,
         gridState = gridState,
+        /** LazyVerticalGrid uses [ScrollableDefaults.flingBehavior], which uses [rememberSplineBasedDecay] */
+        /** LazyVerticalGrid uses [ScrollableDefaults.flingBehavior], which uses [rememberSplineBasedDecay] */
+        /** LazyVerticalGrid uses [ScrollableDefaults.flingBehavior], which uses [rememberSplineBasedDecay] */
         /** LazyVerticalGrid uses [ScrollableDefaults.flingBehavior], which uses [rememberSplineBasedDecay] */
         gridFlingDecayAnimationSpec = gridFlingDecayAnimationSpec,
         gridStickyHeaderItemsAmount = 1,
@@ -90,6 +93,11 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
         ),
       ) {
         stickyHeader(key = TOOLBAR_ITEM_KEY) { GalleryViewToolbar() }
+
+//         todo: add Camera
+//        item(key = CAMERA_ITEM_KEY) {
+//          CameraButton()
+//        }
 
         itemsIndexed(mediaItemsList, key = { _, item -> item.id }) { index, item ->
           GalleryMediaThumbnailView(

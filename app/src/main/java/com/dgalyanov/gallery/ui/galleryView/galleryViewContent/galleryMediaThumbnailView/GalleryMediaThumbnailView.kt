@@ -1,4 +1,4 @@
-package com.dgalyanov.gallery.ui.galleryView.galleryMediaThumbnailView
+package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryMediaThumbnailView
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

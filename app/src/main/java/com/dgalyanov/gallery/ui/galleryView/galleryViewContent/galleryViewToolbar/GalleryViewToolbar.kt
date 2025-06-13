@@ -1,4 +1,4 @@
-package com.dgalyanov.gallery.ui.galleryView.galleryViewToolbar
+package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.GalleryViewModel
-import com.dgalyanov.gallery.ui.galleryView.galleryViewToolbar.galleryAlbumsSheetButton.GalleryAlbumsSheetButton
+import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.galleryAlbumsSheetButton.GalleryAlbumsSheetButton
 
 internal val GALLERY_VIEW_TOOLBAR_HEIGHT = 48.dp
 

@@ -13,6 +13,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewModelScope
 import com.dgalyanov.gallery.GalleryViewModel
+import com.dgalyanov.gallery.ui.commonViews.FillingLoaderView
+import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.GalleryViewContent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

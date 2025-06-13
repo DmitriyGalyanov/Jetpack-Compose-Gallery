@@ -1,4 +1,4 @@
-package com.dgalyanov.gallery.ui.galleryView
+package com.dgalyanov.gallery.ui.galleryView.galleryViewContent
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.DecayAnimationSpec

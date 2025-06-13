@@ -1,4 +1,4 @@
-package com.dgalyanov.gallery.ui.galleryView.galleryMediaThumbnailView
+package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryMediaThumbnailView
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,7 +24,7 @@ import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
 import com.dgalyanov.gallery.utils.conditional
 
 @Composable
-fun GalleryMediaThumbnailSelectionIndicator(selectionIndex: Int) {
+internal fun GalleryMediaThumbnailSelectionIndicator(selectionIndex: Int) {
   val isMultiselectEnabled =
     GalleryViewModel.LocalGalleryViewModel.current.isMultiselectEnabled.collectAsState().value
 

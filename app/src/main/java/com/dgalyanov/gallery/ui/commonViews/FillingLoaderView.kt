@@ -1,4 +1,4 @@
-package com.dgalyanov.gallery.ui.galleryView
+package com.dgalyanov.gallery.ui.commonViews
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 
 @Composable
-fun FillingLoaderView() {
+internal fun FillingLoaderView() {
   Box(
     modifier = Modifier
       .fillMaxSize()
