@@ -110,6 +110,11 @@ class GalleryContentResolver {
       )
     }
 
+    private val mediaItemQueryProjection = arrayOf(
+      MediaStore.Files.FileColumns._ID,
+      MediaStore.Files.FileColumns.DURATION,
+    )
+
     /** do not call on main thread */
     fun getAlbumMediaItems(albumId: Long): Map<Long, GalleryMediaItem> {
       val logTag = "getAlbumMediaFiles(albumId: $albumId)"
@@ -118,19 +123,14 @@ class GalleryContentResolver {
 
       val mediaItems = mutableMapOf<Long, GalleryMediaItem>()
 
-      val projection = arrayOf(
-        MediaStore.Files.FileColumns._ID,
-        MediaStore.Files.FileColumns.DURATION,
-      )
-
       createAlbumQueryCursor(
         albumId = albumId,
-        projection = projection,
+        projection = mediaItemQueryProjection,
         orderAscending = false,
       )?.use { cursor ->
         val idColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
         val durationColumnIndex =
-          cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
+          cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DURATION)
 
         while (cursor.moveToNext()) {
           val id = cursor.getLong(idColumnIndex)
@@ -236,6 +236,33 @@ class GalleryContentResolver {
 
       log("$logTag finished | Albums Amount: ${result.size} | bucketsCount: $bucketsCount, skippedBucketsCount: $skippedBucketsCount | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs}")
       return result.toList()
+    }
+
+    fun getGalleryMediaItemByUri(uri: Uri): GalleryMediaItem? {
+      val requestStartTimeMs = System.currentTimeMillis()
+      val logTag = "getGalleryMediaItemBy(uri: $uri)"
+
+      createQueryCursor(uri, mediaItemQueryProjection)?.use { cursor ->
+        if (cursor.moveToFirst()) {
+          val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
+
+          val mediaItem = GalleryMediaItem(
+            id = id,
+            uri = ContentUris.withAppendedId(collectionUri, id),
+            durationMs = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DURATION)),
+          )
+          log("$logTag | success, item: $mediaItem | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs}")
+          return mediaItem
+        }
+      }
+
+      log("$logTag | failure, couldn't resolve")
+      return null
+    }
+
+    fun getGalleryMediaItemById(id: Long): GalleryMediaItem? {
+      log("getGalleryMediaItemById(id: $id)")
+      return getGalleryMediaItemByUri(ContentUris.withAppendedId(collectionUri, id))
     }
   }
 }

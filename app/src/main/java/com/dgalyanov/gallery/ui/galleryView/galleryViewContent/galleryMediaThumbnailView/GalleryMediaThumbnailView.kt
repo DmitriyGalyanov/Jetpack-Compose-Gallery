@@ -34,7 +34,7 @@ internal fun GalleryMediaThumbnailView(
       .clickable(onClick = onClick)
   ) {
     GlideImage(
-      item.uri,
+      model = item.uri,
       contentDescription = null,
       contentScale = ContentScale.Crop,
       modifier = Modifier.size(size),

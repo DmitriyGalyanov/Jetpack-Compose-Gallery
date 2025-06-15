@@ -20,7 +20,9 @@ android {
 
   buildTypes {
     release {
-      isMinifyEnabled = false
+      // degrades LazyVerticalGrid Performance 🤔
+//      isMinifyEnabled = true
+//      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("debug")
     }
@@ -34,12 +36,18 @@ android {
   }
   buildFeatures {
     compose = true
+    viewBinding = true
   }
 }
 
 dependencies {
   implementation(libs.glide)
   implementation(libs.compose)
+
+  implementation(libs.androidx.camera.core)
+  implementation(libs.androidx.camera.lifecycle)
+  implementation(libs.androidx.camera.camera2)
+  implementation(libs.accompanist.permissions)
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -50,6 +58,7 @@ dependencies {
   implementation(libs.androidx.ui.tooling.preview)
   implementation(libs.androidx.material3)
   implementation(libs.androidx.window)
+  implementation(libs.camera.view)
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)

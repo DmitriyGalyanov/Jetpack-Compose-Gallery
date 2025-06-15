@@ -1,11 +1,8 @@
 package com.dgalyanov.gallery.galleryContentResolver
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
-import android.provider.Settings
 import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import com.dgalyanov.gallery.MainActivity
@@ -77,12 +74,7 @@ class GalleryPermissionsHelper {
       requestPermissions()
     }
 
-    fun openAppSettings() {
-      val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-      val uri = Uri.fromParts("package", mainActivity.packageName, null)
-      intent.setData(uri)
-      mainActivity.startActivity(intent)
-    }
+    fun openAppSettings() = com.dgalyanov.gallery.utils.openAppSettings(mainActivity)
 
     fun onRequestPermissionsResult(
       requestCode: Int,

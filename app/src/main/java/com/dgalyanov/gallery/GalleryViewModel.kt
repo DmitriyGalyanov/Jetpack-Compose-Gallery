@@ -1,5 +1,6 @@
 package com.dgalyanov.gallery
 
+import androidx.camera.core.ImageCapture
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -38,17 +39,20 @@ internal class GalleryViewModel : ViewModel() {
     innerPaddings = newPaddingValues
   }
 
-  var containerWidthPx by mutableIntStateOf(0)
-    private set
   private var density by mutableFloatStateOf(1F)
-  val containerWidthDp by derivedStateOf { containerWidthPx / density }
 
-  fun updateContainerWidth(width: Int, density: Float) {
-    log("updateContainerWidth(width: $width, density: $density) | currentWidth: $containerWidthPx, currentDensity: $density | currentDensityAdjustedContainerWidth: $containerWidthDp")
-    if (containerWidthPx == width) return
+  private var windowWidthPx by mutableIntStateOf(0)
+  val windowWidthDp by derivedStateOf { windowWidthPx / density }
+
+  private var windowHeightPx by mutableIntStateOf(0)
+  val windowHeightDp by derivedStateOf { windowHeightPx / density }
+
+  fun updateWindowMetrics(density: Float, width: Int, height: Int) {
+    log("updateWindowMetrics(density: $density, width: $width, height: $height)")
 
     this.density = density
-    this.containerWidthPx = width
+    this.windowWidthPx = width
+    this.windowHeightPx = height
   }
   /** Layout Data -- END */
 
@@ -81,10 +85,23 @@ internal class GalleryViewModel : ViewModel() {
     getSelectedAlbumMediaFiles()
   }
 
+//  val allMediaItemsList = MutableStateFlow(mapOf<Long, GalleryMediaItem>())
   /**
-   * todo: think if should cache lists of concrete albums or just re-fetch
+   * todo: think if should keep allMediaItemsList and filter by selected album
    */
-  val selectedAlbumMediaItemsMap = MutableStateFlow(mapOf<Long, GalleryMediaItem>())
+  var selectedAlbumMediaItemsMap by mutableStateOf(mapOf<Long, GalleryMediaItem>())
+    private set
+//  private fun getAlbumMediaItemsMap(album: GalleryMediaAlbum): Map<Long, GalleryMediaItem> {
+//    if (album == GalleryMediaAlbum.RecentsAlbum) {
+//      return allMediaItemsList.value
+//    }
+//
+//    val selectedAlbumMediaItems = mutableMapOf<Long, GalleryMediaItem>()
+//    allMediaItemsList.value.values.forEach {
+//      if (it.bucketId == selectedAlbum.id) selectedAlbumMediaItems[it.id] = it
+//    }
+//    return selectedAlbumMediaItems
+//  }
 
   var isFetchingSelectedAlbumMediaFiles by mutableStateOf(false)
     private set
@@ -99,22 +116,23 @@ internal class GalleryViewModel : ViewModel() {
     isFetchingSelectedAlbumMediaFiles = true
 
     viewModelScope.launch(Dispatchers.IO) {
-      selectedAlbumMediaItemsMap.value = GalleryContentResolver.getAlbumMediaItems(selectedAlbum.id)
+      selectedAlbumMediaItemsMap = GalleryContentResolver.getAlbumMediaItems(selectedAlbum.id)
+//      selectedAlbumMediaItemsMap.value = getAlbumMediaItemsMap(selectedAlbum)
 
       if (selectedItemsIds.isEmpty()) {
-        selectItem(selectedAlbumMediaItemsMap.value.values.first())
+        selectItem(selectedAlbumMediaItemsMap.values.first())
       } else if (!isMultiselectEnabled.value) {
-        val selectedItem = selectedAlbumMediaItemsMap.value[selectedItemsIds.first()]
+        val selectedItem = selectedAlbumMediaItemsMap[selectedItemsIds.first()]
         if (selectedItem != null) selectItem(selectedItem)
-        else selectItem(selectedAlbumMediaItemsMap.value.values.first())
+        else selectItem(selectedAlbumMediaItemsMap.values.first())
       } else {
         selectedItemsIds.toList().forEachIndexed { index, id ->
-          selectedAlbumMediaItemsMap.value[id]?.setSelectionIndex(index)
+          selectedAlbumMediaItemsMap[id]?.setSelectionIndex(index)
         }
       }
 
       if (selectedItemsIds.isEmpty()) {
-        selectItem(selectedAlbumMediaItemsMap.value.values.first())
+        selectItem(selectedAlbumMediaItemsMap.values.first())
       }
     }.invokeOnCompletion {
       isFetchingSelectedAlbumMediaFiles = false
@@ -124,12 +142,15 @@ internal class GalleryViewModel : ViewModel() {
   /** Albums -- END */
 
   /** Items Selection -- START */
+  /**
+   * required since [selectedAlbumMediaItemsMap] changes should not affect Selection (if not specified explicitly)
+   */
   private val selectedItemsIds = mutableListOf<Long>()
 
   private fun fixItemsSelection() {
     log("fixItemsSelection() | selectedItemsIds: $selectedItemsIds")
     selectedItemsIds.forEachIndexed { index, id ->
-      selectedAlbumMediaItemsMap.value[id]?.setSelectionIndex(index)
+      selectedAlbumMediaItemsMap[id]?.setSelectionIndex(index)
     }
   }
 
@@ -140,7 +161,7 @@ internal class GalleryViewModel : ViewModel() {
 
     selectedItemsIds.forEach {
       log("$logTag | iterating with $it")
-      if (it != itemToRemain?.id) selectedAlbumMediaItemsMap.value[it]?.deselect()
+      if (it != itemToRemain?.id) selectedAlbumMediaItemsMap[it]?.deselect()
     }
     selectedItemsIds.retainAll(listOf(itemToRemain?.id).toSet())
 
@@ -190,7 +211,7 @@ internal class GalleryViewModel : ViewModel() {
     if (_previewedItem.value == item) {
       val newPreviewedItem =
         if (selectedItemsIds.isEmpty()) null
-        else selectedAlbumMediaItemsMap.value[selectedItemsIds.last()]
+        else selectedAlbumMediaItemsMap[selectedItemsIds.last()]
       setPreviewedItem(newPreviewedItem)
     }
 
@@ -213,4 +234,41 @@ internal class GalleryViewModel : ViewModel() {
     }
   }
   /** Items Selection -- END */
+
+  /** Selection Emission -- START */
+  // todo: come up with a better name
+  private var onEmitSelection: ((mediaItems: List<GalleryMediaItem>) -> Unit)? = null
+  fun setOnEmitSelection(value: (mediaItems: List<GalleryMediaItem>) -> Unit) {
+    log("setOnEmitSelection")
+    onEmitSelection = value
+  }
+
+  fun emitCurrentlySelected() {
+    val selectedItems = mutableListOf<GalleryMediaItem>()
+
+    selectedItemsIds.forEach { selectedItemId ->
+      val item = selectedAlbumMediaItemsMap[selectedItemId]
+      // todo: think if should store all selected items
+        ?: GalleryContentResolver.getGalleryMediaItemById(selectedItemId)
+      if (item != null) selectedItems += item
+    }
+
+    log("emitCurrentlySelected() | selectedItems: $selectedItems")
+    onEmitSelection?.let { it(selectedItems) }
+  }
+
+  fun emitCapturedImage(capturedImageFile: ImageCapture.OutputFileResults) {
+    val logTag = "emitCapturedImage(capturedImageFile: $capturedImageFile)"
+    log(logTag)
+
+    val uri =
+      capturedImageFile.savedUri ?: return log("$logTag | capturedImageFile has no savedUri")
+    val mediaItem = GalleryContentResolver.getGalleryMediaItemByUri(uri)
+      ?: return log("$logTag | couldn't get mediaItem")
+
+    onEmitSelection?.let { it(listOf(mediaItem)) }
+  }
+  // todo
+//  fun emitSelection(capturedVideoFile: ?) {}
+  /** Selection Emission -- END */
 }

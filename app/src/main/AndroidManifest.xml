@@ -15,13 +15,23 @@
     <!--         that other apps created. &ndash;&gt;-->
     <!--    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />-->
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
-<!--    <uses-permission-->
-<!--        android:name="android.permission.WRITE_EXTERNAL_STORAGE"-->
-<!--        android:maxSdkVersion="28" />-->
+    <!--    <uses-permission-->
+    <!--        android:name="android.permission.WRITE_EXTERNAL_STORAGE"-->
+    <!--        android:maxSdkVersion="28" />-->
     <!-- MEDIA ACCESS PERMISSIONS - END -->
+
+    <!-- CAMERA ACCESS PERMISSIONS - START -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="true" />
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- CAMERA ACCESS PERMISSIONS - END -->
 
     <application
         android:allowBackup="true"

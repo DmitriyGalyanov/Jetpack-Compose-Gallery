@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,8 +22,7 @@ import kotlinx.coroutines.launch
 internal fun GalleryView(
   galleryViewModel: GalleryViewModel,
 ) {
-  val mediaItemsList =
-    galleryViewModel.selectedAlbumMediaItemsMap.collectAsState().value.values.toList()
+  val mediaItemsList = galleryViewModel.selectedAlbumMediaItemsMap.values.toList()
 
   var shouldShowLoader by remember { mutableStateOf(false) }
   var loaderJob by remember { mutableStateOf<Job?>(null) }

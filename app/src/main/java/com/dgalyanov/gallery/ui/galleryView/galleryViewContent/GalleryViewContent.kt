@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.GalleryViewModel
 import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryMediaThumbnailView.GalleryMediaThumbnailView
+import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem.CameraSheetButton
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GALLERY_VIEW_TOOLBAR_HEIGHT
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GalleryViewToolbar
 import kotlinx.coroutines.launch
@@ -35,16 +37,18 @@ import kotlinx.coroutines.launch
 private const val COLUMNS_AMOUNT = 3
 
 private const val TOOLBAR_ITEM_KEY = "Toolbar"
+private const val CAMERA_BUTTON_ITEM_KEY = "Camera"
+private const val GRID_NON_THUMBNAILS_ITEMS_AMOUNT = 2
 
 @Composable
 internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
 
-  val thumbnailSize = galleryViewModel.containerWidthDp.dp / COLUMNS_AMOUNT
+  val thumbnailSize = galleryViewModel.windowWidthDp.dp / COLUMNS_AMOUNT
 
   val density = LocalDensity.current
 
-  val previewedAssetHeightDp = galleryViewModel.containerWidthDp.dp
+  val previewedAssetHeightDp = galleryViewModel.windowWidthDp.dp
   val previewedAssetHeightPx = with(density) { previewedAssetHeightDp.roundToPx() }
 
   val scope = rememberCoroutineScope()
@@ -59,11 +63,8 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
         scope = scope,
         gridState = gridState,
         /** LazyVerticalGrid uses [ScrollableDefaults.flingBehavior], which uses [rememberSplineBasedDecay] */
-        /** LazyVerticalGrid uses [ScrollableDefaults.flingBehavior], which uses [rememberSplineBasedDecay] */
-        /** LazyVerticalGrid uses [ScrollableDefaults.flingBehavior], which uses [rememberSplineBasedDecay] */
-        /** LazyVerticalGrid uses [ScrollableDefaults.flingBehavior], which uses [rememberSplineBasedDecay] */
         gridFlingDecayAnimationSpec = gridFlingDecayAnimationSpec,
-        gridStickyHeaderItemsAmount = 1,
+        gridNonThumbnailsItemsAmount = GRID_NON_THUMBNAILS_ITEMS_AMOUNT,
         gridColumnsAmount = COLUMNS_AMOUNT,
         gridItemHeightPx = (thumbnailSize * density.density).value.toInt(),
       )
@@ -94,18 +95,16 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
       ) {
         stickyHeader(key = TOOLBAR_ITEM_KEY) { GalleryViewToolbar() }
 
-//         todo: add Camera
-//        item(key = CAMERA_ITEM_KEY) {
-//          CameraButton()
-//        }
+        item(key = CAMERA_BUTTON_ITEM_KEY) {
+          CameraSheetButton(Modifier.height(thumbnailSize).fillMaxWidth())
+        }
 
         itemsIndexed(mediaItemsList, key = { _, item -> item.id }) { index, item ->
           GalleryMediaThumbnailView(
             item = item,
             size = thumbnailSize,
           ) {
-            // stickyHeader is the first Item, occupying index 0
-            val listItemIndex = index + 1
+            val listItemIndex = index + GRID_NON_THUMBNAILS_ITEMS_AMOUNT
             val stickyHeaderOffset = (GALLERY_VIEW_TOOLBAR_HEIGHT.value * density.density).toInt()
 
             galleryViewModel.onThumbnailClick(item)

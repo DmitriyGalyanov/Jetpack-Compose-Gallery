@@ -6,17 +6,15 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.dgalyanov.gallery.galleryContentResolver.GalleryContentResolver
 import com.dgalyanov.gallery.galleryContentResolver.GalleryPermissionsHelper
 import com.dgalyanov.gallery.ui.galleryView.GalleryViewProvider
 import com.dgalyanov.gallery.ui.theme.GalleryTheme
 import com.dgalyanov.gallery.utils.GalleryLogFactory
-import com.dgalyanov.gallery.utils.galleryGenericLog
 
 private val log = GalleryLogFactory("MainActivity")
 
@@ -53,7 +51,11 @@ class MainActivity : ComponentActivity() {
     log("onCreate")
 
     updateStoredDisplayMetrics()
-    galleryViewModel.updateContainerWidth(displayMetrics.widthPixels, displayMetrics.density)
+    galleryViewModel.updateWindowMetrics(
+      density = displayMetrics.density,
+      width = displayMetrics.widthPixels,
+      height = displayMetrics.heightPixels
+    )
 
     GalleryContentResolver.init(this)
 
@@ -67,9 +69,11 @@ class MainActivity : ComponentActivity() {
     setContent {
       GalleryTheme {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPaddings ->
-          Box {
-            GalleryViewProvider(galleryViewModel, innerPaddings)
+          LaunchedEffect(innerPaddings) {
+            galleryViewModel.updateInnerPaddings(innerPaddings)
           }
+
+          GalleryViewProvider(galleryViewModel)
         }
       }
     }
@@ -80,7 +84,11 @@ class MainActivity : ComponentActivity() {
     log("onWindowAttributesChanged(params: $params)")
 
     updateStoredDisplayMetrics()
-    galleryViewModel.updateContainerWidth(displayMetrics.widthPixels, displayMetrics.density)
+    galleryViewModel.updateWindowMetrics(
+      density = displayMetrics.density,
+      width = displayMetrics.widthPixels,
+      height = displayMetrics.heightPixels
+    )
   }
 
   override fun onResume() {

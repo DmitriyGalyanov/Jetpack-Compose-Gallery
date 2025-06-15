@@ -26,7 +26,7 @@ internal class GalleryViewContentNestedScrollConnection(
   private val scope: CoroutineScope,
   private val gridState: LazyGridState,
   private val gridFlingDecayAnimationSpec: DecayAnimationSpec<Float>,
-  private val gridStickyHeaderItemsAmount: Int,
+  private val gridNonThumbnailsItemsAmount: Int,
   private val gridColumnsAmount: Int,
   private val gridItemHeightPx: Int,
 ) : NestedScrollConnection {
@@ -78,7 +78,7 @@ internal class GalleryViewContentNestedScrollConnection(
   }
 
   private fun getApproximateNonStickyGridOffset() =
-    ((gridState.firstVisibleItemIndex - gridStickyHeaderItemsAmount) / gridColumnsAmount) *
+    ((gridState.firstVisibleItemIndex - gridNonThumbnailsItemsAmount) / gridColumnsAmount) *
       gridItemHeightPx +
       gridState.firstVisibleItemScrollOffset
 

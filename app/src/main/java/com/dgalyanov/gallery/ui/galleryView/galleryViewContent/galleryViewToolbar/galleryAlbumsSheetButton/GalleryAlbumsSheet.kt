@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.GalleryViewModel
+import com.dgalyanov.gallery.ui.styleConsts.GalleryStyleConsts
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,8 +36,6 @@ internal fun GalleryAlbumsSheet(sheetState: SheetState, onDidDismiss: () -> Unit
     GalleryAlbumsSheetContent(sheetState, onDidDismiss)
   }
 }
-
-private val CONTENT_PADDING_HORIZONTAL = 12.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,7 +56,7 @@ private fun GalleryAlbumsSheetContent(sheetState: SheetState, onDidDismiss: () -
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = CONTENT_PADDING_HORIZONTAL)
+        .padding(horizontal = GalleryStyleConsts.COMMON_HORIZONTAL_PADDING)
     ) {
       Text("Cancel", modifier = Modifier.clickable(onClick = ::hide))
 
@@ -76,7 +75,7 @@ private fun GalleryAlbumsSheetContent(sheetState: SheetState, onDidDismiss: () -
     } else {
       LazyColumn(
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(CONTENT_PADDING_HORIZONTAL, 8.dp)
+        contentPadding = PaddingValues(GalleryStyleConsts.COMMON_HORIZONTAL_PADDING, 8.dp)
       ) {
         items(galleryViewModel.albumsList, { it.id }) {
           GalleryAlbumPreviewView(it) {
