@@ -33,6 +33,7 @@ import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryPreviewedA
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem.CameraSheetButton
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GALLERY_VIEW_TOOLBAR_HEIGHT
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GalleryViewToolbar
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val COLUMNS_AMOUNT = 3
@@ -103,7 +104,16 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
             modifier = Modifier
               .height(thumbnailSize)
               .fillMaxWidth(),
-            onSheetGoingToDisplay = galleryViewModel.exoPlayerHolder::pause,
+            onSheetGoingToDisplay = {
+              scope.launch {
+                /**
+                 * Delay is required to Request Pause after Lifecycle-based Play Request
+                 * (Permissions Request pauses current Lifecycle)
+                 */
+                delay(10)
+                galleryViewModel.exoPlayerHolder.pause()
+              }
+            },
             onSheetDidDismiss = galleryViewModel.exoPlayerHolder::play,
           )
         }
