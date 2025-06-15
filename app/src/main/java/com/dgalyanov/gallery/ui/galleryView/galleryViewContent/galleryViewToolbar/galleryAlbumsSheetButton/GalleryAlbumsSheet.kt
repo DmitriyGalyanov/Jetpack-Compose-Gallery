@@ -45,7 +45,7 @@ private fun GalleryAlbumsSheetContent(sheetState: SheetState, onDidDismiss: () -
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
 
   val shouldShowLoader =
-    remember { derivedStateOf { galleryViewModel.albumsList.isEmpty() && galleryViewModel.isRefreshingAlbums } }
+    remember { derivedStateOf { galleryViewModel.albumsList.isEmpty() && galleryViewModel.isFetchingAlbums } }
 
   fun hide() {
     scope.launch { sheetState.hide() }

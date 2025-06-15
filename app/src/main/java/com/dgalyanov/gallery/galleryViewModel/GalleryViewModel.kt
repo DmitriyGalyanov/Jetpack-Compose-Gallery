@@ -62,18 +62,18 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   /** Albums -- START */
   var albumsList by mutableStateOf(listOf<GalleryMediaAlbum>())
 
-  var isRefreshingAlbums by mutableStateOf(false)
+  var isFetchingAlbums by mutableStateOf(false)
     private set
 
   fun refreshAlbumsList() {
     val logTag = "refreshAlbumsList()"
     log("$logTag | currentAlbumsListSize: ${albumsList.size}")
 
-    isRefreshingAlbums = true
+    isFetchingAlbums = true
     viewModelScope.launch(Dispatchers.IO) {
       albumsList = GalleryContentResolver.getMediaAlbums()
     }.invokeOnCompletion {
-      isRefreshingAlbums = false
+      isFetchingAlbums = false
       log("$logTag finished | newAlbumsListSize: ${albumsList.size}")
     }
   }

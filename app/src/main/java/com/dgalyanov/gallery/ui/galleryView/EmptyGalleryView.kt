@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -13,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.galleryContentResolver.GalleryPermissionsHelper
+import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 
 @Composable
 internal fun EmptyGalleryView() {
@@ -20,12 +22,16 @@ internal fun EmptyGalleryView() {
   val didUserForbidPermissionsRequest =
     GalleryPermissionsHelper.didUserForbidPermissionsRequest.collectAsState().value
 
+  val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
+  val isLoading = galleryViewModel.isFetchingSelectedAlbumMediaFiles
+
   Box(
     modifier = Modifier
       .fillMaxSize()
   ) {
     if (arePermissionsGranted) {
-      Text("Gallery is empty", modifier = Modifier.align(Alignment.Center))
+      if (isLoading) CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+      else Text("Gallery is empty", modifier = Modifier.align(Alignment.Center))
     } else {
       Column(
         modifier = Modifier.align(Alignment.Center),
