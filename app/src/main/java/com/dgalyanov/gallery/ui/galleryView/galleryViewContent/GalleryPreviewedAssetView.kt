@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.GlideSubcomposition
 import com.bumptech.glide.integration.compose.placeholder
 import com.dgalyanov.gallery.GalleryViewModel
 
@@ -33,7 +35,7 @@ internal fun GalleryPreviewedAssetView(modifier: Modifier = Modifier) {
         contentDescription = null,
         contentScale = ContentScale.Fit,
 
-        loading = placeholder { CircularProgressIndicator() },
+        loading = placeholder { CircularProgressIndicator(modifier = Modifier.align(Alignment.Center)) },
         modifier = Modifier
           .matchParentSize()
           .background(Color.DarkGray)
