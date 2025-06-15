@@ -2,10 +2,11 @@ package com.dgalyanov.gallery
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
@@ -15,22 +16,26 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.DurationUnit
 
 /**
  * used only for demo/example
@@ -92,16 +97,33 @@ private fun EmittedSelectionSheet(
           .verticalScroll(rememberScrollState())
       ) {
         mediaItems.map {
-          GlideImage(
-            model = it.uri,
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
+          Box(
             modifier = Modifier
               .width(this@BoxWithConstraints.maxWidth / ITEMS_IN_ROW - SPACE_BETWEEN_ITEMS)
               .clip(RoundedCornerShape(8.dp))
               .background(Color.Gray)
               .aspectRatio(9F / 16F)
-          )
+          ) {
+            GlideImage(
+              model = it.uri,
+              contentDescription = null,
+              contentScale = ContentScale.Fit,
+            )
+
+            if (it.durationMs > 0) {
+              Text(
+                it.durationMs.milliseconds.toString(DurationUnit.SECONDS),
+                fontSize = 20.sp,
+                lineHeight = 24.sp,
+                modifier = Modifier
+                  .offset((-4).dp, (-4).dp)
+                  .clip(RoundedCornerShape(2.dp))
+                  .align(Alignment.BottomEnd)
+                  .background(Color(0, 0, 0, 160))
+                  .padding(horizontal = 4.dp)
+              )
+            }
+          }
         }
       }
     }
