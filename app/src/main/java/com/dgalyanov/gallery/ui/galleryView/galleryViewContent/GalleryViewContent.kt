@@ -99,7 +99,13 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
         stickyHeader(key = TOOLBAR_ITEM_KEY) { GalleryViewToolbar() }
 
         item(key = CAMERA_BUTTON_ITEM_KEY) {
-          CameraSheetButton(Modifier.height(thumbnailSize).fillMaxWidth())
+          CameraSheetButton(
+            modifier = Modifier
+              .height(thumbnailSize)
+              .fillMaxWidth(),
+            onSheetGoingToDisplay = galleryViewModel.exoPlayerHolder::pause,
+            onSheetDidDismiss = galleryViewModel.exoPlayerHolder::play,
+          )
         }
 
         itemsIndexed(mediaItemsList, key = { _, item -> item.id }) { index, item ->

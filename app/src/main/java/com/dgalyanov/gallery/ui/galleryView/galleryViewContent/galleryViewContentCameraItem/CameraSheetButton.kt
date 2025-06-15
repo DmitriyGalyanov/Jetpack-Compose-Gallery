@@ -35,9 +35,17 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
-internal fun CameraSheetButton(modifier: Modifier = Modifier) {
+internal fun CameraSheetButton(
+  modifier: Modifier = Modifier,
+  onSheetGoingToDisplay: () -> Unit,
+  onSheetDidDismiss: () -> Unit,
+) {
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   var isSheetDisplayed by remember { mutableStateOf(false) }
+  fun displaySheet() {
+    isSheetDisplayed = true
+    onSheetGoingToDisplay()
+  }
 
   val cameraPermissionsState = rememberMultiplePermissionsState(
     listOf(
@@ -46,7 +54,7 @@ internal fun CameraSheetButton(modifier: Modifier = Modifier) {
     )
   ) {
     galleryGenericLog("after permissions request $it")
-    if (it.values.all { isGranted -> isGranted }) isSheetDisplayed = true
+    if (it.values.all { isGranted -> isGranted }) displaySheet()
   }
 
   val activity = LocalActivity.current
@@ -56,7 +64,7 @@ internal fun CameraSheetButton(modifier: Modifier = Modifier) {
       .background(Color.Black)
       .clickable {
         if (cameraPermissionsState.allPermissionsGranted) {
-          isSheetDisplayed = true
+          displaySheet()
         } else if (!cameraPermissionsState.shouldShowRationale) {
           cameraPermissionsState.launchMultiplePermissionRequest()
         } else if (activity != null) {
@@ -71,6 +79,7 @@ internal fun CameraSheetButton(modifier: Modifier = Modifier) {
     if (isSheetDisplayed) {
       CameraSheet(sheetState = sheetState) {
         isSheetDisplayed = false
+        onSheetDidDismiss()
       }
     }
   }
