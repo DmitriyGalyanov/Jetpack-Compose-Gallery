@@ -107,7 +107,8 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
             item = item,
             size = thumbnailSize,
           ) {
-            val listItemIndex = index + GRID_NON_THUMBNAILS_ITEMS_AMOUNT
+            // minus 1 is to allow user to scroll backwards selecting first item in a row
+            val listItemIndex = index + GRID_NON_THUMBNAILS_ITEMS_AMOUNT - 1
             val stickyHeaderOffset = (GALLERY_VIEW_TOOLBAR_HEIGHT.value * density.density).toInt()
 
             galleryViewModel.onThumbnailClick(item)
