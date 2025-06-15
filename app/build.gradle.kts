@@ -20,9 +20,8 @@ android {
 
   buildTypes {
     release {
-      // degrades LazyVerticalGrid Performance 🤔
-//      isMinifyEnabled = true
-//      isShrinkResources = true
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("debug")
     }
