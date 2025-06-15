@@ -7,11 +7,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -117,24 +121,46 @@ private fun CameraSheet(sheetState: SheetState, onDidDismiss: () -> Unit) {
       Row(
         modifier = Modifier
           .fillMaxWidth()
-          .align(Alignment.BottomCenter)
-          .padding(horizontal = GalleryStyleConsts.COMMON_HORIZONTAL_PADDING),
-        horizontalArrangement = Arrangement.SpaceBetween,
+          .align(Alignment.BottomCenter),
       ) {
-        TextButton(cameraControl.switchCamera) {
+        TextButton(
+          onClick = cameraControl::switchCamera,
+          enabled = !cameraControl.isRecording,
+          modifier = Modifier.weight(1F)
+        ) {
           Text("Switch Camera")
         }
 
-        TextButton({
-          cameraControl.takePicture { capturedImage ->
-            scope.launch { sheetState.hide() }
-              .invokeOnCompletion {
-                onDidDismiss()
-                galleryViewModel.emitCapturedImage(capturedImage)
-              }
-          }
-        }) {
-          Text("Capture and emit Picture")
+        TextButton(
+          onClick = {
+            cameraControl.takePicture { capturedImage ->
+              scope.launch { sheetState.hide() }
+                .invokeOnCompletion {
+                  onDidDismiss()
+                  galleryViewModel.emitCapturedImage(capturedImage)
+                }
+            }
+          },
+          enabled = !cameraControl.isRecording,
+          modifier = Modifier.weight(1F)
+        ) {
+          Text("Capture Picture")
+        }
+
+        TextButton(
+          {
+            if (!cameraControl.isRecording) cameraControl.startVideoRecording { recordedVideoOutputResults ->
+              scope.launch { sheetState.hide() }
+                .invokeOnCompletion {
+                  onDidDismiss()
+                  galleryViewModel.emitRecordedVideo(recordedVideoOutputResults)
+                }
+            } else cameraControl.finishVideoRecording()
+          },
+          modifier = Modifier.weight(1F),
+        ) {
+          // todo: show current recording duration
+          Text(if (cameraControl.isRecording) "Stop recording" else "Record Video")
         }
       }
     }

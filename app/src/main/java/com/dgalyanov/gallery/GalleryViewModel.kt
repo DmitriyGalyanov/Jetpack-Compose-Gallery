@@ -1,6 +1,7 @@
 package com.dgalyanov.gallery
 
 import androidx.camera.core.ImageCapture
+import androidx.camera.video.OutputResults
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -268,7 +269,16 @@ internal class GalleryViewModel : ViewModel() {
 
     onEmitSelection?.let { it(listOf(mediaItem)) }
   }
-  // todo
-//  fun emitSelection(capturedVideoFile: ?) {}
+
+  fun emitRecordedVideo(recordedVideoOutputResults: OutputResults) {
+    val logTag = "emitRecordedVideo(recordedVideoOutputResults: $recordedVideoOutputResults)"
+    log(logTag)
+
+    val mediaItem =
+      GalleryContentResolver.getGalleryMediaItemByUri(recordedVideoOutputResults.outputUri)
+        ?: return log("$logTag | couldn't get mediaItem")
+
+    onEmitSelection?.let { it(listOf(mediaItem)) }
+  }
   /** Selection Emission -- END */
 }

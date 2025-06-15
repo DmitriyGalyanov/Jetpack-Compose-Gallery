@@ -1,23 +1,48 @@
 package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ContentValues
+import android.content.Context
+import android.content.pm.PackageManager
+import android.content.res.Resources
+import android.media.MediaFormat.MIMETYPE_VIDEO_MPEG4
 import android.os.Build
 import android.provider.MediaStore
+import android.widget.Toast
+import androidx.activity.compose.LocalActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.MirrorMode
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.video.FallbackStrategy
+import androidx.camera.video.MediaStoreOutputOptions
+import androidx.camera.video.OutputResults
+import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recording
+import androidx.camera.video.VideoRecordEvent
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
+import androidx.camera.view.video.AudioConfig
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.dgalyanov.gallery.R
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /** todo: enable Volume down button receiver used to trigger shutter */
@@ -34,32 +59,55 @@ import java.util.concurrent.Executors
 //}
 
 internal class CameraControl(
-  val cameraController: LifecycleCameraController,
+  private val activity: Activity?,
+  private val context: Context,
+  private val cameraExecutor: ExecutorService,
+  private val resources: Resources,
   val lifecycleOwner: LifecycleOwner,
-  val switchCamera: () -> Unit,
-  val takePicture: (onImageSaved: (outputFileResults: ImageCapture.OutputFileResults) -> Unit) -> Unit,
-)
+) {
+  companion object {
+    private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
+  }
 
-private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
+  val log = GalleryLogFactory("CameraControl")
 
-// todo: refactor to a class
-@Composable
-internal fun useCameraControl(onDispose: () -> Unit): CameraControl {
-  val log = remember { GalleryLogFactory("UseCameraControl") }
-
-  val context = LocalContext.current
-
-  val cameraController = remember {
-    log("creating cameraController")
-
-    LifecycleCameraController(context).apply {
-      setEnabledUseCases(
-        CameraController.IMAGE_CAPTURE
-//          or
-//          todo: enable VIDEO_CAPTURE when going to take a Video as Docs suggest
-//          CameraController.VIDEO_CAPTURE,
-      )
+  private fun showToast(message: String) {
+    activity?.runOnUiThread {
+      Toast.makeText(context, message, Toast.LENGTH_LONG).show()
     }
+  }
+
+  private fun checkIfPermissionsAreGranted(): Boolean =
+    listOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO).all {
+      ActivityCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+    }
+
+  private val videoQualitySelector = QualitySelector.fromOrderedList(
+    listOf(Quality.FHD, Quality.HD, Quality.SD),
+    FallbackStrategy.lowerQualityOrHigherThan(Quality.SD)
+  )
+
+  /**
+   * todo: could be used with for more control (like flipping cameras while recording)
+   * @see ProcessCameraProvider.getInstance
+   * see https://ngengesenior.medium.com/seamlessly-switching-camera-lenses-during-video-recording-with-camerax-on-android-fcb597ed8236
+   */
+//  private val videoRecorder = Recorder.Builder()
+//    .setExecutor(cameraExecutor)
+//    .setQualitySelector(videoQualitySelector)
+//    .build()
+//  private val videoCapture = VideoCapture.Builder(videoRecorder)
+//    .setMirrorMode(MirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
+//    .build()
+
+  val cameraController = LifecycleCameraController(context).apply {
+    setEnabledUseCases(
+      CameraController.IMAGE_CAPTURE
+//          todo: enable VIDEO_CAPTURE when going to take a Video as Docs suggest
+        or CameraController.VIDEO_CAPTURE
+    )
+    videoCaptureQualitySelector = videoQualitySelector
+    videoCaptureMirrorMode = MirrorMode.MIRROR_MODE_ON_FRONT_ONLY
   }
 
   fun switchCamera() {
@@ -72,19 +120,14 @@ internal fun useCameraControl(onDispose: () -> Unit): CameraControl {
     }
   }
 
-  val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-  DisposableEffect(Unit) {
-    onDispose {
-      log("disposing")
-
-      cameraExecutor.shutdown()
-      onDispose()
+  // todo: see this https://developer.android.com/media/camera/camerax/take-photo/options
+  fun takePicture(
+    onImageSavedCallback: (outputFileResults: ImageCapture.OutputFileResults) -> Unit
+  ) {
+    if (!checkIfPermissionsAreGranted()) {
+      return log("useCameraControl.takePicture called w/o Permissions")
     }
-  }
 
-//  val resources = LocalResources.current
-  val resources = LocalContext.current.resources
-  fun takePicture(onImageSavedCallback: (outputFileResults: ImageCapture.OutputFileResults) -> Unit) {
     val name = SimpleDateFormat(FILENAME_FORMAT, Locale.ENGLISH).format(System.currentTimeMillis())
     val contentValues = ContentValues().apply {
       put(MediaStore.MediaColumns.DISPLAY_NAME, name)
@@ -126,13 +169,108 @@ internal fun useCameraControl(onDispose: () -> Unit): CameraControl {
     )
   }
 
-  // todo
-//  fun recordVideo() {}
+  private var currentRecording by mutableStateOf<Recording?>(null)
+  val isRecording by derivedStateOf { currentRecording != null }
 
-  return CameraControl(
-    cameraController = cameraController,
-    lifecycleOwner = LocalLifecycleOwner.current,
-    switchCamera = ::switchCamera,
-    takePicture = ::takePicture,
-  )
+  @SuppressLint("MissingPermission")
+    /** permissions are checked with [checkIfPermissionsAreGranted] */
+  fun startVideoRecording(
+    onVideoRecordedSuccessfully: (outputResults: OutputResults) -> Unit
+  ) {
+    val logTag = "startVideoRecording()"
+
+    if (!checkIfPermissionsAreGranted()) return log("$logTag called w/o Permissions")
+    if (isRecording) return log("$logTag called while recording")
+
+    val name = "VIDEO_${
+      SimpleDateFormat(FILENAME_FORMAT, Locale.ENGLISH).format(System.currentTimeMillis())
+    }.mp4"
+    val contentValues = ContentValues().apply {
+      put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+      put(MediaStore.MediaColumns.MIME_TYPE, MIMETYPE_VIDEO_MPEG4)
+      if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+        val appName = resources.getString(R.string.app_name)
+        put(MediaStore.Images.Media.RELATIVE_PATH, "Movies/$appName")
+      }
+    }
+
+    val mediaStoreOutputOptions = MediaStoreOutputOptions.Builder(
+      context.contentResolver,
+      MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+    ).setContentValues(contentValues).build()
+
+    val logDetails =
+      "name: $name, contentValues: $contentValues, outputOptions: $mediaStoreOutputOptions"
+    log("$logTag | $logDetails")
+    fun logWithDetails(message: String) = log("$logTag | $message | $logDetails")
+
+    currentRecording = cameraController.startRecording(
+      mediaStoreOutputOptions,
+      AudioConfig.create(true),
+      cameraExecutor,
+    ) { event ->
+//    currentRecording = videoCapture.output.prepareRecording(context, mediaStoreOutputOptions)
+//      .withAudioEnabled()
+//      .asPersistentRecording()
+//      .start(cameraExecutor) { event ->
+      when (event) {
+        is VideoRecordEvent.Start -> {
+          logWithDetails("Recording started")
+        }
+
+        is VideoRecordEvent.Finalize -> {
+          if (event.error != VideoRecordEvent.Finalize.ERROR_NONE) {
+            currentRecording?.stop()
+            currentRecording = null
+
+            logWithDetails("Video recording failed, cause: ${event.cause}")
+            showToast("Video recording failed")
+          } else {
+            log("Video recording succeeded")
+            showToast("Video recording succeeded")
+            onVideoRecordedSuccessfully(event.outputResults)
+          }
+        }
+      }
+    }
+  }
+
+  fun finishVideoRecording() {
+    currentRecording?.stop()
+    currentRecording = null
+  }
+
+  fun onDispose() {
+    finishVideoRecording()
+
+    cameraExecutor.shutdown()
+  }
+}
+
+@Composable
+internal fun useCameraControl(onDispose: () -> Unit): CameraControl {
+  val activity = LocalActivity.current
+  val context = LocalContext.current
+  val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
+  val resources = LocalContext.current.resources
+  val lifecycleOwner = LocalLifecycleOwner.current
+
+  val cameraControl = remember {
+    CameraControl(
+      activity = activity,
+      context = context,
+      cameraExecutor = cameraExecutor,
+      resources = resources,
+      lifecycleOwner = lifecycleOwner
+    )
+  }
+
+  DisposableEffect(Unit) {
+    onDispose {
+      cameraControl.onDispose()
+      onDispose()
+    }
+  }
+
+  return cameraControl
 }
