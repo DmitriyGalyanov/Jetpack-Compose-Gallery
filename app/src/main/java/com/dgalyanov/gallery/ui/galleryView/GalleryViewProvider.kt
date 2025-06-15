@@ -2,7 +2,7 @@ package com.dgalyanov.gallery.ui.galleryView
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import com.dgalyanov.gallery.GalleryViewModel
+import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 
 @Composable
 internal fun GalleryViewProvider(galleryViewModel: GalleryViewModel) {

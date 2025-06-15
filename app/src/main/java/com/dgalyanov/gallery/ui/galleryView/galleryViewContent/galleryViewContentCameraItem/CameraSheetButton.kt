@@ -5,17 +5,11 @@ import androidx.compose.runtime.Composable
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -33,8 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.dgalyanov.gallery.GalleryViewModel
-import com.dgalyanov.gallery.ui.styleConsts.GalleryStyleConsts
+import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.utils.galleryGenericLog
 import com.dgalyanov.gallery.utils.openAppSettings
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -88,7 +81,7 @@ internal fun CameraSheetButton(modifier: Modifier = Modifier) {
 private fun CameraSheet(sheetState: SheetState, onDidDismiss: () -> Unit) {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
 
-  val cameraControl = useCameraControl(
+  val cameraControl = CameraControl.use(
     onDispose = galleryViewModel::getSelectedAlbumMediaFiles
   )
 

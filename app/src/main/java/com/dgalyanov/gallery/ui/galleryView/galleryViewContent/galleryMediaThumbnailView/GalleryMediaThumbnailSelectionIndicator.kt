@@ -16,10 +16,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.dgalyanov.gallery.GalleryViewModel
+import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
 import com.dgalyanov.gallery.utils.conditional
 
@@ -62,8 +63,9 @@ internal fun GalleryMediaThumbnailSelectionIndicator(selectionIndex: Int) {
 private fun MultiselectIndicatorPreview() {
   val selectionIndex = 10
 
+  val context = LocalContext.current
   val galleryViewModel = remember {
-    val gvm = GalleryViewModel()
+    val gvm = GalleryViewModel(context)
     gvm.toggleIsMultiselectEnabled()
     return@remember gvm
   }

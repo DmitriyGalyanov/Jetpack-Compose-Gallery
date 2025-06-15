@@ -5,6 +5,11 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 
+enum class GalleryMediaType {
+  Image,
+  Video,
+}
+
 data class GalleryMediaItem(
   val id: Long,
   val uri: Uri,
@@ -13,6 +18,8 @@ data class GalleryMediaItem(
   companion object {
     const val NOT_SELECTED_INDEX = -1
   }
+
+  val mediaType = if (durationMs > 0) GalleryMediaType.Video else GalleryMediaType.Image
 
   val log = GalleryLogFactory("GalleryMediaItem", toString())
 

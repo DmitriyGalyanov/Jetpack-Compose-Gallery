@@ -29,6 +29,8 @@ internal class GalleryViewContentNestedScrollConnection(
   private val gridNonThumbnailsItemsAmount: Int,
   private val gridColumnsAmount: Int,
   private val gridItemHeightPx: Int,
+  private val onPreviewedAssetDidHide: () -> Unit,
+  private val onPreviewedAssetDidUnhide: () -> Unit,
 ) : NestedScrollConnection {
   var previewedAssetOffset by mutableIntStateOf(0)
     private set
@@ -46,12 +48,18 @@ internal class GalleryViewContentNestedScrollConnection(
 
   fun showPreviewedAsset() {
     galleryGenericLog("showPreviewedAsset()")
-    animatePreviewedAssetOffset(0) { isPreviewedAssetLockedAsHidden = false }
+    animatePreviewedAssetOffset(0) {
+      isPreviewedAssetLockedAsHidden = false
+      onPreviewedAssetDidUnhide()
+    }
   }
 
   private fun hidePreviewedAsset() {
     galleryGenericLog("hidePreviewedAsset()")
-    animatePreviewedAssetOffset(-previewedAssetHeightPx) { isPreviewedAssetLockedAsHidden = true }
+    animatePreviewedAssetOffset(-previewedAssetHeightPx) {
+      isPreviewedAssetLockedAsHidden = true
+      onPreviewedAssetDidHide()
+    }
   }
 
   /** hidden, but not docked */
@@ -67,11 +75,12 @@ internal class GalleryViewContentNestedScrollConnection(
   private fun requestMarkPreviewedAssetLockedAsHidden() {
     if (isPreviewedAssetOffsetUnlockedByCurrentFling) return
     isPreviewedAssetLockedAsHidden = true
+    onPreviewedAssetDidHide()
   }
 
   private fun dockPreviewedAssetToClosestPosition() {
     if (isPreviewedAssetHidden) return requestMarkPreviewedAssetLockedAsHidden()
-    if (previewedAssetOffset == 0) return
+    if (previewedAssetOffset == 0) return onPreviewedAssetDidUnhide()
 
     if (previewedAssetOffset >= -previewedAssetHeightPx / 2) showPreviewedAsset()
     else hidePreviewedAsset()

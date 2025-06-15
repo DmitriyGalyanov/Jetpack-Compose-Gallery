@@ -26,9 +26,10 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.dgalyanov.gallery.GalleryViewModel
+import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryMediaThumbnailView.GalleryMediaThumbnailView
+import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryPreviewedAssetView.GalleryPreviewedAssetView
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem.CameraSheetButton
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GALLERY_VIEW_TOOLBAR_HEIGHT
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GalleryViewToolbar
@@ -67,6 +68,8 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
         gridNonThumbnailsItemsAmount = GRID_NON_THUMBNAILS_ITEMS_AMOUNT,
         gridColumnsAmount = COLUMNS_AMOUNT,
         gridItemHeightPx = (thumbnailSize * density.density).value.toInt(),
+        onPreviewedAssetDidHide = galleryViewModel.exoPlayerHolder::pause,
+        onPreviewedAssetDidUnhide = galleryViewModel.exoPlayerHolder::play,
       )
     }
 

@@ -41,13 +41,21 @@ android {
 }
 
 dependencies {
-  implementation(libs.glide)
-  implementation(libs.compose)
+  // permissions
+  implementation(libs.accompanist.permissions)
 
+  // images
+  implementation(libs.glide)
+  implementation(libs.glideCompose)
+
+  // camera
   implementation(libs.androidx.camera.core)
   implementation(libs.androidx.camera.lifecycle)
   implementation(libs.androidx.camera.camera2)
-  implementation(libs.accompanist.permissions)
+
+  // video
+  implementation(libs.androidx.media3.exoplayer)
+  implementation(libs.androidx.media3.ui)
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -1,5 +1,6 @@
-package com.dgalyanov.gallery
+package com.dgalyanov.gallery.galleryViewModel
 
+import android.content.Context
 import androidx.camera.core.ImageCapture
 import androidx.camera.video.OutputResults
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,9 +22,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-internal class GalleryViewModel : ViewModel() {
+internal class GalleryViewModel(context: Context) : ViewModel() {
   companion object {
-    val LocalGalleryViewModel = staticCompositionLocalOf { GalleryViewModel() }
+    val LocalGalleryViewModel =
+      staticCompositionLocalOf<GalleryViewModel> { error("CompositionLocal of GalleryViewModel not present") }
 
     private const val MULTISELECT_LIMIT = 10
   }
@@ -177,17 +179,13 @@ internal class GalleryViewModel : ViewModel() {
   fun toggleIsMultiselectEnabled() {
     log("toggleIsMultiselectEnabled() | current: ${_isMultiselectEnabled.value}")
 
-    if (_isMultiselectEnabled.value) clearSelectedItems(previewedItem.value)
+    if (_isMultiselectEnabled.value) clearSelectedItems(previewedItem)
 
     _isMultiselectEnabled.value = !_isMultiselectEnabled.value
   }
 
-  private val _previewedItem = MutableStateFlow<GalleryMediaItem?>(null)
-  val previewedItem = _previewedItem.asStateFlow()
-  private fun setPreviewedItem(value: GalleryMediaItem?) {
-    log("setPreviewedItem(item: $value) | current: ${_previewedItem.value}")
-    _previewedItem.value = value
-  }
+  var previewedItem by mutableStateOf<GalleryMediaItem?>(null)
+    private set
 
   private fun selectItem(item: GalleryMediaItem) {
     log("selectItem(item: $item)")
@@ -197,7 +195,7 @@ internal class GalleryViewModel : ViewModel() {
 
     item.setSelectionIndex(selectedItemsIds.size)
     selectedItemsIds += item.id
-    setPreviewedItem(item)
+    previewedItem = item
 
     fixItemsSelection()
   }
@@ -209,11 +207,11 @@ internal class GalleryViewModel : ViewModel() {
     item.deselect()
     selectedItemsIds.remove(item.id)
 
-    if (_previewedItem.value == item) {
+    if (previewedItem == item) {
       val newPreviewedItem =
         if (selectedItemsIds.isEmpty()) null
         else selectedAlbumMediaItemsMap[selectedItemsIds.last()]
-      setPreviewedItem(newPreviewedItem)
+      previewedItem = newPreviewedItem
     }
 
     fixItemsSelection()
@@ -234,7 +232,10 @@ internal class GalleryViewModel : ViewModel() {
       selectItem(item)
     }
   }
+
   /** Items Selection -- END */
+
+  val exoPlayerHolder = GalleryExoPlayerController(context)
 
   /** Selection Emission -- START */
   // todo: come up with a better name

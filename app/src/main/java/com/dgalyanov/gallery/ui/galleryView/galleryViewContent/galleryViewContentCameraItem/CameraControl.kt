@@ -67,6 +67,34 @@ internal class CameraControl(
 ) {
   companion object {
     private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
+
+    @Composable
+    internal fun use(onDispose: () -> Unit): CameraControl {
+      val activity = LocalActivity.current
+      val context = LocalContext.current
+      val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
+      val resources = LocalContext.current.resources
+      val lifecycleOwner = LocalLifecycleOwner.current
+
+      val cameraControl = remember {
+        CameraControl(
+          activity = activity,
+          context = context,
+          cameraExecutor = cameraExecutor,
+          resources = resources,
+          lifecycleOwner = lifecycleOwner
+        )
+      }
+
+      DisposableEffect(Unit) {
+        onDispose {
+          cameraControl.onDispose()
+          onDispose()
+        }
+      }
+
+      return cameraControl
+    }
   }
 
   val log = GalleryLogFactory("CameraControl")
@@ -240,37 +268,9 @@ internal class CameraControl(
     currentRecording = null
   }
 
-  fun onDispose() {
+  private fun onDispose() {
     finishVideoRecording()
 
     cameraExecutor.shutdown()
   }
-}
-
-@Composable
-internal fun useCameraControl(onDispose: () -> Unit): CameraControl {
-  val activity = LocalActivity.current
-  val context = LocalContext.current
-  val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-  val resources = LocalContext.current.resources
-  val lifecycleOwner = LocalLifecycleOwner.current
-
-  val cameraControl = remember {
-    CameraControl(
-      activity = activity,
-      context = context,
-      cameraExecutor = cameraExecutor,
-      resources = resources,
-      lifecycleOwner = lifecycleOwner
-    )
-  }
-
-  DisposableEffect(Unit) {
-    onDispose {
-      cameraControl.onDispose()
-      onDispose()
-    }
-  }
-
-  return cameraControl
 }

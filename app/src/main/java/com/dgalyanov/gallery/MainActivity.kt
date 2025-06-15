@@ -12,6 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.dgalyanov.gallery.galleryContentResolver.GalleryContentResolver
 import com.dgalyanov.gallery.galleryContentResolver.GalleryPermissionsHelper
+import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.ui.galleryView.GalleryViewProvider
 import com.dgalyanov.gallery.ui.theme.GalleryTheme
 import com.dgalyanov.gallery.utils.GalleryLogFactory
@@ -26,7 +27,7 @@ class MainActivity : ComponentActivity() {
     windowManager.defaultDisplay.getMetrics(displayMetrics)
   }
 
-  private val galleryViewModel = GalleryViewModel()
+  private lateinit var galleryViewModel: GalleryViewModel
 
   override fun onRequestPermissionsResult(
     requestCode: Int,
@@ -49,6 +50,10 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     log("onCreate")
+
+    if (!::galleryViewModel.isInitialized) {
+      galleryViewModel = GalleryViewModel(applicationContext)
+    }
 
     updateStoredDisplayMetrics()
     galleryViewModel.updateWindowMetrics(
@@ -84,6 +89,10 @@ class MainActivity : ComponentActivity() {
   override fun onWindowAttributesChanged(params: WindowManager.LayoutParams?) {
     super.onWindowAttributesChanged(params)
     log("onWindowAttributesChanged(params: $params)")
+
+    if (!::galleryViewModel.isInitialized) {
+      galleryViewModel = GalleryViewModel(applicationContext)
+    }
 
     updateStoredDisplayMetrics()
     galleryViewModel.updateWindowMetrics(
