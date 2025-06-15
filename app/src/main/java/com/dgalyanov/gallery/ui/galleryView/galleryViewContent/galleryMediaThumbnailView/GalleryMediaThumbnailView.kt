@@ -39,7 +39,7 @@ internal fun GalleryMediaThumbnailView(
       model = item.uri,
       contentDescription = null,
       contentScale = ContentScale.Crop,
-      modifier = Modifier.size(size),
+      modifier = Modifier.size(size).background(Color.Gray),
     )
 
     GalleryMediaThumbnailSelectionIndicator(item.selectionIndex)
