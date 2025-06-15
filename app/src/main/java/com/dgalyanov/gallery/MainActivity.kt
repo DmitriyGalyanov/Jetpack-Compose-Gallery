@@ -74,6 +74,8 @@ class MainActivity : ComponentActivity() {
           }
 
           GalleryViewProvider(galleryViewModel)
+
+          EmittedSelectionView(galleryViewModel)
         }
       }
     }
