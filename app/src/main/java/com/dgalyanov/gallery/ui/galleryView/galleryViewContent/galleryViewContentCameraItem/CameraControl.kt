@@ -40,6 +40,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.dgalyanov.gallery.R
 import com.dgalyanov.gallery.utils.GalleryLogFactory
+import com.dgalyanov.gallery.utils.postToMainThread
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -59,7 +60,6 @@ import java.util.concurrent.Executors
 //}
 
 internal class CameraControl(
-  private val activity: Activity?,
   private val context: Context,
   private val cameraExecutor: ExecutorService,
   private val resources: Resources,
@@ -70,7 +70,6 @@ internal class CameraControl(
 
     @Composable
     internal fun use(onDispose: () -> Unit): CameraControl {
-      val activity = LocalActivity.current
       val context = LocalContext.current
       val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
       val resources = LocalContext.current.resources
@@ -78,7 +77,6 @@ internal class CameraControl(
 
       val cameraControl = remember {
         CameraControl(
-          activity = activity,
           context = context,
           cameraExecutor = cameraExecutor,
           resources = resources,
@@ -99,11 +97,8 @@ internal class CameraControl(
 
   val log = GalleryLogFactory("CameraControl")
 
-  private fun showToast(message: String) {
-    activity?.runOnUiThread {
-      Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-    }
-  }
+  private fun showToast(message: String) =
+    postToMainThread { Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
 
   private fun checkIfPermissionsAreGranted(): Boolean =
     listOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO).all {
@@ -128,12 +123,10 @@ internal class CameraControl(
 //    .setMirrorMode(MirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
 //    .build()
 
+  private val defaultCameraUseCases = CameraController.IMAGE_CAPTURE
+
   val cameraController = LifecycleCameraController(context).apply {
-    setEnabledUseCases(
-      CameraController.IMAGE_CAPTURE
-//          todo: enable VIDEO_CAPTURE when going to take a Video as Docs suggest
-        or CameraController.VIDEO_CAPTURE
-    )
+    setEnabledUseCases(defaultCameraUseCases)
     videoCaptureQualitySelector = videoQualitySelector
     videoCaptureMirrorMode = MirrorMode.MIRROR_MODE_ON_FRONT_ONLY
   }
@@ -232,6 +225,7 @@ internal class CameraControl(
     log("$logTag | $logDetails")
     fun logWithDetails(message: String) = log("$logTag | $message | $logDetails")
 
+    cameraController.setEnabledUseCases(CameraController.VIDEO_CAPTURE)
     currentRecording = cameraController.startRecording(
       mediaStoreOutputOptions,
       AudioConfig.create(true),
@@ -256,7 +250,9 @@ internal class CameraControl(
           } else {
             log("Video recording succeeded")
             showToast("Video recording succeeded")
-            onVideoRecordedSuccessfully(event.outputResults)
+            postToMainThread {
+              onVideoRecordedSuccessfully(event.outputResults)
+            }
           }
         }
       }
