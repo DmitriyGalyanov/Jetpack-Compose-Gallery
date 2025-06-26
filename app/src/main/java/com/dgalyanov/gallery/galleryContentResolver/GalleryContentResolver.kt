@@ -115,33 +115,49 @@ class GalleryContentResolver {
       MediaStore.Files.FileColumns.DURATION,
     )
 
+    private fun getMediaItemsFromCursor(
+      cursor: Cursor,
+      /** if false -> gets all */
+      shouldGetOnlyFirst: Boolean = false
+    ): MutableMap<Long, GalleryMediaItem> {
+      val mediaItems = mutableMapOf<Long, GalleryMediaItem>()
+
+      val idColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+      val durationColumnIndex =
+        cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DURATION)
+
+      fun extractMediaItemFromCurrentCursorPosition() {
+        val id = cursor.getLong(idColumnIndex)
+
+        mediaItems[id] = GalleryMediaItem(
+          id = id,
+          uri = ContentUris.withAppendedId(collectionUri, id),
+          durationMs = cursor.getInt(durationColumnIndex),
+        )
+      }
+      if (shouldGetOnlyFirst) {
+        if (cursor.moveToFirst()) extractMediaItemFromCurrentCursorPosition()
+      } else {
+        while (cursor.moveToNext()) extractMediaItemFromCurrentCursorPosition()
+      }
+
+      cursor.close()
+      return mediaItems
+    }
+
     /** do not call on main thread */
     fun getAlbumMediaItems(albumId: Long): Map<Long, GalleryMediaItem> {
       val logTag = "getAlbumMediaFiles(albumId: $albumId)"
       log(logTag)
       val requestStartTimeMs = System.currentTimeMillis()
 
-      val mediaItems = mutableMapOf<Long, GalleryMediaItem>()
-
-      createAlbumQueryCursor(
+      val cursor = createAlbumQueryCursor(
         albumId = albumId,
         projection = mediaItemQueryProjection,
         orderAscending = false,
-      )?.use { cursor ->
-        val idColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
-        val durationColumnIndex =
-          cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DURATION)
+      )
 
-        while (cursor.moveToNext()) {
-          val id = cursor.getLong(idColumnIndex)
-
-          mediaItems[id] = GalleryMediaItem(
-            id = id,
-            uri = ContentUris.withAppendedId(collectionUri, id),
-            durationMs = cursor.getInt(durationColumnIndex),
-          )
-        }
-      }
+      val mediaItems = cursor?.let { getMediaItemsFromCursor(it) } ?: mapOf()
 
       log("$logTag finished | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs} | Items Amount: ${mediaItems.size}")
       // consumer should not mutate it
@@ -240,24 +256,14 @@ class GalleryContentResolver {
 
     fun getGalleryMediaItemByUri(uri: Uri): GalleryMediaItem? {
       val requestStartTimeMs = System.currentTimeMillis()
-      val logTag = "getGalleryMediaItemBy(uri: $uri)"
+      val logTag = "getGalleryMediaItemByUri(uri: $uri)"
 
-      createQueryCursor(uri, mediaItemQueryProjection)?.use { cursor ->
-        if (cursor.moveToFirst()) {
-          val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
-
-          val mediaItem = GalleryMediaItem(
-            id = id,
-            uri = ContentUris.withAppendedId(collectionUri, id),
-            durationMs = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DURATION)),
-          )
-          log("$logTag | success, item: $mediaItem | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs}")
-          return mediaItem
-        }
+      val cursor = createQueryCursor(uri, mediaItemQueryProjection)
+      val mediaItem = cursor?.let {
+        getMediaItemsFromCursor(cursor, shouldGetOnlyFirst = true).values.firstOrNull()
       }
-
-      log("$logTag | failure, couldn't resolve")
-      return null
+      log("$logTag | ${if (mediaItem != null) "success" else "failure"}, item: $mediaItem | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs}")
+      return mediaItem
     }
 
     fun getGalleryMediaItemById(id: Long): GalleryMediaItem? {
