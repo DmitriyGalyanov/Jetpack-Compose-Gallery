@@ -10,12 +10,12 @@ private const val DEBUG = true
 internal fun GalleryLogFactory(
   tag: String,
   messagePrefix: String = "",
-): (message: String) -> Unit {
+): (messageGetter: () -> String) -> Unit {
   // todo: use message getter
-  return fun(message: String) {
+  return fun(messageGetter: () -> String) {
     if (!DEBUG) return
     // long Tags cause Formatting Problems in Studio's Logcat
-    Log.d("${GALLERY_BASE_LOG_TAG}_$tag", "$messagePrefix $message")
+    Log.d("${GALLERY_BASE_LOG_TAG}_$tag", "$messagePrefix ${messageGetter()}")
   }
 }
 

@@ -49,7 +49,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
     private set
 
   fun updateInnerPaddings(newPaddingValues: PaddingValues) {
-    log("updateInnerPaddings(newPaddingValues: $newPaddingValues) | current: $innerPaddings")
+    log { "updateInnerPaddings(newPaddingValues: $newPaddingValues) | current: $innerPaddings" }
     if (innerPaddings == newPaddingValues) return
     innerPaddings = newPaddingValues
   }
@@ -69,7 +69,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   val windowHeightDp by derivedStateOf { windowHeightPx / density }
 
   fun updateWindowMetrics(density: Float, width: Int, height: Int) {
-    log("updateWindowMetrics(density: $density, width: $width, height: $height)")
+    log { "updateWindowMetrics(density: $density, width: $width, height: $height)" }
 
     this.density = density
     this.windowWidthPx = width
@@ -85,14 +85,14 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
 
   fun refreshAlbumsList() {
     val logTag = "refreshAlbumsList()"
-    log("$logTag | currentAlbumsListSize: ${albumsList.size}")
+    log { "$logTag | currentAlbumsListSize: ${albumsList.size}" }
 
     isFetchingAlbums = true
     viewModelScope.launch(Dispatchers.IO) {
       albumsList = GalleryContentResolver.getMediaAlbums()
     }.invokeOnCompletion {
       isFetchingAlbums = false
-      log("$logTag finished | newAlbumsListSize: ${albumsList.size}")
+      log { "$logTag finished | newAlbumsListSize: ${albumsList.size}" }
     }
   }
 
@@ -100,7 +100,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
     private set
 
   fun selectAlbum(album: GalleryAssetsAlbum) {
-    log("selectAlbum(album: $album) | current: $selectedAlbum")
+    log { "selectAlbum(album: $album) | current: $selectedAlbum" }
     if (selectedAlbum == album) return
     selectedAlbum = album
     getSelectedAlbumMediaFiles()
@@ -132,7 +132,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
    */
   fun getSelectedAlbumMediaFiles() {
     val logTag = "getSelectedAlbumMediaFiles()"
-    log(logTag)
+    log { logTag }
 
     isFetchingSelectedAlbumMediaFiles = true
 
@@ -157,7 +157,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
       }
     }.invokeOnCompletion {
       isFetchingSelectedAlbumMediaFiles = false
-      log("$logTag finished")
+      log { "$logTag finished" }
     }
   }
   /** Albums -- END */
@@ -181,7 +181,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   private val selectedAssetsIds = mutableListOf<Long>()
 
   private fun fixAssetsSelection() {
-    log("fixAssetsSelection() | selectedAssetsIds: $selectedAssetsIds")
+    log { "fixAssetsSelection() | selectedAssetsIds: $selectedAssetsIds" }
     selectedAssetsIds.forEachIndexed { index, id ->
       selectedAlbumAssetsMap[id]?.setSelectionIndex(index)
     }
@@ -190,17 +190,17 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   private fun clearSelectedAssets(assetToRemain: GalleryAsset? = null) {
     val logTag =
       "clearSelectedAssets(assetToRemain: $assetToRemain) | amountOnStart: ${selectedAssetsIds.size}"
-    log(logTag)
+    log { logTag }
 
     selectedAssetsIds.forEach {
-      log("$logTag | iterating with $it")
+      log { "$logTag | iterating with $it" }
       if (it != assetToRemain?.id) selectedAlbumAssetsMap[it]?.deselect()
     }
     selectedAssetsIds.retainAll(listOf(assetToRemain?.id).toSet())
 
     fixAssetsSelection()
 
-    log("$logTag | amountOnEnd: ${selectedAssetsIds.size}")
+    log { "$logTag | amountOnEnd: ${selectedAssetsIds.size}" }
   }
 
   // todo: use mutableState
@@ -208,7 +208,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   val isMultiselectEnabled = _isMultiselectEnabled.asStateFlow()
 
   fun toggleIsMultiselectEnabled() {
-    log("toggleIsMultiselectEnabled() | current: ${_isMultiselectEnabled.value}")
+    log { "toggleIsMultiselectEnabled() | current: ${_isMultiselectEnabled.value}" }
 
     if (_isMultiselectEnabled.value) clearSelectedAssets(previewedAsset)
 
@@ -223,7 +223,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
 
   private var previewedAssetSelectionJob: Job? = null
   private fun selectAsset(asset: GalleryAsset) {
-    log("selectAsset(asset: $asset)")
+    log { "selectAsset(asset: $asset)" }
     if (asset.isSelected.value) return
 
     if (!_isMultiselectEnabled.value) clearSelectedAssets()
@@ -250,7 +250,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   }
 
   private fun deselectAsset(asset: GalleryAsset) {
-    log("deselectAsset(asset: $asset)")
+    log { "deselectAsset(asset: $asset)" }
     if (!asset.isSelected.value) return
 
     // todo: deselect if previewed (preview if not yet)
@@ -268,7 +268,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   }
 
   fun onThumbnailClick(asset: GalleryAsset) {
-    log("onThumbnailClick(asset: $asset)")
+    log { "onThumbnailClick(asset: $asset)" }
 
     if (_isMultiselectEnabled.value) {
       if (selectedAssetsIds.size == MULTISELECT_LIMIT) return
@@ -291,7 +291,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   // todo: come up with a better name
   private var onEmitSelection: ((assets: List<GalleryAsset>) -> Unit)? = null
   fun setOnEmitSelection(value: (assets: List<GalleryAsset>) -> Unit) {
-    log("setOnEmitSelection")
+    log { "setOnEmitSelection" }
     onEmitSelection = value
   }
 
@@ -305,29 +305,29 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
       if (asset != null) selectedAssets += asset
     }
 
-    log("emitCurrentlySelected() | selectedAssets: $selectedAssets")
+    log { "emitCurrentlySelected() | selectedAssets: $selectedAssets" }
     onEmitSelection?.let { it(selectedAssets) }
   }
 
   fun emitCapturedImage(capturedImageFile: ImageCapture.OutputFileResults) {
     val logTag = "emitCapturedImage(capturedImageFile: $capturedImageFile)"
-    log(logTag)
+    log { logTag }
 
     val uri =
-      capturedImageFile.savedUri ?: return log("$logTag | capturedImageFile has no savedUri")
+      capturedImageFile.savedUri ?: return log { "$logTag | capturedImageFile has no savedUri" }
     val asset = GalleryContentResolver.getGalleryAssetByUri(uri)
-      ?: return log("$logTag | couldn't get asset")
+      ?: return log { "$logTag | couldn't get asset" }
 
     onEmitSelection?.let { it(listOf(asset)) }
   }
 
   fun emitRecordedVideo(recordedVideoOutputResults: OutputResults) {
     val logTag = "emitRecordedVideo(recordedVideoOutputResults: $recordedVideoOutputResults)"
-    log(logTag)
+    log { logTag }
 
     val asset =
       GalleryContentResolver.getGalleryAssetByUri(recordedVideoOutputResults.outputUri)
-        ?: return log("$logTag | couldn't get asset")
+        ?: return log { "$logTag | couldn't get asset" }
 
     onEmitSelection?.let { it(listOf(asset)) }
   }
@@ -336,6 +336,6 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
 
   override fun onCleared() {
     super.onCleared()
-    log("onCleared")
+    log { "onCleared" }
   }
 }

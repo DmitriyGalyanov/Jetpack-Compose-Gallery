@@ -47,7 +47,7 @@ internal class GalleryViewContentNestedScrollConnection(
   }
 
   fun showPreviewedAsset() {
-    galleryGenericLog("showPreviewedAsset()")
+    galleryGenericLog { "showPreviewedAsset()" }
     animatePreviewedAssetOffset(0) {
       isPreviewedAssetLockedAsHidden = false
       onPreviewedAssetDidUnhide()
@@ -55,7 +55,7 @@ internal class GalleryViewContentNestedScrollConnection(
   }
 
   private fun hidePreviewedAsset() {
-    galleryGenericLog("hidePreviewedAsset()")
+    galleryGenericLog { "hidePreviewedAsset()" }
     animatePreviewedAssetOffset(-previewedAssetContainerHeightPx) {
       isPreviewedAssetLockedAsHidden = true
       onPreviewedAssetDidHide()
@@ -68,7 +68,7 @@ internal class GalleryViewContentNestedScrollConnection(
 
   private var isPreviewedAssetLockedAsHidden = isPreviewedAssetHidden
     set(value) {
-      if (value != field) galleryGenericLog("setIsPreviewedAssetLockedAsHidden to $value")
+      if (value != field) galleryGenericLog { "setIsPreviewedAssetLockedAsHidden to $value" }
       field = value
     }
 
@@ -94,7 +94,7 @@ internal class GalleryViewContentNestedScrollConnection(
   override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
     if (!gridState.canScrollBackward) isPreviewedAssetLockedAsHidden = false
 
-    galleryGenericLog("onPreScroll(available.y: ${available.y}), approximateNonStickyGridOffset: ${getApproximateNonStickyGridOffset()}")
+    galleryGenericLog { "onPreScroll(available.y: ${available.y}), approximateNonStickyGridOffset: ${getApproximateNonStickyGridOffset()}" }
 
     if (available.y > 0 && isPreviewedAssetLockedAsHidden) return super.onPreScroll(
       available,
@@ -139,7 +139,7 @@ internal class GalleryViewContentNestedScrollConnection(
 //        0F,
 //        available.y
 //      )
-//    galleryGenericLog("onPreFling(available: $available) gridState.firstVisibleItemIndex: ${gridState.firstVisibleItemIndex}, gridState.firstVisibleItemScrollOffset: ${gridState.firstVisibleItemScrollOffset}, approximateNonStickyGridOffset: $approximateNonStickyGridOffset, projectedVelocityLeftOver: $projectedVelocityLeftOver, nonAdjustedProjectedVelocityLeftOver: $nonAdjustedProjectedVelocityLeftOver, ")
+//    galleryGenericLog { "onPreFling(available: $available) gridState.firstVisibleItemIndex: ${gridState.firstVisibleItemIndex}, gridState.firstVisibleItemScrollOffset: ${gridState.firstVisibleItemScrollOffset}, approximateNonStickyGridOffset: $approximateNonStickyGridOffset, projectedVelocityLeftOver: $projectedVelocityLeftOver, nonAdjustedProjectedVelocityLeftOver: $nonAdjustedProjectedVelocityLeftOver, " }
 //
 //
 //    if (!gridState.canScrollBackward || projectedVelocityLeftOver > 0) {
@@ -151,7 +151,7 @@ internal class GalleryViewContentNestedScrollConnection(
 //  }
 
   override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-    galleryGenericLog("onPostFling")
+    galleryGenericLog { "onPostFling" }
     isPreviewedAssetOffsetUnlockedByCurrentFling = false
     dockPreviewedAssetToClosestPosition()
     return super.onPostFling(consumed, available)

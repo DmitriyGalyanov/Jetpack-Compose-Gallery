@@ -32,7 +32,7 @@ class GalleryPermissionsHelper {
     fun init(mainActivity: MainActivity): Companion {
       if (::mainActivity.isInitialized) return this
 
-      log("init")
+      log { "init" }
 
       this.mainActivity = mainActivity
 
@@ -43,20 +43,20 @@ class GalleryPermissionsHelper {
 
     fun checkIfPermissionsAreGranted(): Boolean {
       val logTag = "checkIfPermissionsAreGranted"
-      log(logTag)
+      log { logTag }
 
       requiredPermissions.forEach {
         if (
           mainActivity.applicationContext.checkSelfPermission(it)
           != PackageManager.PERMISSION_GRANTED
         ) {
-          log("$logTag | $it is not granted")
+          log { "$logTag | $it is not granted" }
           _arePermissionsGranted.value = false
           return _arePermissionsGranted.value
         }
       }
 
-      log("$logTag | permissions are granted")
+      log { "$logTag | permissions are granted" }
       _arePermissionsGranted.value = true
       return _arePermissionsGranted.value
     }
@@ -64,7 +64,7 @@ class GalleryPermissionsHelper {
     private const val READ_STORAGE_REQUEST_CODE = 0
 
     private fun requestPermissions() {
-      log("requestPermissions")
+      log { "requestPermissions" }
       mainActivity.requestPermissions(requiredPermissions.toTypedArray(), READ_STORAGE_REQUEST_CODE)
     }
 
@@ -80,7 +80,7 @@ class GalleryPermissionsHelper {
       requestCode: Int,
       grantResults: IntArray
     ): Boolean {
-      log("onRequestPermissionsResult(requestCode: $requestCode, grantResults: $grantResults) | readStorageRequestCode: $READ_STORAGE_REQUEST_CODE")
+      log { "onRequestPermissionsResult(requestCode: $requestCode, grantResults: $grantResults) | readStorageRequestCode: $READ_STORAGE_REQUEST_CODE" }
 
       if (requestCode == READ_STORAGE_REQUEST_CODE) {
         if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {

@@ -130,7 +130,7 @@ internal class CameraControl(
   }
 
   fun switchCamera() {
-    log("switchCamera()")
+    log { "switchCamera()" }
 
     cameraController.cameraSelector = when (cameraController.cameraSelector) {
       CameraSelector.DEFAULT_BACK_CAMERA -> CameraSelector.DEFAULT_FRONT_CAMERA
@@ -144,7 +144,7 @@ internal class CameraControl(
     onImageSavedCallback: (outputFileResults: ImageCapture.OutputFileResults) -> Unit
   ) {
     if (!checkIfPermissionsAreGranted()) {
-      return log("useCameraControl.takePicture called w/o Permissions")
+      return log { "useCameraControl.takePicture called w/o Permissions" }
     }
 
     val name = SimpleDateFormat(FILENAME_FORMAT, Locale.ENGLISH).format(System.currentTimeMillis())
@@ -165,24 +165,24 @@ internal class CameraControl(
 
     val logTag = "takePicture()"
     val logDetails = "name: $name, contentValues: $contentValues, outputOptions: $outputOptions"
-    log("$logTag | $logDetails")
+    log { "$logTag | $logDetails" }
 
     cameraController.takePicture(
       outputOptions,
       cameraExecutor,
       object : ImageCapture.OnImageSavedCallback {
         override fun onCaptureStarted() {
-          log("$logTag | onCaptureStarted() | $logDetails")
+          log { "$logTag | onCaptureStarted() | $logDetails" }
           super.onCaptureStarted()
         }
 
         override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-          log("$logTag | onImageSaved(outputFileResults.savedUri: ${outputFileResults.savedUri}) | $logDetails")
+          log { "$logTag | onImageSaved(outputFileResults.savedUri: ${outputFileResults.savedUri}) | $logDetails" }
           onImageSavedCallback(outputFileResults)
         }
 
         override fun onError(exception: ImageCaptureException) {
-          log("$logTag | onError(exception: $exception) | $logDetails")
+          log { "$logTag | onError(exception: $exception) | $logDetails" }
         }
       }
     )
@@ -198,8 +198,8 @@ internal class CameraControl(
   ) {
     val logTag = "startVideoRecording()"
 
-    if (!checkIfPermissionsAreGranted()) return log("$logTag called w/o Permissions")
-    if (isRecording) return log("$logTag called while recording")
+    if (!checkIfPermissionsAreGranted()) return log { "$logTag called w/o Permissions" }
+    if (isRecording) return log { "$logTag called while recording" }
 
     val name = "VIDEO_${
       SimpleDateFormat(FILENAME_FORMAT, Locale.ENGLISH).format(System.currentTimeMillis())
@@ -220,8 +220,8 @@ internal class CameraControl(
 
     val logDetails =
       "name: $name, contentValues: $contentValues, outputOptions: $mediaStoreOutputOptions"
-    log("$logTag | $logDetails")
-    fun logWithDetails(message: String) = log("$logTag | $message | $logDetails")
+    log { "$logTag | $logDetails" }
+    fun logWithDetails(message: String) = log { "$logTag | $message | $logDetails" }
 
     cameraController.setEnabledUseCases(CameraController.VIDEO_CAPTURE)
     currentRecording = cameraController.startRecording(
@@ -246,7 +246,7 @@ internal class CameraControl(
             logWithDetails("Video recording failed, cause: ${event.cause}")
             showToast("Video recording failed")
           } else {
-            log("Video recording succeeded")
+            log { "Video recording succeeded" }
             showToast("Video recording succeeded")
             postToMainThread {
               onVideoRecordedSuccessfully(event.outputResults)

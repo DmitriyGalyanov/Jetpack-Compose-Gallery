@@ -43,7 +43,7 @@ internal fun GalleryAlbumsSheetButton() {
 
     if (isSheetDisplayed) {
       GalleryAlbumsSheet(sheetState = sheetState) {
-        galleryGenericLog("GalleryAlbumsSheetButton.onDidDismiss")
+        galleryGenericLog { "GalleryAlbumsSheetButton.onDidDismiss" }
         isSheetDisplayed = false
       }
     }

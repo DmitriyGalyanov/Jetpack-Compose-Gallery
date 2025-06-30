@@ -43,7 +43,7 @@ class GalleryExoPlayerController(context: Context) {
   private var videoUri: Uri? = null
   var statefulHasMedia by mutableStateOf(false)
   fun setMedia(videoUri: Uri?) {
-    log("setMedia(videoUri: $videoUri) | current: $videoUri")
+    log { "setMedia(videoUri: $videoUri) | current: $videoUri" }
     if (this.videoUri == videoUri) return
     this.videoUri = videoUri
 
@@ -63,17 +63,18 @@ class GalleryExoPlayerController(context: Context) {
 
   var isPlayAllowed by mutableStateOf(true)
   fun disallowPlay() {
-    log("disallowPlay()")
+    log { "disallowPlay()" }
     pause()
     isPlayAllowed = false
   }
+
   fun allowPlay() {
-    log("allowPlay")
+    log { "allowPlay" }
     isPlayAllowed = true
   }
 
   fun play() {
-    log("play() | isPlayAllowed: $isPlayAllowed, videoUri: $videoUri")
+    log { "play() | isPlayAllowed: $isPlayAllowed, videoUri: $videoUri" }
     if (!isPlayAllowed || videoUri == null) return
 
     // todo: check if it's ok to call prepare on every play request
@@ -83,12 +84,13 @@ class GalleryExoPlayerController(context: Context) {
   }
 
   fun pause() {
-    log("pause()")
+    log { "pause()" }
     exoPlayer.pause()
     statefulPlayWhenReady = false
   }
 
   var isPausedByLifecycle by mutableStateOf(false)
+
   @Composable
   fun useSyncPlayWithLifecycle(): Boolean {
     val lifecycleOwner = LocalLifecycleOwner.current

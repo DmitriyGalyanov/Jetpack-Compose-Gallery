@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
     deviceId: Int
   ) {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
-    log("onRequestPermissionsResult(requestCode: $requestCode, permissions: $permissions, grantResults: $grantResults, deviceId: $deviceId)")
+    log { "onRequestPermissionsResult(requestCode: $requestCode, permissions: $permissions, grantResults: $grantResults, deviceId: $deviceId)" }
 
     if (GalleryPermissionsHelper.onRequestPermissionsResult(
         requestCode,
@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    log("onCreate")
+    log { "onCreate" }
 
     if (!::galleryViewModel.isInitialized) {
       galleryViewModel = GalleryViewModel(applicationContext)
@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
 
   override fun onWindowAttributesChanged(params: WindowManager.LayoutParams?) {
     super.onWindowAttributesChanged(params)
-    log("onWindowAttributesChanged(params: $params)")
+    log { "onWindowAttributesChanged(params: $params)" }
 
     if (!::galleryViewModel.isInitialized) {
       galleryViewModel = GalleryViewModel(applicationContext)
@@ -104,7 +104,7 @@ class MainActivity : ComponentActivity() {
 
   override fun onResume() {
     super.onResume()
-    log("onResume")
+    log { "onResume" }
 
     if (GalleryPermissionsHelper.checkIfPermissionsAreGranted()) {
       galleryViewModel.getSelectedAlbumMediaFiles()

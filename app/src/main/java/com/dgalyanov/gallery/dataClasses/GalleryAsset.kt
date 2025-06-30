@@ -33,14 +33,14 @@ internal data class GalleryAsset(
   private val _selectionIndex = mutableIntStateOf(NOT_SELECTED_INDEX)
   val selectionIndex get() = _selectionIndex.intValue
   fun setSelectionIndex(value: Int) {
-    log("setSelectionIndex(value: $value) | current: ${_selectionIndex.intValue}")
+    log { "setSelectionIndex(value: $value) | current: ${_selectionIndex.intValue}" }
     _selectionIndex.intValue = value
   }
 
   val isSelected = derivedStateOf { selectionIndex != NOT_SELECTED_INDEX }
 
   fun deselect() {
-    log("deselect")
+    log { "deselect" }
     setSelectionIndex(NOT_SELECTED_INDEX)
   }
 }

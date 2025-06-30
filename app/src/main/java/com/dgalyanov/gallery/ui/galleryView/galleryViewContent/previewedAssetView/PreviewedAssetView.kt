@@ -144,7 +144,7 @@ internal fun PreviewedAssetView(modifier: Modifier) {
           contentBaseOffset = assetBaseOffset,
           contentContainerSize = finalContentContainerSize,
           onTransformationDidClamp = {
-            galleryGenericLog("PreviewedAssetView | onTransformationDidClamp($it)")
+            galleryGenericLog { "PreviewedAssetView | onTransformationDidClamp($it)" }
             asset.transformations = it
           },
         ) {

@@ -1,7 +1,6 @@
 package com.dgalyanov.gallery.dataClasses
 
 import com.dgalyanov.gallery.utils.GalleryLogFactory
-import com.dgalyanov.gallery.utils.galleryGenericLog
 import kotlin.math.abs
 
 /**
@@ -40,7 +39,7 @@ internal enum class AssetAspectRatio(
       availableValues: List<Double>,
       shouldPreferLargerValue: Boolean = false
     ): Double? {
-      log("getClosestAvailableNumber(value: $value, availableValues: $availableValues, shouldPreferLargerValue: $shouldPreferLargerValue)")
+      log { "getClosestAvailableNumber(value: $value, availableValues: $availableValues, shouldPreferLargerValue: $shouldPreferLargerValue)" }
       var smallestAbsDelta = Double.POSITIVE_INFINITY
       var valueWithSmallestDelta: Double? = null
 
@@ -61,12 +60,12 @@ internal enum class AssetAspectRatio(
         }
       }
 
-      log("getClosestAvailableNumber(value: $value, availableValues: $availableValues, shouldPreferLargerValue: $shouldPreferLargerValue) | result: $valueWithSmallestDelta")
+      log { "getClosestAvailableNumber(value: $value, availableValues: $availableValues, shouldPreferLargerValue: $shouldPreferLargerValue) | result: $valueWithSmallestDelta" }
       return valueWithSmallestDelta
     }
 
     private fun isAlmostEqual(num1: Double, num2: Double, epsilon: Double = 0.001): Boolean {
-      galleryGenericLog("isAlmostEqual(num1: $num1, num2: $num2) |r: ${abs(num1 - num2)}")
+      log { "isAlmostEqual(num1: $num1, num2: $num2) |r: ${abs(num1 - num2)}" }
 
       return abs(num1 - num2) < epsilon
     }
@@ -79,7 +78,7 @@ internal enum class AssetAspectRatio(
       height: Double,
       availableValues: List<Double> = allAvailableWidthToHeightNumericValues
     ): AssetAspectRatio {
-      log("getClosest(height: $height, width: $width)")
+      log { "getClosest(height: $height, width: $width)" }
       val closestAvailableDouble = getClosestAvailableNumber(
         value = width / height,
         availableValues = availableValues

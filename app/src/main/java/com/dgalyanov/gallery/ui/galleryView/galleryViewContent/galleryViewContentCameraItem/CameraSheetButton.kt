@@ -53,7 +53,7 @@ internal fun CameraSheetButton(
       android.Manifest.permission.RECORD_AUDIO
     )
   ) {
-    galleryGenericLog("after permissions request $it")
+    galleryGenericLog { "after permissions request $it" }
     if (it.values.all { isGranted -> isGranted }) displaySheet()
   }
 

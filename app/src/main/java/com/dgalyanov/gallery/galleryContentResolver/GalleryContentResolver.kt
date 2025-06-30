@@ -130,7 +130,8 @@ internal class GalleryContentResolver {
         cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DURATION)
       val rawWidthColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
       val rawHeightColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
-      val orientationDegreesColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.ORIENTATION)
+      val orientationDegreesColumnIndex =
+        cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.ORIENTATION)
 
       fun extractAssetFromCurrentCursorPosition() {
         val id = cursor.getLong(idColumnIndex)
@@ -157,7 +158,7 @@ internal class GalleryContentResolver {
     /** do not call on main thread */
     fun getAlbumAssets(albumId: Long): Map<Long, GalleryAsset> {
       val logTag = "getAlbumAssets(albumId: $albumId)"
-      log(logTag)
+      log { logTag }
       val requestStartTimeMs = System.currentTimeMillis()
 
       val cursor = createAlbumQueryCursor(
@@ -168,7 +169,7 @@ internal class GalleryContentResolver {
 
       val assets = cursor?.let { getAssetsFromCursor(it) } ?: mapOf()
 
-      log("$logTag finished | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs} | Assets Amount: ${assets.size}")
+      log { "$logTag finished | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs} | Assets Amount: ${assets.size}" }
       // consumer should not mutate it
       return assets
     }
@@ -188,7 +189,7 @@ internal class GalleryContentResolver {
           projection = arrayOf(idColumnName),
           limit = 1
         )?.use { cursor ->
-          log("getAlbumPreviewMediaUri | cursor.count: ${cursor.count}")
+          log { "getAlbumPreviewMediaUri | cursor.count: ${cursor.count}" }
           if (cursor.moveToFirst()) {
             val mediaId = cursor.getLong(cursor.getColumnIndexOrThrow(idColumnName))
             return ContentUris.withAppendedId(contentUri, mediaId)
@@ -202,7 +203,7 @@ internal class GalleryContentResolver {
     /** do not call on main thread */
     fun getMediaAlbums(): List<GalleryAssetsAlbum> {
       val logTag = "getMediaAlbums()"
-      log(logTag)
+      log { logTag }
       val requestStartTimeMs = System.currentTimeMillis()
 
       val albums = mutableMapOf<Long, GalleryAssetsAlbum>()
@@ -236,7 +237,7 @@ internal class GalleryContentResolver {
 
           val bucketName = cursor.getString(bucketDisplayNameColumnIndex) ?: "Unnamed album"
 
-          log("$logTag | met a bucket for the first time | buckedId: $bucketId, bucketName: $bucketName")
+          log { "$logTag | met a bucket for the first time | buckedId: $bucketId, bucketName: $bucketName" }
 
           albums[bucketId] = GalleryAssetsAlbum(
             bucketId,
@@ -259,7 +260,7 @@ internal class GalleryContentResolver {
         )
       )
 
-      log("$logTag finished | Albums Amount: ${result.size} | bucketsCount: $bucketsCount, skippedBucketsCount: $skippedBucketsCount | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs}")
+      log { "$logTag finished | Albums Amount: ${result.size} | bucketsCount: $bucketsCount, skippedBucketsCount: $skippedBucketsCount | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs}" }
       return result.toList()
     }
 
@@ -271,12 +272,12 @@ internal class GalleryContentResolver {
       val asset = cursor?.let {
         getAssetsFromCursor(cursor, shouldGetOnlyFirst = true).values.firstOrNull()
       }
-      log("$logTag | ${if (asset != null) "success" else "failure"}, asset: $asset | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs}")
+      log { "$logTag | ${if (asset != null) "success" else "failure"}, asset: $asset | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs}" }
       return asset
     }
 
     fun getGalleryAssetById(id: Long): GalleryAsset? {
-      log("getGalleryAssetById(id: $id)")
+      log { "getGalleryAssetById(id: $id)" }
       return getGalleryAssetByUri(ContentUris.withAppendedId(collectionUri, id))
     }
   }
