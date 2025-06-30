@@ -1,4 +1,4 @@
-package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryMediaThumbnailView
+package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.assetThumbnailView
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,15 +21,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
-import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
+import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.utils.conditional
 
 @Composable
-internal fun GalleryMediaThumbnailSelectionIndicator(selectionIndex: Int) {
+internal fun AssetThumbnailSelectionIndicator(selectionIndex: Int) {
   val isMultiselectEnabled =
     GalleryViewModel.LocalGalleryViewModel.current.isMultiselectEnabled.collectAsState().value
 
-  val isSelected = selectionIndex != GalleryMediaItem.NOT_SELECTED_INDEX
+  val isSelected = selectionIndex != GalleryAsset.NOT_SELECTED_INDEX
 
   Box(
     Modifier
@@ -71,13 +71,13 @@ private fun MultiselectIndicatorPreview() {
   }
 
   CompositionLocalProvider(GalleryViewModel.LocalGalleryViewModel provides galleryViewModel) {
-    GalleryMediaThumbnailSelectionIndicator(selectionIndex)
+    AssetThumbnailSelectionIndicator(selectionIndex)
     Box(
       Modifier
         .size(150.dp)
         .background(Color.Magenta)
     ) {
-      GalleryMediaThumbnailSelectionIndicator(selectionIndex)
+      AssetThumbnailSelectionIndicator(selectionIndex)
     }
   }
 }

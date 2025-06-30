@@ -14,7 +14,7 @@ import com.dgalyanov.gallery.utils.useDelayedShouldShowLoader
 internal fun GalleryView(
   galleryViewModel: GalleryViewModel,
 ) {
-  val mediaItemsList = galleryViewModel.selectedAlbumMediaItemsMap.values.toList()
+  val assets = galleryViewModel.selectedAlbumAssetsMap.values.toList()
 
   val shouldShowLoader =
     useDelayedShouldShowLoader(galleryViewModel.isFetchingSelectedAlbumMediaFiles)
@@ -28,7 +28,7 @@ internal fun GalleryView(
     Column(modifier = Modifier.fillMaxSize()) {
       GalleryViewHeader()
 
-      if (mediaItemsList.isNotEmpty()) GalleryViewContent(mediaItemsList)
+      if (assets.isNotEmpty()) GalleryViewContent(assets)
       else EmptyGalleryView()
     }
   }

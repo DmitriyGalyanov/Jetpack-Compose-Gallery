@@ -2,7 +2,6 @@ package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewConte
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
@@ -11,7 +10,6 @@ import android.media.MediaFormat.MIMETYPE_VIDEO_MPEG4
 import android.os.Build
 import android.provider.MediaStore
 import android.widget.Toast
-import androidx.activity.compose.LocalActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException

@@ -27,12 +27,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
-import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
-import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryMediaThumbnailView.GalleryMediaThumbnailView
-import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryPreviewedAssetView.GalleryPreviewedAssetView
+import com.dgalyanov.gallery.dataClasses.GalleryAsset
+import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.assetThumbnailView.AssetThumbnailView
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem.CameraSheetButton
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GALLERY_VIEW_TOOLBAR_HEIGHT
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GalleryViewToolbar
+import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.PreviewedAssetView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -43,15 +43,14 @@ private const val CAMERA_BUTTON_ITEM_KEY = "Camera"
 private const val GRID_NON_THUMBNAILS_ITEMS_AMOUNT = 2
 
 @Composable
-internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
+internal fun GalleryViewContent(assets: List<GalleryAsset>) {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
 
   val thumbnailSize = galleryViewModel.windowWidthDp.dp / COLUMNS_AMOUNT
 
   val density = LocalDensity.current
 
-  val previewedAssetHeightDp = galleryViewModel.windowWidthDp.dp
-  val previewedAssetHeightPx = with(density) { previewedAssetHeightDp.roundToPx() }
+  val previewedAssetContainerHeightPx = galleryViewModel.previewedAssetContainerHeightPx
 
   val scope = rememberCoroutineScope()
   val gridState = rememberLazyGridState()
@@ -59,9 +58,9 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
   val gridFlingDecayAnimationSpec = rememberSplineBasedDecay<Float>()
 
   val nestedScrollConnection =
-    remember(previewedAssetHeightPx) {
+    remember(previewedAssetContainerHeightPx) {
       GalleryViewContentNestedScrollConnection(
-        previewedAssetHeightPx = previewedAssetHeightPx,
+        previewedAssetContainerHeightPx = previewedAssetContainerHeightPx,
         scope = scope,
         gridState = gridState,
         /** LazyVerticalGrid uses [ScrollableDefaults.flingBehavior], which uses [rememberSplineBasedDecay] */
@@ -75,16 +74,13 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
     }
 
   Box(Modifier.nestedScroll(nestedScrollConnection)) {
-    GalleryPreviewedAssetView(Modifier.offset {
-      IntOffset(
-        0,
-        nestedScrollConnection.previewedAssetOffset,
-      )
+    PreviewedAssetView(Modifier.offset {
+      IntOffset(0, nestedScrollConnection.previewedAssetOffset)
     })
 
     Column {
       InnerSpacer(
-        previewedAssetHeightPx = previewedAssetHeightPx,
+        previewedAssetContainerHeightPx = previewedAssetContainerHeightPx,
         nestedScrollConnection = nestedScrollConnection
       )
 
@@ -118,16 +114,16 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
           )
         }
 
-        itemsIndexed(mediaItemsList, key = { _, item -> item.id }) { index, item ->
-          GalleryMediaThumbnailView(
-            item = item,
+        itemsIndexed(assets, key = { _, item -> item.id }) { index, asset ->
+          AssetThumbnailView(
+            asset = asset,
             size = thumbnailSize,
           ) {
-            // minus 1 is to allow user to scroll backwards selecting first item in a row
+            // minus 1 is to allow user to scroll backwards selecting first asset in a row
             val listItemIndex = index + GRID_NON_THUMBNAILS_ITEMS_AMOUNT - 1
             val stickyHeaderOffset = (GALLERY_VIEW_TOOLBAR_HEIGHT.value * density.density).toInt()
 
-            galleryViewModel.onThumbnailClick(item)
+            galleryViewModel.onThumbnailClick(asset)
 
 //            https://issuetracker.google.com/issues/240449680
 //            https://issuetracker.google.com/issues/203855802
@@ -163,7 +159,7 @@ internal fun GalleryViewContent(mediaItemsList: List<GalleryMediaItem>) {
 
 @Composable
 private fun InnerSpacer(
-  previewedAssetHeightPx: Int,
+  previewedAssetContainerHeightPx: Int,
   nestedScrollConnection: GalleryViewContentNestedScrollConnection
 ) {
   val density = LocalDensity.current
@@ -171,7 +167,7 @@ private fun InnerSpacer(
   val spacerHeight by remember(density) {
     derivedStateOf {
       with(density) {
-        (previewedAssetHeightPx + nestedScrollConnection.previewedAssetOffset).toDp()
+        (previewedAssetContainerHeightPx + nestedScrollConnection.previewedAssetOffset).toDp()
       }
     }
   }

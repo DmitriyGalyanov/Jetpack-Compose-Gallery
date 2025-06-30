@@ -19,14 +19,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaAlbum
+import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
 
 
 private val ALBUM_PREVIEW_IMAGE_SIZE = 80.dp
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-internal fun GalleryAlbumPreviewView(album: GalleryMediaAlbum, onClick: () -> Unit) {
+internal fun GalleryAlbumPreviewView(album: GalleryAssetsAlbum, onClick: () -> Unit) {
   Row(
     verticalAlignment = Alignment.CenterVertically,
     modifier = Modifier
@@ -49,7 +49,7 @@ internal fun GalleryAlbumPreviewView(album: GalleryMediaAlbum, onClick: () -> Un
 
     Column(modifier = Modifier.fillMaxHeight()) {
       Text(album.name, fontWeight = FontWeight.Medium)
-      Text(album.itemsAmount.toString())
+      Text(album.assetsAmount.toString())
     }
   }
 }

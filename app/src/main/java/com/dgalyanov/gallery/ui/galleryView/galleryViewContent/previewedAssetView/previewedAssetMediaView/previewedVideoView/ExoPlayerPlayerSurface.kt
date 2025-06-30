@@ -1,4 +1,4 @@
-package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryPreviewedAssetView.exoPlayerPlayerView
+package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.previewedAssetMediaView.previewedVideoView
 
 import android.view.LayoutInflater
 import androidx.annotation.OptIn
@@ -16,7 +16,7 @@ import com.dgalyanov.gallery.R
 internal fun ExoPlayerPlayerSurface(
   player: ExoPlayer,
   resizeMode: Int,
-  onClick: () -> Unit,
+  aspectRatio: Float,
 ) {
   AndroidView(
     factory = { context ->
@@ -27,7 +27,7 @@ internal fun ExoPlayerPlayerSurface(
       view.apply {
         setEnableComposeSurfaceSyncWorkaround(true)
 
-        setOnClickListener { onClick() }
+        isClickable = false
 
         setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
 
@@ -42,8 +42,7 @@ internal fun ExoPlayerPlayerSurface(
       }
     },
     onReset = {},
-    // aspectRatio works but it must be changeable (TODO)
-    modifier = Modifier.aspectRatio(9f / 16f),
+    modifier = Modifier.aspectRatio(aspectRatio),
     update = { view ->
       view.resizeMode = resizeMode
     }

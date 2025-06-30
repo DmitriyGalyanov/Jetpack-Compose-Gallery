@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
+import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
@@ -45,27 +45,27 @@ import kotlin.time.DurationUnit
 @Composable
 internal fun EmittedSelectionView(galleryViewModel: GalleryViewModel) {
 
-  var emittedItems by remember { mutableStateOf(listOf<GalleryMediaItem>()) }
+  var emittedAssets by remember { mutableStateOf(listOf<GalleryAsset>()) }
 
   LaunchedEffect(Unit) {
     galleryViewModel.setOnEmitSelection {
-      emittedItems = it
+      emittedAssets = it
     }
   }
 
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
   var isSheetDisplayed by remember { mutableStateOf(false) }
-  LaunchedEffect(emittedItems) {
-    if (emittedItems.isNotEmpty()) isSheetDisplayed = true
+  LaunchedEffect(emittedAssets) {
+    if (emittedAssets.isNotEmpty()) isSheetDisplayed = true
   }
 
   if (isSheetDisplayed) EmittedSelectionSheet(
     sheetState = sheetState,
-    mediaItems = emittedItems,
+    assets = emittedAssets,
   ) {
     isSheetDisplayed = false
-    emittedItems = listOf()
+    emittedAssets = listOf()
   }
 }
 
@@ -77,7 +77,7 @@ private const val ITEMS_IN_ROW = 3
 @Composable
 private fun EmittedSelectionSheet(
   sheetState: SheetState,
-  mediaItems: List<GalleryMediaItem>,
+  assets: List<GalleryAsset>,
   onDidDismiss: () -> Unit,
 ) {
   ModalBottomSheet(
@@ -97,7 +97,7 @@ private fun EmittedSelectionSheet(
           .wrapContentSize()
           .verticalScroll(rememberScrollState())
       ) {
-        mediaItems.map {
+        assets.map {
           Box(
             modifier = Modifier
               .width(this@BoxWithConstraints.maxWidth / ITEMS_IN_ROW - SPACE_BETWEEN_ITEMS)

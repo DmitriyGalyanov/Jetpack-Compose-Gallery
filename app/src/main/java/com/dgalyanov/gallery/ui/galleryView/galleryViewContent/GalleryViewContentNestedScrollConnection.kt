@@ -22,7 +22,7 @@ internal val AUTO_SCROLL_INT_ANIMATION_SPEC = tween<Int>(AUTO_SCROLL_ANIMATION_D
 internal val AUTO_SCROLL_FLOAT_ANIMATION_SPEC = tween<Float>(AUTO_SCROLL_ANIMATION_DURATION_MS)
 
 internal class GalleryViewContentNestedScrollConnection(
-  private val previewedAssetHeightPx: Int,
+  private val previewedAssetContainerHeightPx: Int,
   private val scope: CoroutineScope,
   private val gridState: LazyGridState,
   private val gridFlingDecayAnimationSpec: DecayAnimationSpec<Float>,
@@ -56,14 +56,14 @@ internal class GalleryViewContentNestedScrollConnection(
 
   private fun hidePreviewedAsset() {
     galleryGenericLog("hidePreviewedAsset()")
-    animatePreviewedAssetOffset(-previewedAssetHeightPx) {
+    animatePreviewedAssetOffset(-previewedAssetContainerHeightPx) {
       isPreviewedAssetLockedAsHidden = true
       onPreviewedAssetDidHide()
     }
   }
 
   /** hidden, but not docked */
-  private val isPreviewedAssetHidden get() = previewedAssetOffset == -previewedAssetHeightPx
+  private val isPreviewedAssetHidden get() = previewedAssetOffset == -previewedAssetContainerHeightPx
   private var isPreviewedAssetOffsetUnlockedByCurrentFling = false
 
   private var isPreviewedAssetLockedAsHidden = isPreviewedAssetHidden
@@ -82,7 +82,7 @@ internal class GalleryViewContentNestedScrollConnection(
     if (isPreviewedAssetHidden) return requestMarkPreviewedAssetLockedAsHidden()
     if (previewedAssetOffset == 0) return onPreviewedAssetDidUnhide()
 
-    if (previewedAssetOffset >= -previewedAssetHeightPx / 2) showPreviewedAsset()
+    if (previewedAssetOffset >= -previewedAssetContainerHeightPx / 2) showPreviewedAsset()
     else hidePreviewedAsset()
   }
 
@@ -104,7 +104,7 @@ internal class GalleryViewContentNestedScrollConnection(
     val previousPreviewedAssetOffset = previewedAssetOffset
 
     previewedAssetOffset =
-      (previewedAssetOffset + available.y.toInt()).coerceIn(-previewedAssetHeightPx, 0)
+      (previewedAssetOffset + available.y.toInt()).coerceIn(-previewedAssetContainerHeightPx, 0)
 
     if (gridState.canScrollBackward && isPreviewedAssetHidden) requestMarkPreviewedAssetLockedAsHidden()
 

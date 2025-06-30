@@ -1,37 +1,37 @@
-package com.dgalyanov.gallery.galleryContentResolver.dataClasses
+package com.dgalyanov.gallery.dataClasses
 
 import android.net.Uri
 import androidx.compose.runtime.mutableStateOf
 
-data class GalleryMediaAlbum(
+data class GalleryAssetsAlbum(
   val id: Long,
   val name: String,
   var previewUri: Uri?,
-  val itemsAmount: Int,
+  val assetsAmount: Int,
 ) {
   companion object {
     const val RECENTS_ALBUM_ID = -1L
     private const val RECENTS_ALBUM_NAME = "Recents"
 
     private var _RecentsAlbum = mutableStateOf(
-      GalleryMediaAlbum(
+      GalleryAssetsAlbum(
         id = RECENTS_ALBUM_ID,
         name = RECENTS_ALBUM_NAME,
         previewUri = null,
-        itemsAmount = 0
+        assetsAmount = 0
       )
     )
     val RecentsAlbum get() = _RecentsAlbum.value
 
-    private fun createRecentsAlbum(previewUri: Uri?, itemsAmount: Int) = GalleryMediaAlbum(
+    private fun createRecentsAlbum(previewUri: Uri?, assetsAmount: Int) = GalleryAssetsAlbum(
       id = RECENTS_ALBUM_ID,
       name = RECENTS_ALBUM_NAME,
       previewUri = previewUri,
-      itemsAmount = itemsAmount
+      assetsAmount = assetsAmount
     )
 
-    fun updateRecentsAlbum(previewUri: Uri?, itemsAmount: Int): GalleryMediaAlbum {
-      _RecentsAlbum.value = createRecentsAlbum(previewUri, itemsAmount)
+    fun updateRecentsAlbum(previewUri: Uri?, assetsAmount: Int): GalleryAssetsAlbum {
+      _RecentsAlbum.value = createRecentsAlbum(previewUri, assetsAmount)
       return _RecentsAlbum.value
     }
   }

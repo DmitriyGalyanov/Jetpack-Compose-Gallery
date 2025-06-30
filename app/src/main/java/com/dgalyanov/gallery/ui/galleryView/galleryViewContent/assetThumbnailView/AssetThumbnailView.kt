@@ -1,4 +1,4 @@
-package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryMediaThumbnailView
+package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.assetThumbnailView
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,14 +19,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
+import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-internal fun GalleryMediaThumbnailView(
-  item: GalleryMediaItem,
+internal fun AssetThumbnailView(
+  asset: GalleryAsset,
   size: Dp,
   onClick: () -> Unit,
 ) {
@@ -36,17 +36,19 @@ internal fun GalleryMediaThumbnailView(
       .clickable(onClick = onClick)
   ) {
     GlideImage(
-      model = item.uri,
+      model = asset.uri,
       contentDescription = null,
       contentScale = ContentScale.Crop,
-      modifier = Modifier.size(size).background(Color.Gray),
+      modifier = Modifier
+        .size(size)
+        .background(Color.Gray),
     )
 
-    GalleryMediaThumbnailSelectionIndicator(item.selectionIndex)
+    AssetThumbnailSelectionIndicator(asset.selectionIndex)
 
-    if (item.durationMs > 0) {
+    if (asset.durationMs > 0) {
       Text(
-        item.durationMs.milliseconds.toString(DurationUnit.SECONDS),
+        asset.durationMs.milliseconds.toString(DurationUnit.SECONDS),
         fontSize = 12.sp,
         lineHeight = (12 * 1.2).sp,
         modifier = Modifier

@@ -10,10 +10,10 @@ import android.provider.MediaStore
 import androidx.annotation.RequiresApi
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import com.dgalyanov.gallery.MainActivity
-import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaAlbum
-import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
+import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
+import com.dgalyanov.gallery.dataClasses.GalleryAsset
 
-class GalleryContentResolver {
+internal class GalleryContentResolver {
   companion object {
     private val log = GalleryLogFactory("GalleryContentResolver")
 
@@ -89,16 +89,16 @@ class GalleryContentResolver {
     }
 
     private fun createAlbumQueryCursor(
-      albumId: Long = GalleryMediaAlbum.RECENTS_ALBUM_ID,
+      albumId: Long = GalleryAssetsAlbum.RECENTS_ALBUM_ID,
       collectionUri: Uri = this.collectionUri,
       projection: Array<String> = arrayOf(MediaStore.Files.FileColumns._ID),
       orderAscending: Boolean = false,
       limit: Int? = null,
     ): Cursor? {
       val selectionCondition =
-        if (albumId != GalleryMediaAlbum.RECENTS_ALBUM_ID) "${MediaStore.Images.ImageColumns.BUCKET_ID} = ?" else null
+        if (albumId != GalleryAssetsAlbum.RECENTS_ALBUM_ID) "${MediaStore.Images.ImageColumns.BUCKET_ID} = ?" else null
       val selectionArgs =
-        if (albumId != GalleryMediaAlbum.RECENTS_ALBUM_ID) arrayOf("$albumId") else null
+        if (albumId != GalleryAssetsAlbum.RECENTS_ALBUM_ID) arrayOf("$albumId") else null
 
       return createQueryCursor(
         collectionUri = collectionUri,
@@ -110,61 +110,70 @@ class GalleryContentResolver {
       )
     }
 
-    private val mediaItemQueryProjection = arrayOf(
+    private val assetQueryProjection = arrayOf(
       MediaStore.Files.FileColumns._ID,
       MediaStore.Files.FileColumns.DURATION,
+      MediaStore.Files.FileColumns.WIDTH,
+      MediaStore.Files.FileColumns.HEIGHT,
+      MediaStore.Files.FileColumns.ORIENTATION,
     )
 
-    private fun getMediaItemsFromCursor(
+    private fun getAssetsFromCursor(
       cursor: Cursor,
       /** if false -> gets all */
       shouldGetOnlyFirst: Boolean = false
-    ): MutableMap<Long, GalleryMediaItem> {
-      val mediaItems = mutableMapOf<Long, GalleryMediaItem>()
+    ): MutableMap<Long, GalleryAsset> {
+      val assets = mutableMapOf<Long, GalleryAsset>()
 
       val idColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
       val durationColumnIndex =
         cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DURATION)
+      val rawWidthColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
+      val rawHeightColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
+      val orientationDegreesColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.ORIENTATION)
 
-      fun extractMediaItemFromCurrentCursorPosition() {
+      fun extractAssetFromCurrentCursorPosition() {
         val id = cursor.getLong(idColumnIndex)
 
-        mediaItems[id] = GalleryMediaItem(
+        assets[id] = GalleryAsset(
           id = id,
           uri = ContentUris.withAppendedId(collectionUri, id),
           durationMs = cursor.getInt(durationColumnIndex),
+          rawWidth = cursor.getDouble(rawWidthColumnIndex),
+          rawHeight = cursor.getDouble(rawHeightColumnIndex),
+          orientationDegrees = cursor.getInt(orientationDegreesColumnIndex),
         )
       }
       if (shouldGetOnlyFirst) {
-        if (cursor.moveToFirst()) extractMediaItemFromCurrentCursorPosition()
+        if (cursor.moveToFirst()) extractAssetFromCurrentCursorPosition()
       } else {
-        while (cursor.moveToNext()) extractMediaItemFromCurrentCursorPosition()
+        while (cursor.moveToNext()) extractAssetFromCurrentCursorPosition()
       }
 
       cursor.close()
-      return mediaItems
+      return assets
     }
 
     /** do not call on main thread */
-    fun getAlbumMediaItems(albumId: Long): Map<Long, GalleryMediaItem> {
-      val logTag = "getAlbumMediaFiles(albumId: $albumId)"
+    fun getAlbumAssets(albumId: Long): Map<Long, GalleryAsset> {
+      val logTag = "getAlbumAssets(albumId: $albumId)"
       log(logTag)
       val requestStartTimeMs = System.currentTimeMillis()
 
       val cursor = createAlbumQueryCursor(
         albumId = albumId,
-        projection = mediaItemQueryProjection,
+        projection = assetQueryProjection,
         orderAscending = false,
       )
 
-      val mediaItems = cursor?.let { getMediaItemsFromCursor(it) } ?: mapOf()
+      val assets = cursor?.let { getAssetsFromCursor(it) } ?: mapOf()
 
-      log("$logTag finished | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs} | Items Amount: ${mediaItems.size}")
+      log("$logTag finished | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs} | Assets Amount: ${assets.size}")
       // consumer should not mutate it
-      return mediaItems
+      return assets
     }
 
-    private fun getAlbumItemsCount(albumId: Long) = createAlbumQueryCursor(albumId)?.count ?: 0
+    private fun getAlbumAssetsCount(albumId: Long) = createAlbumQueryCursor(albumId)?.count ?: 0
 
     private fun getAlbumPreviewMediaUri(albumId: Long): Uri? {
       val mediaTypesToTry = listOf(
@@ -191,12 +200,12 @@ class GalleryContentResolver {
     }
 
     /** do not call on main thread */
-    fun getMediaAlbums(): List<GalleryMediaAlbum> {
+    fun getMediaAlbums(): List<GalleryAssetsAlbum> {
       val logTag = "getMediaAlbums()"
       log(logTag)
       val requestStartTimeMs = System.currentTimeMillis()
 
-      val albums = mutableMapOf<Long, GalleryMediaAlbum>()
+      val albums = mutableMapOf<Long, GalleryAssetsAlbum>()
 
       val projection = arrayOf(
         MediaStore.Files.FileColumns.BUCKET_ID,
@@ -229,24 +238,24 @@ class GalleryContentResolver {
 
           log("$logTag | met a bucket for the first time | buckedId: $bucketId, bucketName: $bucketName")
 
-          albums[bucketId] = GalleryMediaAlbum(
+          albums[bucketId] = GalleryAssetsAlbum(
             bucketId,
             bucketName,
             getAlbumPreviewMediaUri(bucketId),
-            getAlbumItemsCount(bucketId),
+            getAlbumAssetsCount(bucketId),
           )
         }
       }
 
       val result = albums.values.toMutableList()
 
-      var recentsAlbumItemsAmount = 0
-      result.forEach { recentsAlbumItemsAmount += it.itemsAmount }
+      var recentsAlbumAssetsAmount = 0
+      result.forEach { recentsAlbumAssetsAmount += it.assetsAmount }
       result.add(
         0,
-        GalleryMediaAlbum.updateRecentsAlbum(
-          getAlbumPreviewMediaUri(GalleryMediaAlbum.RECENTS_ALBUM_ID),
-          itemsAmount = recentsAlbumItemsAmount
+        GalleryAssetsAlbum.updateRecentsAlbum(
+          getAlbumPreviewMediaUri(GalleryAssetsAlbum.RECENTS_ALBUM_ID),
+          assetsAmount = recentsAlbumAssetsAmount
         )
       )
 
@@ -254,21 +263,21 @@ class GalleryContentResolver {
       return result.toList()
     }
 
-    fun getGalleryMediaItemByUri(uri: Uri): GalleryMediaItem? {
+    fun getGalleryAssetByUri(uri: Uri): GalleryAsset? {
       val requestStartTimeMs = System.currentTimeMillis()
-      val logTag = "getGalleryMediaItemByUri(uri: $uri)"
+      val logTag = "getGalleryAssetByUri(uri: $uri)"
 
-      val cursor = createQueryCursor(uri, mediaItemQueryProjection)
-      val mediaItem = cursor?.let {
-        getMediaItemsFromCursor(cursor, shouldGetOnlyFirst = true).values.firstOrNull()
+      val cursor = createQueryCursor(uri, assetQueryProjection)
+      val asset = cursor?.let {
+        getAssetsFromCursor(cursor, shouldGetOnlyFirst = true).values.firstOrNull()
       }
-      log("$logTag | ${if (mediaItem != null) "success" else "failure"}, item: $mediaItem | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs}")
-      return mediaItem
+      log("$logTag | ${if (asset != null) "success" else "failure"}, asset: $asset | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs}")
+      return asset
     }
 
-    fun getGalleryMediaItemById(id: Long): GalleryMediaItem? {
-      log("getGalleryMediaItemById(id: $id)")
-      return getGalleryMediaItemByUri(ContentUris.withAppendedId(collectionUri, id))
+    fun getGalleryAssetById(id: Long): GalleryAsset? {
+      log("getGalleryAssetById(id: $id)")
+      return getGalleryAssetByUri(ContentUris.withAppendedId(collectionUri, id))
     }
   }
 }

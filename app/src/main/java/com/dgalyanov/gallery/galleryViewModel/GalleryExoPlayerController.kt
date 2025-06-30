@@ -41,21 +41,40 @@ class GalleryExoPlayerController(context: Context) {
   }
 
   private var videoUri: Uri? = null
+  var statefulHasMedia by mutableStateOf(false)
   fun setMedia(videoUri: Uri?) {
     log("setMedia(videoUri: $videoUri) | current: $videoUri")
     if (this.videoUri == videoUri) return
     this.videoUri = videoUri
 
-    if (videoUri == null) return exoPlayer.stop()
+    if (videoUri == null) {
+      exoPlayer.stop()
+      statefulHasMedia = false
+      return
+    }
 
-    exoPlayer.setMediaItem(MediaItem.fromUri(videoUri))
+//    exoPlayer.setMediaItem(MediaItem.fromUri(videoUri))
+    exoPlayer.replaceMediaItem(0, MediaItem.fromUri(videoUri))
+    statefulHasMedia = true
   }
 
   var statefulPlayWhenReady by mutableStateOf(false)
     private set
 
+  var isPlayAllowed by mutableStateOf(true)
+  fun disallowPlay() {
+    log("disallowPlay()")
+    pause()
+    isPlayAllowed = false
+  }
+  fun allowPlay() {
+    log("allowPlay")
+    isPlayAllowed = true
+  }
+
   fun play() {
-    if (videoUri == null) return
+    log("play() | isPlayAllowed: $isPlayAllowed, videoUri: $videoUri")
+    if (!isPlayAllowed || videoUri == null) return
 
     // todo: check if it's ok to call prepare on every play request
     exoPlayer.prepare()
@@ -64,13 +83,14 @@ class GalleryExoPlayerController(context: Context) {
   }
 
   fun pause() {
+    log("pause()")
     exoPlayer.pause()
     statefulPlayWhenReady = false
   }
 
+  var isPausedByLifecycle by mutableStateOf(false)
   @Composable
   fun useSyncPlayWithLifecycle(): Boolean {
-    var isPausedByLifecycle by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(Unit) {
       val observer = object : DefaultLifecycleObserver {

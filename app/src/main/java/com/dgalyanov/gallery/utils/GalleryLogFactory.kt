@@ -4,7 +4,7 @@ import android.util.Log
 
 internal const val GALLERY_BASE_LOG_TAG = "Gallery"
 
-private const val DEBUG = false
+private const val DEBUG = true
 
 @Suppress("FunctionName")
 internal fun GalleryLogFactory(

@@ -3,6 +3,7 @@ package com.dgalyanov.gallery.galleryViewModel
 import android.content.Context
 import androidx.camera.core.ImageCapture
 import androidx.camera.video.OutputResults
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -14,20 +15,31 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dgalyanov.gallery.galleryContentResolver.GalleryContentResolver
-import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaAlbum
-import com.dgalyanov.gallery.galleryContentResolver.dataClasses.GalleryMediaItem
+import com.dgalyanov.gallery.dataClasses.AssetAspectRatio
+import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
+import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+// todo: add Content Modes (post, story, reels, aiFilters)
 internal class GalleryViewModel(context: Context) : ViewModel() {
   companion object {
     val LocalGalleryViewModel =
       staticCompositionLocalOf<GalleryViewModel> { error("CompositionLocal of GalleryViewModel not present") }
 
     private const val MULTISELECT_LIMIT = 10
+
+    // todo: check if should use PerformanceClass to determine this Value
+    const val PREVIEWED_ASSET_SELECTION_VISUAL_DELAY_MS = 150
+    val PREVIEWED_ASSET_SELECTION_RELATED_ANIMATIONS_SPEC = tween<Float>(
+      PREVIEWED_ASSET_SELECTION_VISUAL_DELAY_MS
+    )
   }
 
   private val log = GalleryLogFactory("GalleryViewModel")
@@ -47,6 +59,12 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   private var windowWidthPx by mutableIntStateOf(0)
   val windowWidthDp by derivedStateOf { windowWidthPx / density }
 
+  val previewedAssetContainerWidthPx by derivedStateOf { windowWidthPx }
+  private val previewedAssetContainerAspectRatio = AssetAspectRatio._1x1
+  val previewedAssetContainerHeightPx by derivedStateOf {
+    (previewedAssetContainerWidthPx * previewedAssetContainerAspectRatio.heightToWidthNumericValue).toInt()
+  }
+
   private var windowHeightPx by mutableIntStateOf(0)
   val windowHeightDp by derivedStateOf { windowHeightPx / density }
 
@@ -60,7 +78,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   /** Layout Data -- END */
 
   /** Albums -- START */
-  var albumsList by mutableStateOf(listOf<GalleryMediaAlbum>())
+  var albumsList by mutableStateOf(listOf<GalleryAssetsAlbum>())
 
   var isFetchingAlbums by mutableStateOf(false)
     private set
@@ -78,32 +96,32 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
     }
   }
 
-  var selectedAlbum by mutableStateOf(GalleryMediaAlbum.RecentsAlbum)
+  var selectedAlbum by mutableStateOf(GalleryAssetsAlbum.RecentsAlbum)
     private set
 
-  fun selectAlbum(album: GalleryMediaAlbum) {
+  fun selectAlbum(album: GalleryAssetsAlbum) {
     log("selectAlbum(album: $album) | current: $selectedAlbum")
     if (selectedAlbum == album) return
     selectedAlbum = album
     getSelectedAlbumMediaFiles()
   }
 
-//  val allMediaItemsList = MutableStateFlow(mapOf<Long, GalleryMediaItem>())
+//  val allAssets = MutableStateFlow(mapOf<Long, GalleryAsset>())
   /**
-   * todo: think if should keep allMediaItemsList and filter by selected album
+   * todo: think if should keep allAssets and filter by selected album
    */
-  var selectedAlbumMediaItemsMap by mutableStateOf(mapOf<Long, GalleryMediaItem>())
+  var selectedAlbumAssetsMap by mutableStateOf(mapOf<Long, GalleryAsset>())
     private set
-//  private fun getAlbumMediaItemsMap(album: GalleryMediaAlbum): Map<Long, GalleryMediaItem> {
+//  private fun getAlbumAssetsMap(album: GalleryMediaAlbum): Map<Long, GalleryAsset> {
 //    if (album == GalleryMediaAlbum.RecentsAlbum) {
-//      return allMediaItemsList.value
+//      return allAssets.value
 //    }
 //
-//    val selectedAlbumMediaItems = mutableMapOf<Long, GalleryMediaItem>()
-//    allMediaItemsList.value.values.forEach {
-//      if (it.bucketId == selectedAlbum.id) selectedAlbumMediaItems[it.id] = it
+//    val selectedAlbumAssets = mutableMapOf<Long, GalleryAsset>()
+//    allAssets.value.values.forEach {
+//      if (it.bucketId == selectedAlbum.id) selectedAlbumAssets[it.id] = it
 //    }
-//    return selectedAlbumMediaItems
+//    return selectedAlbumAssets
 //  }
 
   var isFetchingSelectedAlbumMediaFiles by mutableStateOf(false)
@@ -119,23 +137,23 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
     isFetchingSelectedAlbumMediaFiles = true
 
     viewModelScope.launch(Dispatchers.IO) {
-      selectedAlbumMediaItemsMap = GalleryContentResolver.getAlbumMediaItems(selectedAlbum.id)
-//      selectedAlbumMediaItemsMap.value = getAlbumMediaItemsMap(selectedAlbum)
+      selectedAlbumAssetsMap = GalleryContentResolver.getAlbumAssets(selectedAlbum.id)
+//      selectedAlbumAssetsMap.value = getAlbumAssetsMap(selectedAlbum)
 
-      if (selectedItemsIds.isEmpty()) {
-        selectItem(selectedAlbumMediaItemsMap.values.first())
+      if (selectedAssetsIds.isEmpty()) {
+        selectAsset(selectedAlbumAssetsMap.values.first())
       } else if (!isMultiselectEnabled.value) {
-        val selectedItem = selectedAlbumMediaItemsMap[selectedItemsIds.first()]
-        if (selectedItem != null) selectItem(selectedItem)
-        else selectItem(selectedAlbumMediaItemsMap.values.first())
+        val selectedAsset = selectedAlbumAssetsMap[selectedAssetsIds.first()]
+        if (selectedAsset != null) selectAsset(selectedAsset)
+        else selectAsset(selectedAlbumAssetsMap.values.first())
       } else {
-        selectedItemsIds.toList().forEachIndexed { index, id ->
-          selectedAlbumMediaItemsMap[id]?.setSelectionIndex(index)
+        selectedAssetsIds.toList().forEachIndexed { index, id ->
+          selectedAlbumAssetsMap[id]?.setSelectionIndex(index)
         }
       }
 
-      if (selectedItemsIds.isEmpty()) {
-        selectItem(selectedAlbumMediaItemsMap.values.first())
+      if (selectedAssetsIds.isEmpty()) {
+        selectAsset(selectedAlbumAssetsMap.values.first())
       }
     }.invokeOnCompletion {
       isFetchingSelectedAlbumMediaFiles = false
@@ -144,119 +162,151 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   }
   /** Albums -- END */
 
-  /** Items Selection -- START */
-  /**
-   * required since [selectedAlbumMediaItemsMap] changes should not affect Selection (if not specified explicitly)
-   */
-  private val selectedItemsIds = mutableListOf<Long>()
+  /** Assets Selection -- START */
+  /** Aspect Ratio -- START */
+  var availableAspectRatios by mutableStateOf(AssetAspectRatio.entries)
+  var autoSelectedAspectRatio by mutableStateOf<AssetAspectRatio?>(null)
+    private set
+  var userSelectedAspectRatio by mutableStateOf<AssetAspectRatio?>(null)
+  val usedAspectRatio by derivedStateOf {
+    userSelectedAspectRatio ?: autoSelectedAspectRatio ?: previewedAsset?.closestAspectRatio
+    ?: AssetAspectRatio._1x1
+  }
 
-  private fun fixItemsSelection() {
-    log("fixItemsSelection() | selectedItemsIds: $selectedItemsIds")
-    selectedItemsIds.forEachIndexed { index, id ->
-      selectedAlbumMediaItemsMap[id]?.setSelectionIndex(index)
+  /** Aspect Ratio -- END */
+
+  /**
+   * required since [selectedAlbumAssetsMap] changes should not affect Selection (if not specified explicitly)
+   */
+  private val selectedAssetsIds = mutableListOf<Long>()
+
+  private fun fixAssetsSelection() {
+    log("fixAssetsSelection() | selectedAssetsIds: $selectedAssetsIds")
+    selectedAssetsIds.forEachIndexed { index, id ->
+      selectedAlbumAssetsMap[id]?.setSelectionIndex(index)
     }
   }
 
-  private fun clearSelectedItems(itemToRemain: GalleryMediaItem? = null) {
+  private fun clearSelectedAssets(assetToRemain: GalleryAsset? = null) {
     val logTag =
-      "clearSelectedItems(itemToRemain: $itemToRemain) | amountOnStart: ${selectedItemsIds.size}"
+      "clearSelectedAssets(assetToRemain: $assetToRemain) | amountOnStart: ${selectedAssetsIds.size}"
     log(logTag)
 
-    selectedItemsIds.forEach {
+    selectedAssetsIds.forEach {
       log("$logTag | iterating with $it")
-      if (it != itemToRemain?.id) selectedAlbumMediaItemsMap[it]?.deselect()
+      if (it != assetToRemain?.id) selectedAlbumAssetsMap[it]?.deselect()
     }
-    selectedItemsIds.retainAll(listOf(itemToRemain?.id).toSet())
+    selectedAssetsIds.retainAll(listOf(assetToRemain?.id).toSet())
 
-    fixItemsSelection()
+    fixAssetsSelection()
 
-    log("$logTag | amountOnEnd: ${selectedItemsIds.size}")
+    log("$logTag | amountOnEnd: ${selectedAssetsIds.size}")
   }
 
+  // todo: use mutableState
   private val _isMultiselectEnabled = MutableStateFlow(false)
   val isMultiselectEnabled = _isMultiselectEnabled.asStateFlow()
 
   fun toggleIsMultiselectEnabled() {
     log("toggleIsMultiselectEnabled() | current: ${_isMultiselectEnabled.value}")
 
-    if (_isMultiselectEnabled.value) clearSelectedItems(previewedItem)
+    if (_isMultiselectEnabled.value) clearSelectedAssets(previewedAsset)
 
     _isMultiselectEnabled.value = !_isMultiselectEnabled.value
   }
 
-  var previewedItem by mutableStateOf<GalleryMediaItem?>(null)
+  var previewedAsset by mutableStateOf<GalleryAsset?>(null)
     private set
 
-  private fun selectItem(item: GalleryMediaItem) {
-    log("selectItem(item: $item)")
-    if (item.isSelected.value) return
+  var nextPreviewedAsset by mutableStateOf<GalleryAsset?>(null)
+    private set
 
-    if (!_isMultiselectEnabled.value) clearSelectedItems()
+  private var previewedAssetSelectionJob: Job? = null
+  private fun selectAsset(asset: GalleryAsset) {
+    log("selectAsset(asset: $asset)")
+    if (asset.isSelected.value) return
 
-    item.setSelectionIndex(selectedItemsIds.size)
-    selectedItemsIds += item.id
-    previewedItem = item
+    if (!_isMultiselectEnabled.value) clearSelectedAssets()
 
-    fixItemsSelection()
-  }
+    asset.setSelectionIndex(selectedAssetsIds.size)
+    selectedAssetsIds += asset.id
+    nextPreviewedAsset = asset
 
-  private fun deselectItem(item: GalleryMediaItem) {
-    log("deselectItem(item: $item)")
-    if (!item.isSelected.value) return
+    previewedAssetSelectionJob?.cancel()
+    previewedAssetSelectionJob = viewModelScope.launch {
+      if (previewedAsset != null) {
+        delay(PREVIEWED_ASSET_SELECTION_VISUAL_DELAY_MS.toLong())
+      }
+      if (!isActive) return@launch
 
-    item.deselect()
-    selectedItemsIds.remove(item.id)
-
-    if (previewedItem == item) {
-      val newPreviewedItem =
-        if (selectedItemsIds.isEmpty()) null
-        else selectedAlbumMediaItemsMap[selectedItemsIds.last()]
-      previewedItem = newPreviewedItem
+      previewedAsset = asset
+      if (!_isMultiselectEnabled.value) {
+        autoSelectedAspectRatio = asset.closestAspectRatio
+      }
+      nextPreviewedAsset = null
     }
 
-    fixItemsSelection()
+    fixAssetsSelection()
   }
 
-  fun onThumbnailClick(item: GalleryMediaItem) {
-    log("onThumbnailClick(item: $item)")
+  private fun deselectAsset(asset: GalleryAsset) {
+    log("deselectAsset(asset: $asset)")
+    if (!asset.isSelected.value) return
+
+    // todo: deselect if previewed (preview if not yet)
+    asset.deselect()
+    selectedAssetsIds.remove(asset.id)
+
+    if (previewedAsset == asset) {
+      val newPreviewedAsset =
+        if (selectedAssetsIds.isEmpty()) null
+        else selectedAlbumAssetsMap[selectedAssetsIds.last()]
+      previewedAsset = newPreviewedAsset
+    }
+
+    fixAssetsSelection()
+  }
+
+  fun onThumbnailClick(asset: GalleryAsset) {
+    log("onThumbnailClick(asset: $asset)")
 
     if (_isMultiselectEnabled.value) {
-      if (selectedItemsIds.size == MULTISELECT_LIMIT) return
+      if (selectedAssetsIds.size == MULTISELECT_LIMIT) return
 
-      if (item.isSelected.value) {
-        if (selectedItemsIds.size > 1) deselectItem(item)
+      if (asset.isSelected.value) {
+        if (selectedAssetsIds.size > 1) deselectAsset(asset)
       } else {
-        selectItem(item)
+        selectAsset(asset)
       }
     } else {
-      selectItem(item)
+      selectAsset(asset)
     }
   }
 
-  /** Items Selection -- END */
+  /** Assets Selection -- END */
 
   val exoPlayerHolder = GalleryExoPlayerController(context)
 
   /** Selection Emission -- START */
   // todo: come up with a better name
-  private var onEmitSelection: ((mediaItems: List<GalleryMediaItem>) -> Unit)? = null
-  fun setOnEmitSelection(value: (mediaItems: List<GalleryMediaItem>) -> Unit) {
+  private var onEmitSelection: ((assets: List<GalleryAsset>) -> Unit)? = null
+  fun setOnEmitSelection(value: (assets: List<GalleryAsset>) -> Unit) {
     log("setOnEmitSelection")
     onEmitSelection = value
   }
 
   fun emitCurrentlySelected() {
-    val selectedItems = mutableListOf<GalleryMediaItem>()
+    val selectedAssets = mutableListOf<GalleryAsset>()
 
-    selectedItemsIds.forEach { selectedItemId ->
-      val item = selectedAlbumMediaItemsMap[selectedItemId]
-      // todo: think if should store all selected items
-        ?: GalleryContentResolver.getGalleryMediaItemById(selectedItemId)
-      if (item != null) selectedItems += item
+    selectedAssetsIds.forEach { selectedAssetId ->
+      val asset = selectedAlbumAssetsMap[selectedAssetId]
+      // todo: think if should store all selected assets
+        ?: GalleryContentResolver.getGalleryAssetById(selectedAssetId)
+      if (asset != null) selectedAssets += asset
     }
 
-    log("emitCurrentlySelected() | selectedItems: $selectedItems")
-    onEmitSelection?.let { it(selectedItems) }
+    log("emitCurrentlySelected() | selectedAssets: $selectedAssets")
+    onEmitSelection?.let { it(selectedAssets) }
   }
 
   fun emitCapturedImage(capturedImageFile: ImageCapture.OutputFileResults) {
@@ -265,21 +315,27 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
 
     val uri =
       capturedImageFile.savedUri ?: return log("$logTag | capturedImageFile has no savedUri")
-    val mediaItem = GalleryContentResolver.getGalleryMediaItemByUri(uri)
-      ?: return log("$logTag | couldn't get mediaItem")
+    val asset = GalleryContentResolver.getGalleryAssetByUri(uri)
+      ?: return log("$logTag | couldn't get asset")
 
-    onEmitSelection?.let { it(listOf(mediaItem)) }
+    onEmitSelection?.let { it(listOf(asset)) }
   }
 
   fun emitRecordedVideo(recordedVideoOutputResults: OutputResults) {
     val logTag = "emitRecordedVideo(recordedVideoOutputResults: $recordedVideoOutputResults)"
     log(logTag)
 
-    val mediaItem =
-      GalleryContentResolver.getGalleryMediaItemByUri(recordedVideoOutputResults.outputUri)
-        ?: return log("$logTag | couldn't get mediaItem")
+    val asset =
+      GalleryContentResolver.getGalleryAssetByUri(recordedVideoOutputResults.outputUri)
+        ?: return log("$logTag | couldn't get asset")
 
-    onEmitSelection?.let { it(listOf(mediaItem)) }
+    onEmitSelection?.let { it(listOf(asset)) }
   }
+
   /** Selection Emission -- END */
+
+  override fun onCleared() {
+    super.onCleared()
+    log("onCleared")
+  }
 }
