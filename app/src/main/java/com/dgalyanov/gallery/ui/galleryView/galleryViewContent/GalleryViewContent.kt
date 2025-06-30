@@ -14,9 +14,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyLayoutScrollScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -73,6 +74,46 @@ internal fun GalleryViewContent(assets: List<GalleryAsset>) {
       )
     }
 
+  fun scrollToAssetByIndex(index: Int) {
+    // minus 1 is to allow user to scroll backwards selecting first asset in a row
+    val listItemIndex = index + GRID_NON_THUMBNAILS_ITEMS_AMOUNT - 1
+    val stickyHeaderOffset = (GALLERY_VIEW_TOOLBAR_HEIGHT.value * density.density).toInt()
+
+//            https://issuetracker.google.com/issues/240449680
+//            https://issuetracker.google.com/issues/203855802
+    nestedScrollConnection.showPreviewedAsset()
+
+    scope.launch {
+      gridState.scroll {
+        val distanceToSelectedItem =
+          LazyLayoutScrollScope(gridState, this).calculateDistanceTo(
+            listItemIndex,
+            -stickyHeaderOffset
+          )
+
+        val animatable = Animatable(0F)
+        var previouslyScrolledDistance = 0F
+
+        animatable.animateTo(
+          targetValue = distanceToSelectedItem.toFloat(),
+          animationSpec = AUTO_SCROLL_FLOAT_ANIMATION_SPEC
+        ) {
+          val delta = this.value - previouslyScrolledDistance
+          gridState.dispatchRawDelta(delta)
+          previouslyScrolledDistance = this.value
+        }
+      }
+    }
+  }
+
+  LaunchedEffect(galleryViewModel.nextPreviewedAsset) {
+    if (galleryViewModel.nextPreviewedAsset == null) return@LaunchedEffect
+
+    val previewedAssetIndex = assets.indexOf(galleryViewModel.nextPreviewedAsset)
+    scrollToAssetByIndex(previewedAssetIndex)
+  }
+
+
   Box(Modifier.nestedScroll(nestedScrollConnection)) {
     PreviewedAssetView(Modifier.offset {
       IntOffset(0, nestedScrollConnection.previewedAssetOffset)
@@ -114,42 +155,12 @@ internal fun GalleryViewContent(assets: List<GalleryAsset>) {
           )
         }
 
-        itemsIndexed(assets, key = { _, item -> item.id }) { index, asset ->
+        items(assets, key = { it.id }) { asset ->
           AssetThumbnailView(
             asset = asset,
             size = thumbnailSize,
           ) {
-            // minus 1 is to allow user to scroll backwards selecting first asset in a row
-            val listItemIndex = index + GRID_NON_THUMBNAILS_ITEMS_AMOUNT - 1
-            val stickyHeaderOffset = (GALLERY_VIEW_TOOLBAR_HEIGHT.value * density.density).toInt()
-
             galleryViewModel.onThumbnailClick(asset)
-
-//            https://issuetracker.google.com/issues/240449680
-//            https://issuetracker.google.com/issues/203855802
-            nestedScrollConnection.showPreviewedAsset()
-
-            scope.launch {
-              gridState.scroll {
-                val distanceToSelectedItem =
-                  LazyLayoutScrollScope(gridState, this).calculateDistanceTo(
-                    listItemIndex,
-                    -stickyHeaderOffset
-                  )
-
-                val animatable = Animatable(0F)
-                var previouslyScrolledDistance = 0F
-
-                animatable.animateTo(
-                  targetValue = distanceToSelectedItem.toFloat(),
-                  animationSpec = AUTO_SCROLL_FLOAT_ANIMATION_SPEC
-                ) {
-                  val delta = this.value - previouslyScrolledDistance
-                  gridState.dispatchRawDelta(delta)
-                  previouslyScrolledDistance = this.value
-                }
-              }
-            }
           }
         }
       }
