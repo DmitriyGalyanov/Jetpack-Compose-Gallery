@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,7 +20,7 @@ internal val GALLERY_VIEW_TOOLBAR_HEIGHT = 48.dp
 @Composable
 internal fun GalleryViewToolbar() {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
-  val isMultiselectEnabled = galleryViewModel.isMultiselectEnabled.collectAsState().value
+  val isMultiselectEnabled = galleryViewModel.isMultiselectEnabled
 
   Box(
     modifier = Modifier

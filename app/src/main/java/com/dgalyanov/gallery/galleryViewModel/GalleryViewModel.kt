@@ -22,8 +22,6 @@ import com.dgalyanov.gallery.utils.GalleryLogFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -142,7 +140,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
 
       if (selectedAssetsIds.isEmpty()) {
         selectAsset(selectedAlbumAssetsMap.values.first())
-      } else if (!isMultiselectEnabled.value) {
+      } else if (!isMultiselectEnabled) {
         val selectedAsset = selectedAlbumAssetsMap[selectedAssetsIds.first()]
         if (selectedAsset != null) selectAsset(selectedAsset)
         else selectAsset(selectedAlbumAssetsMap.values.first())
@@ -203,16 +201,15 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
     log { "$logTag | amountOnEnd: ${selectedAssetsIds.size}" }
   }
 
-  // todo: use mutableState
-  private val _isMultiselectEnabled = MutableStateFlow(false)
-  val isMultiselectEnabled = _isMultiselectEnabled.asStateFlow()
+  var isMultiselectEnabled by mutableStateOf(false)
+    private set
 
   fun toggleIsMultiselectEnabled() {
-    log { "toggleIsMultiselectEnabled() | current: ${_isMultiselectEnabled.value}" }
+    log { "toggleIsMultiselectEnabled() | current: $isMultiselectEnabled" }
 
-    if (_isMultiselectEnabled.value) clearSelectedAssets(previewedAsset)
+    if (isMultiselectEnabled) clearSelectedAssets(previewedAsset)
 
-    _isMultiselectEnabled.value = !_isMultiselectEnabled.value
+    isMultiselectEnabled = !isMultiselectEnabled
   }
 
   var previewedAsset by mutableStateOf<GalleryAsset?>(null)
@@ -242,7 +239,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
       if (!isActive) return@launch
 
       previewedAsset = asset
-      if (!_isMultiselectEnabled.value) {
+      if (!isMultiselectEnabled) {
         autoSelectedAspectRatio = asset.closestAspectRatio
       }
       nextPreviewedAsset = null
@@ -253,7 +250,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
     log { "selectAsset(asset: $asset)" }
     if (asset.isSelected) return
 
-    if (!_isMultiselectEnabled.value) clearSelectedAssets()
+    if (!isMultiselectEnabled) clearSelectedAssets()
 
     asset.setSelectionIndex(selectedAssetsIds.size)
     selectedAssetsIds += asset.id
@@ -284,7 +281,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   fun onThumbnailClick(asset: GalleryAsset) {
     log { "onThumbnailClick(asset: $asset)" }
 
-    if (_isMultiselectEnabled.value) {
+    if (isMultiselectEnabled) {
       if (asset.isSelected) {
         when {
           asset != previewedAsset -> _setPreviewedAsset(asset)
