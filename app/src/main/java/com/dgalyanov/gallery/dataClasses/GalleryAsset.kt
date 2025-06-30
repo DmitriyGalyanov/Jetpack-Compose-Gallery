@@ -2,6 +2,7 @@ package com.dgalyanov.gallery.dataClasses
 
 import android.net.Uri
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 
@@ -37,7 +38,7 @@ internal data class GalleryAsset(
     _selectionIndex.intValue = value
   }
 
-  val isSelected = derivedStateOf { selectionIndex != NOT_SELECTED_INDEX }
+  val isSelected by derivedStateOf { selectionIndex != NOT_SELECTED_INDEX }
 
   fun deselect() {
     log { "deselect" }

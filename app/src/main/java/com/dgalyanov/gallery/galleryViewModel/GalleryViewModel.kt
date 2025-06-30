@@ -222,14 +222,16 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
     private set
 
   private var previewedAssetSelectionJob: Job? = null
-  private fun selectAsset(asset: GalleryAsset) {
-    log { "selectAsset(asset: $asset)" }
-    if (asset.isSelected.value) return
 
-    if (!_isMultiselectEnabled.value) clearSelectedAssets()
+  private fun _setPreviewedAsset(asset: GalleryAsset?) {
+    log { "_setPreviewedAsset(asset: $asset) | current: $previewedAsset, nextPreviewedAsset: $nextPreviewedAsset, previewedAssetSelectionJob?.isActive: ${previewedAssetSelectionJob?.isActive}" }
+    if (asset == null) {
+      previewedAssetSelectionJob?.cancel()
+      previewedAsset = null
+      nextPreviewedAsset = null
+      return
+    }
 
-    asset.setSelectionIndex(selectedAssetsIds.size)
-    selectedAssetsIds += asset.id
     nextPreviewedAsset = asset
 
     previewedAssetSelectionJob?.cancel()
@@ -245,13 +247,25 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
       }
       nextPreviewedAsset = null
     }
+  }
+
+  private fun selectAsset(asset: GalleryAsset) {
+    log { "selectAsset(asset: $asset)" }
+    if (asset.isSelected) return
+
+    if (!_isMultiselectEnabled.value) clearSelectedAssets()
+
+    asset.setSelectionIndex(selectedAssetsIds.size)
+    selectedAssetsIds += asset.id
+
+    _setPreviewedAsset(asset)
 
     fixAssetsSelection()
   }
 
   private fun deselectAsset(asset: GalleryAsset) {
     log { "deselectAsset(asset: $asset)" }
-    if (!asset.isSelected.value) return
+    if (!asset.isSelected) return
 
     // todo: deselect if previewed (preview if not yet)
     asset.deselect()
@@ -261,7 +275,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
       val newPreviewedAsset =
         if (selectedAssetsIds.isEmpty()) null
         else selectedAlbumAssetsMap[selectedAssetsIds.last()]
-      previewedAsset = newPreviewedAsset
+      _setPreviewedAsset(newPreviewedAsset)
     }
 
     fixAssetsSelection()
@@ -271,13 +285,12 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
     log { "onThumbnailClick(asset: $asset)" }
 
     if (_isMultiselectEnabled.value) {
-      if (selectedAssetsIds.size == MULTISELECT_LIMIT) return
-
-      if (asset.isSelected.value) {
-        if (selectedAssetsIds.size > 1) deselectAsset(asset)
-      } else {
-        selectAsset(asset)
-      }
+      if (asset.isSelected) {
+        when {
+          asset != previewedAsset -> _setPreviewedAsset(asset)
+          asset == previewedAsset && selectedAssetsIds.size > 1 -> deselectAsset(asset)
+        }
+      } else if (selectedAssetsIds.size < MULTISELECT_LIMIT) selectAsset(asset)
     } else {
       selectAsset(asset)
     }
