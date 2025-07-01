@@ -15,7 +15,8 @@ internal data class Transformations(val scale: Float, val offset: Offset) {
       contentContainerSize: AssetSize,
       rawOffset: Offset,
     ): Transformations {
-      val scale = rawScale.coerceIn(minScale, maxScale)
+      val coercedMaxScale = maxScale.coerceAtLeast(minScale)
+      val scale = rawScale.coerceIn(minScale, coercedMaxScale)
 
       val scaledContentSize = AssetSize(
         width = actualContentSize.width * scale,
