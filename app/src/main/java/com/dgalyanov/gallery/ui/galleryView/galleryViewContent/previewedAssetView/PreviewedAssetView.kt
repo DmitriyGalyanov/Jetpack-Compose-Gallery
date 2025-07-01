@@ -9,7 +9,6 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import com.dgalyanov.gallery.dataClasses.AssetSize
@@ -59,15 +58,6 @@ internal fun PreviewedAssetView(modifier: Modifier) {
       height = if (isAssetVertical) wrapSize.height else wrapSize.height / requiredToFitScale,
     )
   }
-
-  /**
-   * asset left/top offset relative to wrap
-   * without any transformations applied
-   */
-  val assetBaseOffset = Offset(
-    x = ((wrapSize.width - scaledToFitWrapAssetSize.width) / 2).toFloat(),
-    y = ((wrapSize.height - scaledToFitWrapAssetSize.height) / 2).toFloat(),
-  )
 
   val usedAspectRatio = galleryViewModel.usedAspectRatio.heightToWidthNumericValue
   val finalContentContainerSize = AssetSize(
@@ -141,7 +131,6 @@ internal fun PreviewedAssetView(modifier: Modifier) {
           initialTransformations = asset.transformations,
           minScale = minScale.toFloat(),
           actualContentSize = scaledToFitWrapAssetSize,
-          contentBaseOffset = assetBaseOffset,
           contentContainerSize = finalContentContainerSize,
           onTransformationDidClamp = {
             galleryGenericLog { "PreviewedAssetView | onTransformationDidClamp($it)" }
