@@ -363,6 +363,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   override fun onCleared() {
     super.onCleared()
     log { "onCleared()" }
+    exoPlayerController.onDispose()
     selectedAlbumAssetsMapChangeSubscriptionJob.cancel()
   }
 }
