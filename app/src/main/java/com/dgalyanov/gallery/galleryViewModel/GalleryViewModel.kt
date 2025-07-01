@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -23,6 +24,9 @@ import com.dgalyanov.gallery.utils.GalleryLogFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.cancellable
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -102,62 +106,40 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
     log { "selectAlbum(album: $album) | current: $selectedAlbum" }
     if (selectedAlbum == album) return
     selectedAlbum = album
-    getSelectedAlbumMediaFiles()
   }
 
-  //  val allAssets = MutableStateFlow(mapOf<GalleryAssetId, GalleryAsset>())
-  /**
-   * todo: think if should keep allAssets and filter by selected album
-   */
-  var selectedAlbumAssetsMap by mutableStateOf(mapOf<GalleryAssetId, GalleryAsset>())
+  var isFetchingAllAssets by mutableStateOf(false)
     private set
-//  private fun getAlbumAssetsMap(album: GalleryMediaAlbum): Map<GalleryAssetId, GalleryAsset> {
-//    if (album == GalleryMediaAlbum.RecentsAlbum) {
-//      return allAssets.value
-//    }
-//
-//    val selectedAlbumAssets = mutableMapOf<GalleryAssetId, GalleryAsset>()
-//    allAssets.value.values.forEach {
-//      if (it.bucketId == selectedAlbum.id) selectedAlbumAssets[it.id] = it
-//    }
-//    return selectedAlbumAssets
-//  }
+  private var allAssetsMap by mutableStateOf(mapOf<GalleryAssetId, GalleryAsset>())
 
-  var isFetchingSelectedAlbumMediaFiles by mutableStateOf(false)
-    private set
+  fun populateAllAssetsMap() {
+    val startTimeMs = System.currentTimeMillis()
+    val logTag = "populateAllAssetsMap()"
+    log { "$logTag start" }
 
-  /**
-   * multiple requests should not be issued simultaneously
-   */
-  fun getSelectedAlbumMediaFiles() {
-    val logTag = "getSelectedAlbumMediaFiles()"
-    log { logTag }
-
-    isFetchingSelectedAlbumMediaFiles = true
+    if (isFetchingAllAssets) {
+      log { "$logTag cancelled since isPopulatingAllAssetsMap already" }
+      return
+    }
+    isFetchingAllAssets = true
 
     viewModelScope.launch(Dispatchers.IO) {
-      selectedAlbumAssetsMap = GalleryContentResolver.getAlbumAssets(selectedAlbum.id)
-//      selectedAlbumAssetsMap.value = getAlbumAssetsMap(selectedAlbum)
-
-      if (selectedAssetsIds.isEmpty()) {
-        selectAsset(selectedAlbumAssetsMap.values.first())
-      } else if (!isMultiselectEnabled) {
-        val selectedAsset = selectedAlbumAssetsMap[selectedAssetsIds.first()]
-        if (selectedAsset != null) selectAsset(selectedAsset)
-        else selectAsset(selectedAlbumAssetsMap.values.first())
-      } else {
-        selectedAssetsIds.toList().forEachIndexed { index, id ->
-          selectedAlbumAssetsMap[id]?.setSelectionIndex(index)
-        }
-      }
-
-      if (selectedAssetsIds.isEmpty()) {
-        selectAsset(selectedAlbumAssetsMap.values.first())
-      }
+      allAssetsMap = GalleryContentResolver.getAlbumAssets(GalleryAssetsAlbum.RECENTS_ALBUM_ID)
     }.invokeOnCompletion {
-      isFetchingSelectedAlbumMediaFiles = false
-      log { "$logTag finished" }
+      resetAssetsSelection()
+
+      isFetchingAllAssets = false
+      log { "$logTag finished, time taken: ${System.currentTimeMillis() - startTimeMs}" }
     }
+  }
+
+  val selectedAlbumAssetsMap by derivedStateOf {
+    val result =
+      if (selectedAlbum.id == GalleryAssetsAlbum.RecentsAlbum.id) allAssetsMap
+      else allAssetsMap.filter { it.value.albumId == selectedAlbum.id }
+
+    log { "calculated selectedAlbumAssetsMap, selectedAlbum: $selectedAlbum, allAssetsMap.size: ${allAssetsMap.size} result.size: ${result.size}" }
+    return@derivedStateOf result
   }
   /** Albums -- END */
 
@@ -174,9 +156,6 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
 
   /** Aspect Ratio -- END */
 
-  /**
-   * required since [selectedAlbumAssetsMap] changes should not affect Selection (if not specified explicitly)
-   */
   private val selectedAssetsIds = mutableListOf<GalleryAssetId>()
 
   private fun fixAssetsSelection() {
@@ -205,12 +184,16 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   var isMultiselectEnabled by mutableStateOf(false)
     private set
 
+  @Suppress("FunctionName")
+  private fun _setIsMultiselectEnabled(value: Boolean) {
+    log { "_setIsMultiselectEnabled(value: $value)" }
+    if (!value) clearSelectedAssets(previewedAsset)
+    isMultiselectEnabled = value
+  }
+
   fun toggleIsMultiselectEnabled() {
     log { "toggleIsMultiselectEnabled() | current: $isMultiselectEnabled" }
-
-    if (isMultiselectEnabled) clearSelectedAssets(previewedAsset)
-
-    isMultiselectEnabled = !isMultiselectEnabled
+    _setIsMultiselectEnabled(!isMultiselectEnabled)
   }
 
   var previewedAsset by mutableStateOf<GalleryAsset?>(null)
@@ -221,6 +204,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
 
   private var previewedAssetSelectionJob: Job? = null
 
+  @Suppress("FunctionName")
   private fun _setPreviewedAsset(asset: GalleryAsset?) {
     log { "_setPreviewedAsset(asset: $asset) | current: $previewedAsset, nextPreviewedAsset: $nextPreviewedAsset, previewedAssetSelectionJob?.isActive: ${previewedAssetSelectionJob?.isActive}" }
     if (asset == null) {
@@ -265,14 +249,13 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
     log { "deselectAsset(asset: $asset)" }
     if (!asset.isSelected) return
 
-    // todo: deselect if previewed (preview if not yet)
     asset.deselect()
     selectedAssetsIds.remove(asset.id)
 
     if (previewedAsset == asset) {
       val newPreviewedAsset =
         if (selectedAssetsIds.isEmpty()) null
-        else selectedAlbumAssetsMap[selectedAssetsIds.last()]
+        else allAssetsMap[selectedAssetsIds.last()]
       _setPreviewedAsset(newPreviewedAsset)
     }
 
@@ -292,6 +275,38 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
     } else {
       selectAsset(asset)
     }
+  }
+
+  private fun maybeSelectAppropriateAsset(map: Map<GalleryAssetId, GalleryAsset>) {
+    log { "maybeSelectAppropriateAsset(map: { size: ${map.size} }) | isMultiselectEnabled: $isMultiselectEnabled, selectedAssetsIds.isEmpty(): ${selectedAssetsIds.isEmpty()}" }
+    if (map.isNotEmpty() && (!isMultiselectEnabled || selectedAssetsIds.isEmpty())) {
+      selectAsset(map.values.first())
+    }
+  }
+
+  private val selectedAlbumAssetsMapChangeSubscriptionJob: Job
+  private fun subscribeToSelectedAlbumAssetsMapChange(): Job {
+    log { "subscribeToSelectedAlbumAssetsMapChange()" }
+    return viewModelScope.launch {
+      snapshotFlow { selectedAlbumAssetsMap }
+        .cancellable()
+        .distinctUntilChanged()
+        .collectLatest { result ->
+          log { "collected latest selectedAlbumAssetsMap update, result.size: ${result.size}, selectedAlbumAssetsMap.size: ${selectedAlbumAssetsMap.size}" }
+
+          maybeSelectAppropriateAsset(result)
+        }
+    }
+  }
+
+  init {
+    selectedAlbumAssetsMapChangeSubscriptionJob = subscribeToSelectedAlbumAssetsMapChange()
+  }
+
+  private fun resetAssetsSelection() {
+    log { "resetAssetsSelection()" }
+    _setIsMultiselectEnabled(false)
+    maybeSelectAppropriateAsset(selectedAlbumAssetsMap)
   }
 
   /** Assets Selection -- END */
@@ -347,6 +362,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
 
   override fun onCleared() {
     super.onCleared()
-    log { "onCleared" }
+    log { "onCleared()" }
+    selectedAlbumAssetsMapChangeSubscriptionJob.cancel()
   }
 }

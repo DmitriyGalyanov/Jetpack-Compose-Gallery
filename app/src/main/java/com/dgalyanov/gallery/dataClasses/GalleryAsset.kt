@@ -10,6 +10,7 @@ typealias GalleryAssetId = Long
 
 internal data class GalleryAsset(
   val id: GalleryAssetId,
+  val albumId: Long,
   val uri: Uri,
   val durationMs: Int,
   private val rawHeight: Double,

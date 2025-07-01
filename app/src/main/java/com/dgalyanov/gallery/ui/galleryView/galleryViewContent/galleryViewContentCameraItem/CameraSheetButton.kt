@@ -91,7 +91,7 @@ private fun CameraSheet(sheetState: SheetState, onDidDismiss: () -> Unit) {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
 
   val cameraControl = CameraControl.use(
-    onDispose = galleryViewModel::getSelectedAlbumMediaFiles
+    onDispose = galleryViewModel::populateAllAssetsMap,
   )
 
   val scope = rememberCoroutineScope()

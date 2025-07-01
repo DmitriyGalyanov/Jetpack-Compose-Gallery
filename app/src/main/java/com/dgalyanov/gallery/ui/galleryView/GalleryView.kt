@@ -17,7 +17,7 @@ internal fun GalleryView(
   val assets = galleryViewModel.selectedAlbumAssetsMap.values.toList()
 
   val shouldShowLoader =
-    useDelayedShouldShowLoader(galleryViewModel.isFetchingSelectedAlbumMediaFiles)
+    useDelayedShouldShowLoader(galleryViewModel.isFetchingAllAssets)
 
   Box(
     modifier = Modifier

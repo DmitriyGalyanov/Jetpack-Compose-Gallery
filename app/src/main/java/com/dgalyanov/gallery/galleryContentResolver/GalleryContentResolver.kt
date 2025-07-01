@@ -113,6 +113,7 @@ internal class GalleryContentResolver {
 
     private val assetQueryProjection = arrayOf(
       MediaStore.Files.FileColumns._ID,
+      MediaStore.Files.FileColumns.BUCKET_ID,
       MediaStore.Files.FileColumns.DURATION,
       MediaStore.Files.FileColumns.WIDTH,
       MediaStore.Files.FileColumns.HEIGHT,
@@ -127,6 +128,7 @@ internal class GalleryContentResolver {
       val assets = mutableMapOf<GalleryAssetId, GalleryAsset>()
 
       val idColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+      val albumIdColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_ID)
       val durationColumnIndex =
         cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DURATION)
       val rawWidthColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
@@ -139,6 +141,7 @@ internal class GalleryContentResolver {
 
         assets[id] = GalleryAsset(
           id = id,
+          albumId = cursor.getLong(albumIdColumnIndex),
           uri = ContentUris.withAppendedId(collectionUri, id),
           durationMs = cursor.getInt(durationColumnIndex),
           rawWidth = cursor.getDouble(rawWidthColumnIndex),

@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
         grantResults
       )
     ) {
-      galleryViewModel.getSelectedAlbumMediaFiles()
+      galleryViewModel.populateAllAssetsMap()
     }
   }
 
@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
 
     GalleryPermissionsHelper.init(this).requestPermissionsIfNeeded()
     if (GalleryPermissionsHelper.arePermissionsGranted.value) {
-      galleryViewModel.getSelectedAlbumMediaFiles()
+      galleryViewModel.populateAllAssetsMap()
     }
 
     enableEdgeToEdge()
@@ -107,7 +107,7 @@ class MainActivity : ComponentActivity() {
     log { "onResume" }
 
     if (GalleryPermissionsHelper.checkIfPermissionsAreGranted()) {
-      galleryViewModel.getSelectedAlbumMediaFiles()
+      galleryViewModel.populateAllAssetsMap()
     }
   }
 }

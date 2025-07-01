@@ -23,7 +23,7 @@ internal fun EmptyGalleryView() {
     GalleryPermissionsHelper.didUserForbidPermissionsRequest.collectAsState().value
 
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
-  val isLoading = galleryViewModel.isFetchingSelectedAlbumMediaFiles
+  val isLoading = galleryViewModel.isFetchingAllAssets
 
   Box(
     modifier = Modifier
