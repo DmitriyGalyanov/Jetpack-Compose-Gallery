@@ -27,7 +27,7 @@ internal data class GalleryAsset(
   val height = if (orientationDegrees % 180 == 0) rawHeight else rawWidth
   val width = if (orientationDegrees % 180 == 0) rawWidth else rawHeight
 
-  val closestAspectRatio = AssetAspectRatio.getClosest(width = width, height = height)
+  val closestAspectRatio by lazy { AssetAspectRatio.getClosest(width = width, height = height) }
   val actualNumericWidthToHeightRatio = width / height
   val isVertical = actualNumericWidthToHeightRatio < 1
 
