@@ -20,12 +20,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.dgalyanov.gallery.galleryViewModel.GalleryExoPlayerController
+import com.dgalyanov.gallery.galleryViewModel.ExoPlayerController
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 
 @Composable
 internal fun PreviewedVideoControlsView(
-  exoPlayerController: GalleryExoPlayerController,
+  exoPlayerController: ExoPlayerController,
   isVisible: Boolean,
 ) {
   AnimatedVisibility(

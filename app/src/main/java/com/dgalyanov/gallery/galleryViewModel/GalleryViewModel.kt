@@ -311,7 +311,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
 
   /** Assets Selection -- END */
 
-  val exoPlayerHolder = GalleryExoPlayerController(context)
+  val exoPlayerController = ExoPlayerController(context)
 
   /** Selection Emission -- START */
   // todo: come up with a better name

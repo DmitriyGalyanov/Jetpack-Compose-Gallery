@@ -154,7 +154,7 @@ internal fun PreviewedAssetView(modifier: Modifier) {
     }
 
     PreviewedVideoControlsView(
-      exoPlayerController = galleryViewModel.exoPlayerHolder,
+      exoPlayerController = galleryViewModel.exoPlayerController,
       isVisible = asset.type == GalleryAssetType.Video &&
         nextPreviewedAsset?.type != GalleryAssetType.Image
     )

@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -17,12 +16,12 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import com.dgalyanov.gallery.utils.postToMainThread
 
-class GalleryExoPlayerController(context: Context) {
+internal class ExoPlayerController(context: Context) {
   companion object {
     private const val DEFAULT_IS_MUTED = false
   }
 
-  val log = GalleryLogFactory("ExoPlayerHolder")
+  val log = GalleryLogFactory("ExoPlayerController")
 
   val exoPlayer = ExoPlayer.Builder(context).build().apply {
     volume = if (DEFAULT_IS_MUTED) 0F else 1F

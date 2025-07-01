@@ -4,7 +4,7 @@ import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
-import com.dgalyanov.gallery.galleryViewModel.GalleryExoPlayerController
+import com.dgalyanov.gallery.galleryViewModel.ExoPlayerController
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.PreviewedVideoControlsView
 
 /**
@@ -13,7 +13,7 @@ import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetVie
 @OptIn(UnstableApi::class)
 @Composable
 internal fun PreviewedVideoView(
-  exoPlayerController: GalleryExoPlayerController,
+  exoPlayerController: ExoPlayerController,
   aspectRatio: Float,
 ) {
   exoPlayerController.useSyncPlayWithLifecycle()

@@ -12,26 +12,26 @@ import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetVie
 internal fun PreviewedAssetMediaView(asset: GalleryAsset?, nextAsset: GalleryAsset?) {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
 
-  val exoPlayerHolder = galleryViewModel.exoPlayerHolder
+  val exoPlayerController = galleryViewModel.exoPlayerController
 
   LaunchedEffect(asset, nextAsset) {
     val assetToApply = nextAsset ?: asset
 
     if (assetToApply?.type == GalleryAssetType.Video) {
-      exoPlayerHolder.setMedia(assetToApply.uri)
+      exoPlayerController.setMedia(assetToApply.uri)
       if (nextAsset == null) {
-        exoPlayerHolder.allowPlay()
-        exoPlayerHolder.play()
+        exoPlayerController.allowPlay()
+        exoPlayerController.play()
         // making sure requests from other sources will not be fulfilled
-      } else exoPlayerHolder.disallowPlay()
+      } else exoPlayerController.disallowPlay()
     } else {
-      exoPlayerHolder.setMedia(null)
+      exoPlayerController.setMedia(null)
     }
   }
 
   DisposableEffect(Unit) {
     onDispose {
-      exoPlayerHolder.setMedia(null)
+      exoPlayerController.setMedia(null)
     }
   }
 
@@ -40,7 +40,7 @@ internal fun PreviewedAssetMediaView(asset: GalleryAsset?, nextAsset: GalleryAss
       PreviewedImageView(it.uri)
     } else {
       PreviewedVideoView(
-        exoPlayerController = exoPlayerHolder,
+        exoPlayerController = exoPlayerController,
         aspectRatio = it.actualNumericWidthToHeightRatio.toFloat()
       )
     }

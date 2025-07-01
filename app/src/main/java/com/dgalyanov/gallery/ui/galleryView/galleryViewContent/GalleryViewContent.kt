@@ -69,8 +69,8 @@ internal fun GalleryViewContent(assets: List<GalleryAsset>) {
         gridNonThumbnailsItemsAmount = GRID_NON_THUMBNAILS_ITEMS_AMOUNT,
         gridColumnsAmount = COLUMNS_AMOUNT,
         gridItemHeightPx = (thumbnailSize * density.density).value.toInt(),
-        onPreviewedAssetDidHide = galleryViewModel.exoPlayerHolder::pause,
-        onPreviewedAssetDidUnhide = galleryViewModel.exoPlayerHolder::play,
+        onPreviewedAssetDidHide = galleryViewModel.exoPlayerController::pause,
+        onPreviewedAssetDidUnhide = galleryViewModel.exoPlayerController::play,
       )
     }
 
@@ -142,15 +142,16 @@ internal fun GalleryViewContent(assets: List<GalleryAsset>) {
               .fillMaxWidth(),
             onSheetGoingToDisplay = {
               scope.launch {
+                // todo: pause before request
                 /**
                  * Delay is required to Request Pause after Lifecycle-based Play Request
                  * (Permissions Request pauses current Lifecycle)
                  */
                 delay(10)
-                galleryViewModel.exoPlayerHolder.pause()
+                galleryViewModel.exoPlayerController.pause()
               }
             },
-            onSheetDidDismiss = galleryViewModel.exoPlayerHolder::play,
+            onSheetDidDismiss = galleryViewModel.exoPlayerController::play,
             enabled = !galleryViewModel.isMultiselectEnabled,
           )
         }
