@@ -1,6 +1,5 @@
 package com.dgalyanov.gallery.dataClasses
 
-import androidx.compose.runtime.Stable
 import androidx.compose.ui.geometry.Offset
 
 internal data class Transformations(val scale: Float, val offset: Offset) {
@@ -10,8 +9,6 @@ internal data class Transformations(val scale: Float, val offset: Offset) {
       minScale: Float,
       maxScale: Float,
       actualContentSize: AssetSize,
-      topLeftClampVector: Offset,
-      contentBaseOffset: Offset,
       contentContainerSize: AssetSize,
       rawOffset: Offset,
     ): Transformations {
@@ -23,8 +20,7 @@ internal data class Transformations(val scale: Float, val offset: Offset) {
         height = actualContentSize.height * scale,
       )
 
-      val leftEdgeX =
-        topLeftClampVector.x - contentBaseOffset.x + (actualContentSize.width * (scale - 1)) / 2
+      val leftEdgeX = (actualContentSize.width * (scale - 1)) / 2
       val rightEdgeX = leftEdgeX + contentContainerSize.width
 
       var clampedX = rawOffset.x
@@ -45,8 +41,7 @@ internal data class Transformations(val scale: Float, val offset: Offset) {
       // HORIZONTAL ADJUSTMENT -- END
 
       // VERTICAL ADJUSTMENT -- START
-      val topEdgeY =
-        topLeftClampVector.y - contentBaseOffset.y + (actualContentSize.height * (scale - 1)) / 2
+      val topEdgeY = (actualContentSize.height * (scale - 1)) / 2
       val bottomEdgeY = topEdgeY + contentContainerSize.height
 
       val doesContentIntersectTopEdge =

@@ -124,8 +124,6 @@ internal fun GesturesTransformView(
         minScale = minScale,
         maxScale = maxScale,
         actualContentSize = actualContentSize,
-        topLeftClampVector = getTopLeftContentContainerOffset(wrapSize, contentContainerSize),
-        contentBaseOffset = contentBaseOffset,
         contentContainerSize = contentContainerSize,
         rawOffset = offset,
       )
