@@ -24,6 +24,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -39,6 +40,7 @@ internal fun CameraSheetButton(
   modifier: Modifier = Modifier,
   onSheetGoingToDisplay: () -> Unit,
   onSheetDidDismiss: () -> Unit,
+  enabled: Boolean,
 ) {
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   var isSheetDisplayed by remember { mutableStateOf(false) }
@@ -62,7 +64,8 @@ internal fun CameraSheetButton(
   Box(
     modifier = modifier
       .background(Color.Black)
-      .clickable {
+      .alpha(if (enabled) 1f else 0.6f)
+      .clickable(enabled = enabled) {
         if (cameraPermissionsState.allPermissionsGranted) {
           displaySheet()
         } else if (!cameraPermissionsState.shouldShowRationale) {

@@ -113,7 +113,6 @@ internal fun GalleryViewContent(assets: List<GalleryAsset>) {
     scrollToAssetByIndex(previewedAssetIndex)
   }
 
-
   Box(Modifier.nestedScroll(nestedScrollConnection)) {
     PreviewedAssetView(Modifier.offset {
       IntOffset(0, nestedScrollConnection.previewedAssetOffset)
@@ -152,6 +151,7 @@ internal fun GalleryViewContent(assets: List<GalleryAsset>) {
               }
             },
             onSheetDidDismiss = galleryViewModel.exoPlayerHolder::play,
+            enabled = !galleryViewModel.isMultiselectEnabled,
           )
         }
 
