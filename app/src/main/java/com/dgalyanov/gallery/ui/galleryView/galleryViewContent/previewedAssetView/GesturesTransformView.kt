@@ -154,6 +154,7 @@ internal fun GesturesTransformView(
       val animatableOffset = Animatable(offset, Offset.VectorConverter)
 
       clearTransformationsClampAnimations()
+      // todo: animate velocity
       transformationsClampAnimationsJobs += scope.launch {
         if (scale != clampedTransformations.scale) {
           animatableScale.animateTo(
@@ -179,10 +180,37 @@ internal fun GesturesTransformView(
 
       scale *= zoomChange
 
-      offset = Offset(
-        x = (offset.x + scale * panChange.x),
-        y = (offset.y + scale * panChange.y),
+      val scaleSpringModifier = 3
+
+      val scaledContentSize = AssetSize(
+        width = actualContentSize.width * scale,
+        height = actualContentSize.height * scale,
       )
+
+      val baseNextOffsetX = offset.x + panChange.x * scale
+
+      val leftXBound = (actualContentSize.width * (scale - 1)) / 2
+      val rightXBound = leftXBound + contentContainerSize.width
+      val isNextBaseOffsetXOutOfLeftXBound = baseNextOffsetX > leftXBound
+      val isNextBaseOffsetXOutOfRightXBound =
+        baseNextOffsetX + scaledContentSize.width < rightXBound
+      val shouldSpringifyX = isNextBaseOffsetXOutOfLeftXBound || isNextBaseOffsetXOutOfRightXBound
+      val springifiedNextOffsetX =
+        if (shouldSpringifyX) offset.x + panChange.x * scale / scaleSpringModifier
+        else baseNextOffsetX
+
+      val baseNextOffsetY = offset.y + panChange.y * scale
+      val topYBound = (actualContentSize.height * (scale - 1)) / 2
+      val bottomYBound = topYBound + contentContainerSize.height
+      val isNextBaseOffsetYOutOfTopYBound = baseNextOffsetY > topYBound
+      val isNextBaseOffsetYOutOfBottomYBound =
+        baseNextOffsetY + scaledContentSize.height < bottomYBound
+      val shouldSpringifyY = isNextBaseOffsetYOutOfTopYBound || isNextBaseOffsetYOutOfBottomYBound
+      val springifiedNextOffsetY =
+        if (shouldSpringifyY) offset.y + panChange.y * scale / scaleSpringModifier
+        else baseNextOffsetY
+
+      offset = Offset(x = springifiedNextOffsetX, y = springifiedNextOffsetY)
     }
 
     LaunchedEffect(
