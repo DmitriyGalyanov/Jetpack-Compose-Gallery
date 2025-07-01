@@ -32,7 +32,7 @@ internal enum class AssetAspectRatio(
   }
 
   companion object {
-    private val log = GalleryLogFactory("AspectRatio")
+    private val log = GalleryLogFactory("AssetAspectRatio")
 
     private fun getClosestAvailableNumber(
       value: Double,
