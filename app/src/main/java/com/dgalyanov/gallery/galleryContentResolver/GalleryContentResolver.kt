@@ -12,6 +12,7 @@ import com.dgalyanov.gallery.utils.GalleryLogFactory
 import com.dgalyanov.gallery.MainActivity
 import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
+import com.dgalyanov.gallery.dataClasses.GalleryAssetId
 
 internal class GalleryContentResolver {
   companion object {
@@ -122,8 +123,8 @@ internal class GalleryContentResolver {
       cursor: Cursor,
       /** if false -> gets all */
       shouldGetOnlyFirst: Boolean = false
-    ): MutableMap<Long, GalleryAsset> {
-      val assets = mutableMapOf<Long, GalleryAsset>()
+    ): MutableMap<GalleryAssetId, GalleryAsset> {
+      val assets = mutableMapOf<GalleryAssetId, GalleryAsset>()
 
       val idColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
       val durationColumnIndex =
@@ -156,7 +157,7 @@ internal class GalleryContentResolver {
     }
 
     /** do not call on main thread */
-    fun getAlbumAssets(albumId: Long): Map<Long, GalleryAsset> {
+    fun getAlbumAssets(albumId: Long): Map<GalleryAssetId, GalleryAsset> {
       val logTag = "getAlbumAssets(albumId: $albumId)"
       log { logTag }
       val requestStartTimeMs = System.currentTimeMillis()
@@ -206,7 +207,7 @@ internal class GalleryContentResolver {
       log { logTag }
       val requestStartTimeMs = System.currentTimeMillis()
 
-      val albums = mutableMapOf<Long, GalleryAssetsAlbum>()
+      val albums = mutableMapOf<GalleryAssetId, GalleryAssetsAlbum>()
 
       val projection = arrayOf(
         MediaStore.Files.FileColumns.BUCKET_ID,
@@ -276,7 +277,7 @@ internal class GalleryContentResolver {
       return asset
     }
 
-    fun getGalleryAssetById(id: Long): GalleryAsset? {
+    fun getGalleryAssetById(id: GalleryAssetId): GalleryAsset? {
       log { "getGalleryAssetById(id: $id)" }
       return getGalleryAssetByUri(ContentUris.withAppendedId(collectionUri, id))
     }

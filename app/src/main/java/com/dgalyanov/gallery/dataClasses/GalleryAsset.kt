@@ -6,8 +6,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 
+typealias GalleryAssetId = Long
+
 internal data class GalleryAsset(
-  val id: Long,
+  val id: GalleryAssetId,
   val uri: Uri,
   val durationMs: Int,
   private val rawHeight: Double,

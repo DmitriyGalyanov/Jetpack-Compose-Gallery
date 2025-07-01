@@ -18,6 +18,7 @@ import com.dgalyanov.gallery.galleryContentResolver.GalleryContentResolver
 import com.dgalyanov.gallery.dataClasses.AssetAspectRatio
 import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
+import com.dgalyanov.gallery.dataClasses.GalleryAssetId
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -104,18 +105,18 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
     getSelectedAlbumMediaFiles()
   }
 
-//  val allAssets = MutableStateFlow(mapOf<Long, GalleryAsset>())
+  //  val allAssets = MutableStateFlow(mapOf<GalleryAssetId, GalleryAsset>())
   /**
    * todo: think if should keep allAssets and filter by selected album
    */
-  var selectedAlbumAssetsMap by mutableStateOf(mapOf<Long, GalleryAsset>())
+  var selectedAlbumAssetsMap by mutableStateOf(mapOf<GalleryAssetId, GalleryAsset>())
     private set
-//  private fun getAlbumAssetsMap(album: GalleryMediaAlbum): Map<Long, GalleryAsset> {
+//  private fun getAlbumAssetsMap(album: GalleryMediaAlbum): Map<GalleryAssetId, GalleryAsset> {
 //    if (album == GalleryMediaAlbum.RecentsAlbum) {
 //      return allAssets.value
 //    }
 //
-//    val selectedAlbumAssets = mutableMapOf<Long, GalleryAsset>()
+//    val selectedAlbumAssets = mutableMapOf<GalleryAssetId, GalleryAsset>()
 //    allAssets.value.values.forEach {
 //      if (it.bucketId == selectedAlbum.id) selectedAlbumAssets[it.id] = it
 //    }
@@ -176,7 +177,7 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   /**
    * required since [selectedAlbumAssetsMap] changes should not affect Selection (if not specified explicitly)
    */
-  private val selectedAssetsIds = mutableListOf<Long>()
+  private val selectedAssetsIds = mutableListOf<GalleryAssetId>()
 
   private fun fixAssetsSelection() {
     log { "fixAssetsSelection() | selectedAssetsIds: $selectedAssetsIds" }
