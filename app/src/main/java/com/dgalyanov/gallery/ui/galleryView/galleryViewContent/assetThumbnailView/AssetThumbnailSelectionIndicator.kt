@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
-import com.dgalyanov.gallery.utils.conditional
+import com.dgalyanov.gallery.utils.modifiers.conditional
 
 @Composable
 internal fun AssetThumbnailSelectionIndicator(selectionIndex: Int) {

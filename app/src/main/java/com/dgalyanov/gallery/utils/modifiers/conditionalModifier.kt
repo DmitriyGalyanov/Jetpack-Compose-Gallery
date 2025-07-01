@@ -1,13 +1,13 @@
-package com.dgalyanov.gallery.utils
+package com.dgalyanov.gallery.utils.modifiers
 
 import androidx.compose.ui.Modifier
 
-fun Modifier.conditional(
+internal fun Modifier.conditional(
   condition: Boolean,
   ifTrue: Modifier.() -> Modifier,
 ): Modifier = if (condition) this.then(ifTrue(Modifier)) else this
 
-//fun Modifier.conditionalWithElse(
+//internal fun Modifier.conditionalWithElse(
 //  condition: Boolean,
 //  ifTrue: Modifier.() -> Modifier,
 //  ifFalse: Modifier.() -> Modifier,

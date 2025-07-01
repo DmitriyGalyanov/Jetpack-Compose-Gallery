@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.graphicsLayer
 import com.dgalyanov.gallery.dataClasses.AssetSize
 import com.dgalyanov.gallery.dataClasses.Transformations
-import com.dgalyanov.gallery.utils.conditional
+import com.dgalyanov.gallery.utils.modifiers.conditional
 
 private fun getTopLeftContentContainerOffset(
   wrapSize: AssetSize, contentContainerSize: AssetSize
