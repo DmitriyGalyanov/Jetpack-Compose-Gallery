@@ -1,5 +1,7 @@
 package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -20,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -34,6 +37,8 @@ import com.dgalyanov.gallery.dataClasses.Transformations
 import com.dgalyanov.gallery.utils.modifiers.BorderSide
 import com.dgalyanov.gallery.utils.modifiers.conditional
 import com.dgalyanov.gallery.utils.modifiers.drawBorders
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
 
@@ -43,6 +48,8 @@ private fun getTopLeftContentContainerOffset(
   x = ((wrapSize.width - contentContainerSize.width) / 2).toFloat(),
   y = ((wrapSize.height - contentContainerSize.height) / 2).toFloat(),
 )
+
+private const val TRANSFORMATION_CLAMP_ANIMATION_DURATION_MS = 250
 
 // todo: support cropAreaExtraScale
 private fun Modifier.drawContentWithContainerMask(
@@ -125,6 +132,14 @@ internal fun GesturesTransformView(
     var scale by remember { mutableFloatStateOf(initialTransformations?.scale ?: minScale) }
     var offset by remember { mutableStateOf(initialTransformations?.offset ?: Offset.Zero) }
 
+    val scope = rememberCoroutineScope()
+    val transformationsClampAnimationsJobs = remember { mutableListOf<Job>() }
+    fun clearTransformationsClampAnimations() {
+      if (transformationsClampAnimationsJobs.isEmpty()) return
+      transformationsClampAnimationsJobs.forEach { it.cancel() }
+      transformationsClampAnimationsJobs.clear()
+    }
+
     fun clampTransformations(): Transformations {
       val clampedTransformations = Transformations.toClamped(
         rawScale = scale,
@@ -135,13 +150,33 @@ internal fun GesturesTransformView(
         rawOffset = offset,
       )
 
-      scale = clampedTransformations.scale
-      offset = clampedTransformations.offset
+      val animatableScale = Animatable(scale)
+      val animatableOffset = Animatable(offset, Offset.VectorConverter)
+
+      clearTransformationsClampAnimations()
+      transformationsClampAnimationsJobs += scope.launch {
+        if (scale != clampedTransformations.scale) {
+          animatableScale.animateTo(
+            clampedTransformations.scale,
+            animationSpec = tween(TRANSFORMATION_CLAMP_ANIMATION_DURATION_MS)
+          ) { scale = this.value }
+        }
+      }
+      transformationsClampAnimationsJobs += scope.launch {
+        if (offset != clampedTransformations.offset) {
+          animatableOffset.animateTo(
+            clampedTransformations.offset,
+            animationSpec = tween(TRANSFORMATION_CLAMP_ANIMATION_DURATION_MS)
+          ) { offset = this.value }
+        }
+      }
 
       return clampedTransformations
     }
 
     val transformableState = rememberTransformableState { zoomChange, panChange, rotationChange ->
+      clearTransformationsClampAnimations()
+
       scale *= zoomChange
 
       offset = Offset(
