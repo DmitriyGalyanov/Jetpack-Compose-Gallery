@@ -8,14 +8,20 @@ import com.dgalyanov.gallery.utils.GalleryLogFactory
 
 typealias GalleryAssetId = Long
 
-internal data class GalleryAsset(
+internal class GalleryAsset(
   val id: GalleryAssetId,
   val albumId: Long,
-  val uri: Uri,
-  val durationMs: Int,
-  private val rawHeight: Double,
-  private val rawWidth: Double,
-  private val orientationDegrees: Int,
+  uri: Uri,
+  durationMs: Int,
+  rawHeight: Double,
+  rawWidth: Double,
+  orientationDegrees: Int,
+) : Asset(
+  uri = uri,
+  durationMs = durationMs,
+  rawHeight = rawHeight,
+  rawWidth = rawWidth,
+  orientationDegrees = orientationDegrees,
 ) {
   companion object {
     const val NOT_SELECTED_INDEX = -1
@@ -23,14 +29,9 @@ internal data class GalleryAsset(
 
   var transformations: Transformations? = null
 
-  val type = if (durationMs > 0) GalleryAssetType.Video else GalleryAssetType.Image
-
-  val height = if (orientationDegrees % 180 == 0) rawHeight else rawWidth
-  val width = if (orientationDegrees % 180 == 0) rawWidth else rawHeight
+  var cropData: CropData? = null
 
   val closestAspectRatio by lazy { AssetAspectRatio.getClosest(width = width, height = height) }
-  val actualNumericWidthToHeightRatio = width / height
-  val isVertical = actualNumericWidthToHeightRatio < 1
 
   val log = GalleryLogFactory(GalleryAsset.toString(), toString())
 
@@ -47,4 +48,7 @@ internal data class GalleryAsset(
     log { "deselect" }
     setSelectionIndex(NOT_SELECTED_INDEX)
   }
+
+  override fun toString() =
+    "GalleryAsset(id: $id, albumId: $albumId, uri: $uri, durationMs: $durationMs, type: $type,\ntransformations: $transformations, cropData: $cropData,\norientationDegrees: $orientationDegrees, rawHeight: $rawHeight, rotatedHeight: $height, rawWidth: $rawWidth, rotatedWidth: $width,\nclosestAspectRatio: $closestAspectRatio,\nactualNumericWidthToHeightRatio: $actualNumericWidthToHeightRatio, isVertical: $isVertical)"
 }

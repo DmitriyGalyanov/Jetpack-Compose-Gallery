@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.dgalyanov.gallery.dataClasses.Asset
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import kotlin.time.Duration.Companion.milliseconds
@@ -45,7 +46,7 @@ import kotlin.time.DurationUnit
 @Composable
 internal fun EmittedSelectionView(galleryViewModel: GalleryViewModel) {
 
-  var emittedAssets by remember { mutableStateOf(listOf<GalleryAsset>()) }
+  var emittedAssets by remember { mutableStateOf(listOf<Asset>()) }
 
   LaunchedEffect(Unit) {
     galleryViewModel.setOnEmitSelection {
@@ -77,7 +78,7 @@ private const val ITEMS_IN_ROW = 3
 @Composable
 private fun EmittedSelectionSheet(
   sheetState: SheetState,
-  assets: List<GalleryAsset>,
+  assets: List<Asset>,
   onDidDismiss: () -> Unit,
 ) {
   ModalBottomSheet(

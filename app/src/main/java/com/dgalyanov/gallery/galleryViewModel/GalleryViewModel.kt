@@ -1,5 +1,6 @@
 package com.dgalyanov.gallery.galleryViewModel
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.camera.core.ImageCapture
 import androidx.camera.video.OutputResults
@@ -15,14 +16,19 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dgalyanov.gallery.cropper.AssetCropper
+import com.dgalyanov.gallery.dataClasses.Asset
 import com.dgalyanov.gallery.galleryContentResolver.GalleryContentResolver
 import com.dgalyanov.gallery.dataClasses.AssetAspectRatio
+import com.dgalyanov.gallery.dataClasses.AssetSize
 import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.dataClasses.GalleryAssetId
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.collectLatest
@@ -31,7 +37,11 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 // todo: add Content Modes (post, story, reels, aiFilters)
-internal class GalleryViewModel(context: Context) : ViewModel() {
+internal class GalleryViewModel(
+  @SuppressLint("StaticFieldLeak")
+  private val context: Context
+) :
+  ViewModel() {
   companion object {
     val LocalGalleryViewModel =
       staticCompositionLocalOf<GalleryViewModel> { error("CompositionLocal of GalleryViewModel not present") }
@@ -66,6 +76,13 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
   private val previewedAssetContainerAspectRatio = AssetAspectRatio._1x1
   val previewedAssetContainerHeightPx by derivedStateOf {
     (previewedAssetContainerWidthPx * previewedAssetContainerAspectRatio.heightToWidthNumericValue).toInt()
+  }
+
+  val previewedAssetViewWrapSize by derivedStateOf {
+    AssetSize(
+      width = previewedAssetContainerWidthPx.toDouble(),
+      height = previewedAssetContainerHeightPx.toDouble(),
+    )
   }
 
   private var windowHeightPx by mutableIntStateOf(0)
@@ -315,24 +332,26 @@ internal class GalleryViewModel(context: Context) : ViewModel() {
 
   /** Selection Emission -- START */
   // todo: come up with a better name
-  private var onEmitSelection: ((assets: List<GalleryAsset>) -> Unit)? = null
-  fun setOnEmitSelection(value: (assets: List<GalleryAsset>) -> Unit) {
+  private var onEmitSelection: ((assets: List<Asset>) -> Unit)? = null
+  fun setOnEmitSelection(value: (assets: List<Asset>) -> Unit) {
     log { "setOnEmitSelection" }
     onEmitSelection = value
   }
 
-  fun emitCurrentlySelected() {
-    val selectedAssets = mutableListOf<GalleryAsset>()
-
-    selectedAssetsIds.forEach { selectedAssetId ->
-      val asset = selectedAlbumAssetsMap[selectedAssetId]
-      // todo: think if should store all selected assets
-        ?: GalleryContentResolver.getGalleryAssetById(selectedAssetId)
-      if (asset != null) selectedAssets += asset
-    }
-
-    log { "emitCurrentlySelected() | selectedAssets: $selectedAssets" }
-    onEmitSelection?.let { it(selectedAssets) }
+  fun emitCurrentlySelected() = viewModelScope.launch(Dispatchers.IO) {
+    val croppedSelectedAssets = selectedAssetsIds.map { selectedAssetId ->
+      async {
+        val asset = allAssetsMap[selectedAssetId]
+        // it's a fallback, all selected assets should be available here
+          ?: GalleryContentResolver.getGalleryAssetById(selectedAssetId)
+        if (asset != null) return@async AssetCropper.getCroppedAsset(
+          asset = asset,
+          context = context
+        )
+        else return@async null
+      }
+    }.awaitAll().filterNotNull()
+    onEmitSelection?.let { it(croppedSelectedAssets) }
   }
 
   fun emitCapturedImage(capturedImageFile: ImageCapture.OutputFileResults) {

@@ -1,6 +1,7 @@
 package com.dgalyanov.gallery.dataClasses
 
 import com.dgalyanov.gallery.utils.GalleryLogFactory
+import com.dgalyanov.gallery.utils.isAlmostEqual
 import kotlin.math.abs
 
 /**
@@ -62,12 +63,6 @@ internal enum class AssetAspectRatio(
 
       log { "getClosestAvailableNumber(value: $value, availableValues: $availableValues, shouldPreferLargerValue: $shouldPreferLargerValue) | result: $valueWithSmallestDelta" }
       return valueWithSmallestDelta
-    }
-
-    private fun isAlmostEqual(num1: Double, num2: Double, epsilon: Double = 0.001): Boolean {
-      log { "isAlmostEqual(num1: $num1, num2: $num2) |r: ${abs(num1 - num2)}" }
-
-      return abs(num1 - num2) < epsilon
     }
 
     private val allAvailableWidthToHeightNumericValues =

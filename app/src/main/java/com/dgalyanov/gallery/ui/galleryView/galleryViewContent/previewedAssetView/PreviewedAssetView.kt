@@ -12,6 +12,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import com.dgalyanov.gallery.dataClasses.AssetSize
+import com.dgalyanov.gallery.dataClasses.CropData
 import com.dgalyanov.gallery.dataClasses.GalleryAssetType
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.previewedAssetMediaView.PreviewedAssetMediaView
@@ -25,10 +26,7 @@ internal fun PreviewedAssetView(modifier: Modifier) {
 
   val density = LocalDensity.current
 
-  val wrapSize = AssetSize(
-    width = galleryViewModel.previewedAssetContainerWidthPx.toDouble(),
-    height = galleryViewModel.previewedAssetContainerHeightPx.toDouble(),
-  )
+  val wrapSize = galleryViewModel.previewedAssetViewWrapSize
   val wrapSizeDp = wrapSize.toDp(density)
 
   val assetSize = AssetSize(width = asset.width, height = asset.height)
@@ -81,26 +79,14 @@ internal fun PreviewedAssetView(modifier: Modifier) {
     if (floor(basedOnWidthScaledAssetSize.height) >= floor(finalContentContainerSize.height) && floor(
         basedOnWidthScaledAssetSize.width
       ) >= floor(finalContentContainerSize.width)
-    ) return@run minScaleBasedOnWidth;
+    ) return@run minScaleBasedOnWidth
 
     val minScaleBasedOnHeight =
-      if (scaledToFitWrapAssetSize.height < finalContentContainerSize.height) finalContentContainerSize.height / scaledToFitWrapAssetSize.height
-      else 1.0;
-    return@run minScaleBasedOnHeight;
+      if (scaledToFitWrapAssetSize.height < finalContentContainerSize.height) {
+        finalContentContainerSize.height / scaledToFitWrapAssetSize.height
+      } else 1.0
+    return@run minScaleBasedOnHeight
   }
-
-  fun handleCropUpdate() {
-    // TODO:  
-  }
-
-  fun handleAspectRatioSelection() {
-    // TODO:
-  }
-
-  fun handleFixedAspectRatioChange() {
-    // TODO:
-  }
-  // todo: subscribe handleFixedAspectRatioKeyChange
 
   Box(
     modifier
@@ -132,9 +118,15 @@ internal fun PreviewedAssetView(modifier: Modifier) {
           minScale = minScale.toFloat(),
           actualContentSize = scaledToFitWrapAssetSize,
           contentContainerSize = finalContentContainerSize,
-          onTransformationDidClamp = {
-            galleryGenericLog { "PreviewedAssetView | onTransformationDidClamp($it)" }
-            asset.transformations = it
+          onTransformationDidClamp = { transformations ->
+            galleryGenericLog { "PreviewedAssetView | onTransformationDidClamp(transformations: $transformations)" }
+            asset.transformations = transformations
+            asset.cropData = CropData.create(
+              asset = asset,
+              transformations = transformations,
+              wrapSize = wrapSize,
+              cropContainerSize = finalContentContainerSize,
+            )
           },
         ) {
           PreviewedAssetMediaView(asset = asset, nextAsset = nextPreviewedAsset)
@@ -144,8 +136,7 @@ internal fun PreviewedAssetView(modifier: Modifier) {
 
     PreviewedVideoControlsView(
       exoPlayerController = galleryViewModel.exoPlayerController,
-      isVisible = asset.type == GalleryAssetType.Video &&
-        nextPreviewedAsset?.type != GalleryAssetType.Image
+      isVisible = asset.type == GalleryAssetType.Video && nextPreviewedAsset?.type != GalleryAssetType.Image
     )
 
     AspectRatioSelectorView(isVisible = asset.type == GalleryAssetType.Image)

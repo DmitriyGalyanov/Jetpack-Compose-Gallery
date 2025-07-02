@@ -1,6 +1,7 @@
 package com.dgalyanov.gallery.dataClasses
 
 import androidx.compose.ui.geometry.Offset
+import kotlin.math.round
 
 internal data class Transformations(val scale: Float, val offset: Offset) {
   companion object {
@@ -57,7 +58,7 @@ internal data class Transformations(val scale: Float, val offset: Offset) {
         shouldAdjustY && !shouldAdjustYToTopEdge && rawOffset.y - scaledContentSize.height < bottomEdgeY
       if (shouldAdjustYToBottomEdge) clampedY = (bottomEdgeY - scaledContentSize.height).toFloat()
 
-      return Transformations(scale = scale, offset = Offset(x = clampedX, y = clampedY))
+      return Transformations(scale = scale, offset = Offset(x = round(clampedX), y = round(clampedY)))
     }
   }
 }

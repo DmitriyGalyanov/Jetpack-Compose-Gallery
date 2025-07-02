@@ -2,25 +2,33 @@ package com.dgalyanov.gallery.galleryContentResolver
 
 import android.content.ContentResolver
 import android.content.ContentUris
+import android.content.Context
 import android.database.Cursor
+import android.media.ExifInterface
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.annotation.RequiresApi
+import androidx.core.net.toUri
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import com.dgalyanov.gallery.MainActivity
+import com.dgalyanov.gallery.dataClasses.Asset
 import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.dataClasses.GalleryAssetId
+import java.io.File
 
+// todo: mark appropriate functions as suspending
+// todo: make singleton
 internal class GalleryContentResolver {
   companion object {
     private val log = GalleryLogFactory("GalleryContentResolver")
 
     private lateinit var mainActivity: MainActivity
-    private val context get() = mainActivity.applicationContext
-    private val contentResolver get() = context.contentResolver
+    val context: Context get() = mainActivity.applicationContext
+    val contentResolver: ContentResolver get() = context.contentResolver
 
     fun init(mainActivity: MainActivity): Companion {
       if (::mainActivity.isInitialized) return this
@@ -114,6 +122,7 @@ internal class GalleryContentResolver {
     private val assetQueryProjection = arrayOf(
       MediaStore.Files.FileColumns._ID,
       MediaStore.Files.FileColumns.BUCKET_ID,
+//      MediaStore.Files.FileColumns.DISPLAY_NAME,
       MediaStore.Files.FileColumns.DURATION,
       MediaStore.Files.FileColumns.WIDTH,
       MediaStore.Files.FileColumns.HEIGHT,
@@ -283,6 +292,45 @@ internal class GalleryContentResolver {
     fun getGalleryAssetById(id: GalleryAssetId): GalleryAsset? {
       log { "getGalleryAssetById(id: $id)" }
       return getGalleryAssetByUri(ContentUris.withAppendedId(collectionUri, id))
+    }
+
+    fun createAssetFromFile(file: File): Asset {
+      val uri = file.toUri()
+
+      val retriever = MediaMetadataRetriever()
+      val durationMs =
+        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toInt() ?: 0
+      val type = contentResolver.getType(uri)
+      val isImage = type != null && type.contains("image")
+
+      val rawWidth =
+        retriever.extractMetadata(if (isImage) MediaMetadataRetriever.METADATA_KEY_IMAGE_WIDTH else MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+          ?.toDouble() ?: 0.0
+      val rawHeight =
+        retriever.extractMetadata(if (isImage) MediaMetadataRetriever.METADATA_KEY_IMAGE_HEIGHT else MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+          ?.toDouble() ?: 0.0
+
+      val orientationDegrees = contentResolver.openInputStream(uri)?.use {
+        return@use when (ExifInterface(it).getAttributeInt(
+          ExifInterface.TAG_ORIENTATION,
+          ExifInterface.ORIENTATION_UNDEFINED
+        )) {
+          ExifInterface.ORIENTATION_ROTATE_90 -> 90
+          ExifInterface.ORIENTATION_ROTATE_180 -> 180
+          ExifInterface.ORIENTATION_ROTATE_270 -> 270
+          else -> 0
+        }
+      } ?: 0
+
+      retriever.release()
+
+      return Asset(
+        uri = uri,
+        durationMs = durationMs,
+        rawWidth = rawWidth,
+        rawHeight = rawHeight,
+        orientationDegrees = orientationDegrees,
+      )
     }
   }
 }
