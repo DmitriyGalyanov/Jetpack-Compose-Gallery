@@ -16,7 +16,7 @@ internal fun GalleryLogFactory(
   return fun(messageGetter: () -> String) {
     if (!DEBUG || !isEnabled) return
     // long Tags cause Formatting Problems in Studio's Logcat
-    Log.d("${GALLERY_BASE_LOG_TAG}_$tag", "$messagePrefix ${messageGetter()}")
+    Log.d("${GALLERY_BASE_LOG_TAG}.$tag", "$messagePrefix ${messageGetter()}")
   }
 }
 
