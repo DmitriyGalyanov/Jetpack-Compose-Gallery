@@ -1,4 +1,4 @@
-package com.dgalyanov.gallery.utils.modifiers
+package com.dgalyanov.gallery.ui.utils.modifiers
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind

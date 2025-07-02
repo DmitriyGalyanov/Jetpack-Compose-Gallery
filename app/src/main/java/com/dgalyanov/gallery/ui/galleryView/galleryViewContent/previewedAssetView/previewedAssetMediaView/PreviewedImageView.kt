@@ -10,7 +10,7 @@ import androidx.compose.ui.layout.ContentScale
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
-import com.dgalyanov.gallery.utils.useDelayedShouldShowLoader
+import com.dgalyanov.gallery.ui.utils.useDelayedShouldShowLoader
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable

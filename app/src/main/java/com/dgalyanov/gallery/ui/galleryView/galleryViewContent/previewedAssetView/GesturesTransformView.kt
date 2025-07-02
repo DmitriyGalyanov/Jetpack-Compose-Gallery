@@ -34,9 +34,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.dataClasses.AssetSize
 import com.dgalyanov.gallery.dataClasses.Transformations
-import com.dgalyanov.gallery.utils.modifiers.BorderSide
-import com.dgalyanov.gallery.utils.modifiers.conditional
-import com.dgalyanov.gallery.utils.modifiers.drawBorders
+import com.dgalyanov.gallery.ui.utils.modifiers.BorderSide
+import com.dgalyanov.gallery.ui.utils.modifiers.conditional
+import com.dgalyanov.gallery.ui.utils.modifiers.drawBorders
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.math.max

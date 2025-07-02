@@ -1,4 +1,4 @@
-package com.dgalyanov.gallery.utils
+package com.dgalyanov.gallery.ui.utils
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.toComposeRect

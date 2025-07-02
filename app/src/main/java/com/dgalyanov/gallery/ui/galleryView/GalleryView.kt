@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.ui.commonViews.FillingLoaderView
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.GalleryViewContent
-import com.dgalyanov.gallery.utils.useDelayedShouldShowLoader
+import com.dgalyanov.gallery.ui.utils.useDelayedShouldShowLoader
 
 @Composable
 internal fun GalleryView(
