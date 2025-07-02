@@ -2,12 +2,8 @@ package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewConte
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
-import android.content.res.Resources
-import android.media.MediaFormat.MIMETYPE_VIDEO_MPEG4
-import android.os.Build
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.camera.core.CameraSelector
@@ -36,11 +32,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.dgalyanov.gallery.R
 import com.dgalyanov.gallery.utils.GalleryLogFactory
+import com.dgalyanov.gallery.utils.MediaMetadataHelper
 import com.dgalyanov.gallery.utils.postToMainThread
-import java.text.SimpleDateFormat
-import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -60,24 +54,19 @@ import java.util.concurrent.Executors
 internal class CameraControl(
   private val context: Context,
   private val cameraExecutor: ExecutorService,
-  private val resources: Resources,
   val lifecycleOwner: LifecycleOwner,
 ) {
   companion object {
-    private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
-
     @Composable
     internal fun use(onDispose: () -> Unit): CameraControl {
       val context = LocalContext.current
       val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-      val resources = LocalContext.current.resources
       val lifecycleOwner = LocalLifecycleOwner.current
 
       val cameraControl = remember {
         CameraControl(
           context = context,
           cameraExecutor = cameraExecutor,
-          resources = resources,
           lifecycleOwner = lifecycleOwner
         )
       }
@@ -147,15 +136,7 @@ internal class CameraControl(
       return log { "useCameraControl.takePicture called w/o Permissions" }
     }
 
-    val name = SimpleDateFormat(FILENAME_FORMAT, Locale.ENGLISH).format(System.currentTimeMillis())
-    val contentValues = ContentValues().apply {
-      put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-      put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-      if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-        val appName = resources.getString(R.string.app_name)
-        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/$appName")
-      }
-    }
+    val contentValues = MediaMetadataHelper.createContentValuesForPicture()
 
     val outputOptions = ImageCapture.OutputFileOptions.Builder(
       context.contentResolver,
@@ -164,7 +145,8 @@ internal class CameraControl(
     ).build()
 
     val logTag = "takePicture()"
-    val logDetails = "name: $name, contentValues: $contentValues, outputOptions: $outputOptions"
+    val logDetails =
+      "name: ${contentValues.get(MediaStore.MediaColumns.DISPLAY_NAME)}, contentValues: $contentValues, outputOptions: $outputOptions"
     log { "$logTag | $logDetails" }
 
     cameraController.takePicture(
@@ -201,17 +183,7 @@ internal class CameraControl(
     if (!checkIfPermissionsAreGranted()) return log { "$logTag called w/o Permissions" }
     if (isRecording) return log { "$logTag called while recording" }
 
-    val name = "VIDEO_${
-      SimpleDateFormat(FILENAME_FORMAT, Locale.ENGLISH).format(System.currentTimeMillis())
-    }.mp4"
-    val contentValues = ContentValues().apply {
-      put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-      put(MediaStore.MediaColumns.MIME_TYPE, MIMETYPE_VIDEO_MPEG4)
-      if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-        val appName = resources.getString(R.string.app_name)
-        put(MediaStore.Images.Media.RELATIVE_PATH, "Movies/$appName")
-      }
-    }
+    val contentValues = MediaMetadataHelper.createContentValuesForVideo()
 
     val mediaStoreOutputOptions = MediaStoreOutputOptions.Builder(
       context.contentResolver,
@@ -219,7 +191,7 @@ internal class CameraControl(
     ).setContentValues(contentValues).build()
 
     val logDetails =
-      "name: $name, contentValues: $contentValues, outputOptions: $mediaStoreOutputOptions"
+      "name: ${contentValues.get(MediaStore.MediaColumns.DISPLAY_NAME)}, contentValues: $contentValues, outputOptions: $mediaStoreOutputOptions"
     log { "$logTag | $logDetails" }
     fun logWithDetails(message: String) = log { "$logTag | $message | $logDetails" }
 
