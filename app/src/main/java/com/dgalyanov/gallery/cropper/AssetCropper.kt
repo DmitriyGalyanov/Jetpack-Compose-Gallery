@@ -5,7 +5,10 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.ImageDecoder
+import android.graphics.Matrix
 import android.graphics.RectF
+import androidx.exifinterface.media.ExifInterface
+import android.net.Uri
 import android.os.Build
 import android.os.Looper
 import android.provider.MediaStore
@@ -59,7 +62,7 @@ internal object AssetCropper {
     }
 
     val resolvedGalleryAsset = GalleryContentResolver.getGalleryAssetByUri(insertionUri)
-    log { "$logTag | contentValues: $contentValues, insertionUri: $insertionUri, time taken: ${System.currentTimeMillis() - startTime},\n resolvedGalleryAsset: $resolvedGalleryAsset" }
+    log { "$logTag | contentValues: $contentValues, insertionUri: $insertionUri, time (ms) taken: ${System.currentTimeMillis() - startTime},\n resolvedGalleryAsset: $resolvedGalleryAsset" }
     return resolvedGalleryAsset
   }
 
@@ -84,7 +87,7 @@ internal object AssetCropper {
     }
 
     val file = File.createTempFile(TEMP_FILE_PREFIX, mimeType, cacheDir)
-    log { "$logTag finished, time taken: ${System.currentTimeMillis() - startTime}, created file: $file" }
+    log { "$logTag finished, time (ms) taken: ${System.currentTimeMillis() - startTime}, created file: $file" }
     return file
   }
 
@@ -95,7 +98,7 @@ internal object AssetCropper {
     val file = createTempFile(context, mimeType = ".jpg")
     file?.outputStream()?.use { bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it) }
 
-    log { "saveBitmapToFile finished | time taken: ${System.currentTimeMillis() - startTime}, resultingFile: $file" }
+    log { "saveBitmapToFile finished | time (ms) taken: ${System.currentTimeMillis() - startTime}, resultingFile: $file" }
     return file
   }
 
@@ -136,7 +139,7 @@ internal object AssetCropper {
     }
 
     val resolvedGalleryAsset = GalleryContentResolver.getGalleryAssetByUri(insertionUri)
-    log { "$logTag | type: $type, contentValues: $contentValues, insertionUri: $insertionUri, time taken: ${System.currentTimeMillis() - startTime},\n resolvedGalleryAsset: $resolvedGalleryAsset" }
+    log { "$logTag | type: $type, contentValues: $contentValues, insertionUri: $insertionUri, time (ms) taken: ${System.currentTimeMillis() - startTime},\n resolvedGalleryAsset: $resolvedGalleryAsset" }
     return resolvedGalleryAsset
   }
 
@@ -164,12 +167,79 @@ internal object AssetCropper {
     return downscaleRatio
   }
 
+  private class ExifTransformationInfo(val rotationDegree: Int, val scaleX: Int, val scaleY: Int) {
+    companion object {
+      private fun fromUri(
+        context: Context, uri: Uri
+      ): ExifTransformationInfo? =
+        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+          when (ExifInterface(inputStream).getAttributeInt(
+            ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED
+          )) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> ExifTransformationInfo(90, 1, 1)
+
+            ExifInterface.ORIENTATION_ROTATE_270 -> ExifTransformationInfo(270, 1, 1)
+
+            ExifInterface.ORIENTATION_TRANSPOSE, ExifInterface.ORIENTATION_TRANSVERSE -> ExifTransformationInfo(
+              270, -1, -1
+            )
+
+            ExifInterface.ORIENTATION_ROTATE_180 -> ExifTransformationInfo(180, 1, 1)
+
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> ExifTransformationInfo(0, 1, -1)
+
+            else -> ExifTransformationInfo(0, 1, 1)
+          }
+        }
+
+      fun getMaybeTransformedBitmap(context: Context, uri: Uri, bitmap: Bitmap): Bitmap {
+        val startTime = System.currentTimeMillis()
+        val logTag = "getMaybeTransformedBitmap(...)"
+        warnIfOnMainThread("getMaybeTransformedBitmap")
+
+        val exifTransformationInfo = fromUri(context, uri)
+        val rotationMatrix = if (exifTransformationInfo?.hasTransformations == true) {
+          Matrix().apply {
+            postRotate(exifTransformationInfo.rotationDegree.toFloat())
+            postScale(
+              exifTransformationInfo.scaleX.toFloat(),
+              exifTransformationInfo.scaleY.toFloat()
+            )
+          }
+        } else null
+        if (rotationMatrix != null) {
+          log { "$logTag rotation fix is required" }
+          val result = Bitmap.createBitmap(
+            bitmap,
+            0,
+            0,
+            bitmap.width,
+            bitmap.height,
+            rotationMatrix,
+            true,
+          )
+          log { "$logTag fixed rotation, time (ms) taken: ${System.currentTimeMillis() - startTime}" }
+          return result
+        } else {
+          log { "$logTag rotation fix is not required, returning provided bitmap, time (ms) taken to find out: ${System.currentTimeMillis() - startTime}" }
+          return bitmap
+        }
+      }
+    }
+
+    val hasTransformations: Boolean = rotationDegree != 0 || scaleX != 1 || scaleY != 1
+    val isRotationMultipleOf90: Boolean = rotationDegree > 0 && rotationDegree % 90 == 0
+
+    override fun toString() =
+      "{ hasTransformations: $hasTransformations, isRotationMultipleOf90: $isRotationMultipleOf90, rotationDegree: $rotationDegree, scaleX: $scaleX, scaleY: $scaleY }"
+  }
+
   private suspend fun getCroppedImage(
     asset: GalleryAsset, context: Context, shouldSaveToGallery: Boolean = false
   ): Asset? = withContext(Dispatchers.IO) {
     val startTime = System.currentTimeMillis()
     val logTag =
-      "crop(asset: { type: ${asset.type}, cropData: ${asset.cropData}, width: ${asset.width}, height: ${asset.height} })"
+      "crop(asset: { type: ${asset.type}, cropData: ${asset.cropData}, width: ${asset.width}, height: ${asset.height}, orientationDegrees: ${asset.orientationDegrees} })"
     warnIfOnMainThread("cropImage")
 
     if (asset.type != GalleryAssetType.Image) {
@@ -198,7 +268,9 @@ internal object AssetCropper {
       didApplyDownscaleRatio = decodedBitmap != null
       decodedBitmap
     } ?: ImageDecoder.decodeBitmap(ImageDecoder.createSource(resolver, asset.uri))
-    log { "$logTag, decoded bitmap, time taken: ${System.currentTimeMillis() - bitmapDecodeStartTime}" }
+    log { "$logTag, decoded bitmap, time (ms) taken: ${System.currentTimeMillis() - bitmapDecodeStartTime}" }
+
+    bitmap = ExifTransformationInfo.getMaybeTransformedBitmap(context, asset.uri, bitmap)
 
     val bitmapWidth = bitmap.width
     val bitmapHeight = bitmap.height
@@ -210,8 +282,6 @@ internal object AssetCropper {
     val finalHeight = croppedSize.height / ratioToApplyToCropValues
 
     log { "$logTag | bitmapWidth: $bitmapWidth, bitmapHeight: $bitmapHeight, ratioToApplyToCropValues: $ratioToApplyToCropValues, finalOffsetX: $finalOffsetX, finalOffsetY: $finalOffsetY, finalWidth: $finalWidth, finalHeight: $finalHeight |" }
-
-    // todo: maybe rotate bitmap
 
     val requiresVerticalWhitespace = finalHeight + finalOffsetY > bitmapHeight
     val requiresHorizontalWhitespace = finalWidth + finalOffsetX > bitmapWidth
@@ -234,31 +304,22 @@ internal object AssetCropper {
       val whitespaceOffsetTop = (heightWithWhitespaces - bitmapHeight).toFloat() / 2
       val whitespaceOffsetBottom = whitespaceOffsetTop + bitmapHeight
 
-      val mutableBitmapCopy =
-        if (bitmap.config != Bitmap.Config.HARDWARE) bitmap else bitmap.copy(
-          Bitmap.Config.ARGB_8888, true
-        )
+      val mutableBitmapCopy = if (bitmap.config != Bitmap.Config.HARDWARE) bitmap else bitmap.copy(
+        Bitmap.Config.ARGB_8888, true
+      )
       canvasWithWhitespaces.drawBitmap(
-        mutableBitmapCopy,
-        null,
-        RectF(
-          whitespaceOffsetLeft,
-          whitespaceOffsetTop,
-          whitespaceOffsetRight,
-          whitespaceOffsetBottom
-        ),
-        null
+        mutableBitmapCopy, null, RectF(
+          whitespaceOffsetLeft, whitespaceOffsetTop, whitespaceOffsetRight, whitespaceOffsetBottom
+        ), null
       )
 
       bitmap = bitmapWithWhitespaces
       log {
-        "$logTag added whitespaces, time taken: ${System.currentTimeMillis() - whitespacesAdditionStartTime}\n requiresVerticalWhitespace: $requiresVerticalWhitespace, requiresHorizontalWhitespace: $requiresHorizontalWhitespace, heightWithWhitespaces: $heightWithWhitespaces, widthWithWhitespaces: $widthWithWhitespaces, whitespaceOffsetLeft: $whitespaceOffsetLeft, whitespaceOffsetRight: $whitespaceOffsetRight, whitespaceOffsetTop: $whitespaceOffsetTop, whitespaceOffsetBottom: $whitespaceOffsetBottom"
+        "$logTag added whitespaces, time (ms) taken: ${System.currentTimeMillis() - whitespacesAdditionStartTime}\n requiresVerticalWhitespace: $requiresVerticalWhitespace, requiresHorizontalWhitespace: $requiresHorizontalWhitespace, heightWithWhitespaces: $heightWithWhitespaces, widthWithWhitespaces: $widthWithWhitespaces, whitespaceOffsetLeft: $whitespaceOffsetLeft, whitespaceOffsetRight: $whitespaceOffsetRight, whitespaceOffsetTop: $whitespaceOffsetTop, whitespaceOffsetBottom: $whitespaceOffsetBottom"
       }
     } else {
       if (finalOffsetX == 0f && finalOffsetY == 0f && isAlmostEqual(
-          finalWidth,
-          bitmap.width.toDouble(),
-          1.0
+          finalWidth, bitmap.width.toDouble(), 1.0
         ) && isAlmostEqual(finalHeight, bitmap.height.toDouble(), 1.0)
       ) {
         log { "$logTag crop is not required" }
@@ -272,7 +333,7 @@ internal object AssetCropper {
           finalWidth.toInt(),
           finalHeight.toInt(),
         )
-        log { "$logTag cropped, time taken: ${System.currentTimeMillis() - cropStartTime}" }
+        log { "$logTag cropped, time (ms) taken: ${System.currentTimeMillis() - cropStartTime}" }
       }
     }
 
@@ -283,20 +344,16 @@ internal object AssetCropper {
       }
     }
 
-    log { "$logTag | time taken: ${System.currentTimeMillis() - startTime} resultAsset: $resultAsset" }
+    log { "$logTag | time (ms) taken: ${System.currentTimeMillis() - startTime} resultAsset: $resultAsset" }
     return@withContext resultAsset
   }
 
   suspend fun getCroppedAsset(
-    asset: GalleryAsset,
-    context: Context,
-    shouldSaveToGallery: Boolean = false
+    asset: GalleryAsset, context: Context, shouldSaveToGallery: Boolean = false
   ): Asset? = withContext(Dispatchers.IO) {
     when (asset.type) {
       GalleryAssetType.Image -> getCroppedImage(
-        asset = asset,
-        context = context,
-        shouldSaveToGallery = shouldSaveToGallery
+        asset = asset, context = context, shouldSaveToGallery = shouldSaveToGallery
       )
 
       // todo: support Video Cropping
