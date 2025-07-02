@@ -9,7 +9,7 @@ import com.dgalyanov.gallery.MainActivity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class GalleryPermissionsHelper {
+internal class GalleryPermissionsHelper {
   companion object {
     private val log = GalleryLogFactory("GalleryPermissionsHelper")
 

@@ -10,7 +10,7 @@ import androidx.window.layout.WindowMetricsCalculator
 
 // https://github.com/alexstyl/cmp-windowContainerSize/blob/main/cmpcontainersize/src/androidMain/kotlin/ContainerSize.android.kt
 @Composable
-fun currentWindowContainerSize(): DpSize {
+internal fun currentWindowContainerSize(): DpSize {
   // Observe view configuration changes and recalculate the size class on each change. We can't
   // use Activity#onConfigurationChanged as this will sometimes fail to be called on different
   // API levels, hence why this function needs to be @Composable so we can observe the

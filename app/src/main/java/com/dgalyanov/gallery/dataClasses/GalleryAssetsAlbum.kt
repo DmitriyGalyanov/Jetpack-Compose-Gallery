@@ -3,7 +3,7 @@ package com.dgalyanov.gallery.dataClasses
 import android.net.Uri
 import androidx.compose.runtime.mutableStateOf
 
-data class GalleryAssetsAlbum(
+internal data class GalleryAssetsAlbum(
   val id: Long,
   val name: String,
   var previewUri: Uri?,

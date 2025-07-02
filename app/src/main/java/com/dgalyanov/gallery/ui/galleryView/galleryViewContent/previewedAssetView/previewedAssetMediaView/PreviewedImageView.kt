@@ -14,7 +14,7 @@ import com.dgalyanov.gallery.ui.utils.useDelayedShouldShowLoader
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun PreviewedImageView(uri: Uri) {
+internal fun PreviewedImageView(uri: Uri) {
   Box {
     GlideImage(
       uri,
