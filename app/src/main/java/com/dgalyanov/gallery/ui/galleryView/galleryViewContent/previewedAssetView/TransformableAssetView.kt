@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import com.dgalyanov.gallery.dataClasses.AssetAspectRatio
 import com.dgalyanov.gallery.dataClasses.AssetSize
-import com.dgalyanov.gallery.dataClasses.AssetSizeDp
 import com.dgalyanov.gallery.dataClasses.CropData
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.dataClasses.GalleryAssetType
@@ -28,21 +27,17 @@ val log = GalleryLogFactory("TransformableAssetView")
 
 // todo: come up with a better name
 private data class TransformableAssetViewValues(
-  val wrapSizeDp: AssetSizeDp,
   val minScale: Float,
-  val maxScale: Float = 3f,
-  val scaledToFitWrapAssetSize: AssetSize,
-  val finalContentContainerSize: AssetSize,
+  val maxScale: Float,
+  val assetSizeScaledToFitWrap: AssetSize,
+  val cropContainerSize: AssetSize,
 ) {
   companion object {
     fun get(
       asset: GalleryAsset,
-      density: Float,
       wrapSize: AssetSize,
       cropContainerAspectRatio: AssetAspectRatio,
     ): TransformableAssetViewValues {
-      val wrapSizeDp = wrapSize.toDp(density)
-
       val assetSize = AssetSize(width = asset.width, height = asset.height)
 
       // width?
@@ -50,15 +45,15 @@ private data class TransformableAssetViewValues(
 
       val isAssetVertical = asset.isVertical
 
-      val scaledToFitWrapAssetSize = run {
-        val assetAspectRatio = assetSize.aspectRatio
-        val wrapAspectRatio = wrapSize.aspectRatio
+      val assetSizeScaledToFitWrap = run {
+        val wrapAspectRatio = wrapSize.heightToWidthAspectRatio
+        val assetAspectRatio = assetSize.heightToWidthAspectRatio
 
         val scaledToWrapAssetWidth = assetSize.width / assetToWrapWidthRatio
 
-        val containerToChildrenAspectRatio = wrapAspectRatio / assetAspectRatio
+        val wrapToAssetAspectRatio = wrapAspectRatio / assetAspectRatio
 
-        var requiredToFitScale = containerToChildrenAspectRatio
+        var requiredToFitScale = wrapToAssetAspectRatio
         if (assetAspectRatio > 1) {
           if (scaledToWrapAssetWidth < wrapSize.width) {
             requiredToFitScale = wrapSize.width / scaledToWrapAssetWidth
@@ -72,54 +67,49 @@ private data class TransformableAssetViewValues(
       }
 
       val cropContainerHeightToWidthAspectRatio = cropContainerAspectRatio.heightToWidthNumericValue
-      val finalContentContainerSize = AssetSize(
+      val cropContainerSize = AssetSize(
         width = (wrapSize.width * cropContainerHeightToWidthAspectRatio).coerceAtMost(wrapSize.width),
         height = (wrapSize.height / cropContainerHeightToWidthAspectRatio).coerceAtMost(wrapSize.height),
       )
 
-      /**
-       * minimal scale required to make asset fill cropped area (finalContentContainerSize)
-       */
-      val minScale = run {
+      val minScaleToFillCropContainer = run {
         val minScaleBasedOnWidth =
-          if (scaledToFitWrapAssetSize.width < finalContentContainerSize.width) {
-            finalContentContainerSize.width / scaledToFitWrapAssetSize.width
+          if (assetSizeScaledToFitWrap.width < cropContainerSize.width) {
+            cropContainerSize.width / assetSizeScaledToFitWrap.width
           } else 1.0
 
         val basedOnWidthScaledAssetSize = AssetSize(
-          width = scaledToFitWrapAssetSize.width * minScaleBasedOnWidth,
-          height = scaledToFitWrapAssetSize.height * minScaleBasedOnWidth,
+          width = assetSizeScaledToFitWrap.width * minScaleBasedOnWidth,
+          height = assetSizeScaledToFitWrap.height * minScaleBasedOnWidth,
         )
-        if (floor(basedOnWidthScaledAssetSize.height) >= floor(finalContentContainerSize.height) && floor(
+        if (floor(basedOnWidthScaledAssetSize.height) >= floor(cropContainerSize.height) && floor(
             basedOnWidthScaledAssetSize.width
-          ) >= floor(finalContentContainerSize.width)
+          ) >= floor(cropContainerSize.width)
         ) return@run minScaleBasedOnWidth
 
         val minScaleBasedOnHeight =
-          if (scaledToFitWrapAssetSize.height < finalContentContainerSize.height) {
-            finalContentContainerSize.height / scaledToFitWrapAssetSize.height
+          if (assetSizeScaledToFitWrap.height < cropContainerSize.height) {
+            cropContainerSize.height / assetSizeScaledToFitWrap.height
           } else 1.0
         return@run minScaleBasedOnHeight
       }
 
       return TransformableAssetViewValues(
-        wrapSizeDp = wrapSizeDp,
-        minScale = minScale.toFloat(),
-        scaledToFitWrapAssetSize = scaledToFitWrapAssetSize,
-        finalContentContainerSize = finalContentContainerSize
+        minScale = minScaleToFillCropContainer.toFloat(),
+        maxScale = 3f,
+        assetSizeScaledToFitWrap = assetSizeScaledToFitWrap,
+        cropContainerSize = cropContainerSize,
       )
     }
 
     @Composable
-    fun getWithRemember(
+    fun rememberBy(
       asset: GalleryAsset,
-      density: Float,
       wrapSize: AssetSize,
       cropContainerAspectRatio: AssetAspectRatio,
-    ) = remember(asset, wrapSize, density, cropContainerAspectRatio) {
+    ) = remember(asset, wrapSize, cropContainerAspectRatio) {
       get(
         asset = asset,
-        density = density,
         wrapSize = wrapSize,
         cropContainerAspectRatio = cropContainerAspectRatio,
       )
@@ -132,17 +122,15 @@ private data class TransformableAssetViewValues(
  */
 internal fun clampAssetTransformationsAndCropData(
   asset: GalleryAsset,
-  density: Float,
   wrapSize: AssetSize,
   cropContainerAspectRatio: AssetAspectRatio,
 ) {
   // capturing asset's initial state
   val logTag =
-    "clampAssetTransformationsAndCropData(asset[captured]: $asset, density: $density, wrapSize: $wrapSize, usedAspectRatio: $cropContainerAspectRatio)"
+    "clampAssetTransformationsAndCropData(asset[captured]: $asset, wrapSize: $wrapSize, usedAspectRatio: $cropContainerAspectRatio)"
 
   val transformableAssetViewValues = TransformableAssetViewValues.get(
     asset = asset,
-    density = density,
     wrapSize = wrapSize,
     cropContainerAspectRatio = cropContainerAspectRatio,
   )
@@ -153,8 +141,8 @@ internal fun clampAssetTransformationsAndCropData(
     rawOffset = rawTransformations.offset,
     minScale = transformableAssetViewValues.minScale,
     maxScale = transformableAssetViewValues.maxScale,
-    actualContentSize = transformableAssetViewValues.scaledToFitWrapAssetSize,
-    cropContainerSize = transformableAssetViewValues.finalContentContainerSize,
+    displayedContentSize = transformableAssetViewValues.assetSizeScaledToFitWrap,
+    cropContainerSize = transformableAssetViewValues.cropContainerSize,
   )
 
   asset.transformations = clampedTransformations
@@ -162,7 +150,7 @@ internal fun clampAssetTransformationsAndCropData(
     asset = asset,
     transformations = clampedTransformations,
     wrapSize = wrapSize,
-    cropContainerSize = transformableAssetViewValues.finalContentContainerSize,
+    cropContainerSize = transformableAssetViewValues.cropContainerSize,
   )
 
   galleryGenericLog {
@@ -178,10 +166,10 @@ internal fun TransformableAssetView(
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
 
   val wrapSize = galleryViewModel.previewedAssetViewWrapSize
+  val wrapSizeDp = wrapSize.toDp(LocalDensity.current.density)
 
-  val transformableAssetViewValues = TransformableAssetViewValues.getWithRemember(
+  val transformableAssetViewValues = TransformableAssetViewValues.rememberBy(
     asset = asset,
-    density = LocalDensity.current.density,
     wrapSize = wrapSize,
     cropContainerAspectRatio = galleryViewModel.usedAspectRatio,
   )
@@ -189,12 +177,10 @@ internal fun TransformableAssetView(
   Box(
     modifier
       .clipToBounds()
-      .size(
-        width = transformableAssetViewValues.wrapSizeDp.width,
-        height = transformableAssetViewValues.wrapSizeDp.height
-      ),
+      .size(width = wrapSizeDp.width, height = wrapSizeDp.height),
   ) {
     val nextPreviewedAsset = galleryViewModel.nextPreviewedAsset
+
     key(asset) {
       val animatedAlpha = remember { Animatable(0.0f) }
 
@@ -218,8 +204,8 @@ internal fun TransformableAssetView(
           initialTransformations = asset.transformations,
           minScale = transformableAssetViewValues.minScale,
           maxScale = transformableAssetViewValues.maxScale,
-          actualContentSize = transformableAssetViewValues.scaledToFitWrapAssetSize,
-          contentContainerSize = transformableAssetViewValues.finalContentContainerSize,
+          displayedContentSize = transformableAssetViewValues.assetSizeScaledToFitWrap,
+          cropContainerSize = transformableAssetViewValues.cropContainerSize,
           onTransformationsDidClamp = { transformations ->
             galleryGenericLog { "PreviewedAssetView | onTransformationDidClamp(transformations: $transformations)" }
             asset.transformations = transformations
@@ -227,7 +213,7 @@ internal fun TransformableAssetView(
               asset = asset,
               transformations = transformations,
               wrapSize = wrapSize,
-              cropContainerSize = transformableAssetViewValues.finalContentContainerSize,
+              cropContainerSize = transformableAssetViewValues.cropContainerSize,
             )
           }) {
           FullSizeAssetMediaView(asset = asset, nextAsset = nextPreviewedAsset)

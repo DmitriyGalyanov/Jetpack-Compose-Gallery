@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.dgalyanov.gallery.dataClasses.Asset
-import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit

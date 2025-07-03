@@ -42,58 +42,56 @@ import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
 
-private fun getTopLeftContentContainerOffset(
-  wrapSize: AssetSize, contentContainerSize: AssetSize
+private fun getCropContainerTopLeftOffset(
+  wrapSize: AssetSize, cropContainerSize: AssetSize
 ) = Offset(
-  x = ((wrapSize.width - contentContainerSize.width) / 2).toFloat(),
-  y = ((wrapSize.height - contentContainerSize.height) / 2).toFloat(),
+  x = ((wrapSize.width - cropContainerSize.width) / 2).toFloat(),
+  y = ((wrapSize.height - cropContainerSize.height) / 2).toFloat(),
 )
 
 private const val TRANSFORMATION_CLAMP_ANIMATION_DURATION_MS = 250
 
 // todo: support cropAreaExtraScale
-private fun Modifier.drawContentWithContainerMask(
+private fun Modifier.drawContentWithCropContainerMask(
   wrapSize: AssetSize,
-  contentContainerSize: AssetSize,
-): Modifier {
-  return this.drawWithContent {
-    drawContent()
+  cropContainerSize: AssetSize,
+): Modifier = this.drawWithContent {
+  drawContent()
 
-    val maskColor = Color(0, 0, 0, 150)
+  val maskColor = Color(0, 0, 0, 150)
 
-    val topLeftRectOffset = getTopLeftContentContainerOffset(wrapSize, contentContainerSize)
+  val topLeftRectOffset = getCropContainerTopLeftOffset(wrapSize, cropContainerSize)
 
-    val topLeftRectWidth =
-      (if (topLeftRectOffset.y > 0) wrapSize.width else topLeftRectOffset.x).toFloat()
-    val topLeftRectHeight =
-      (if (topLeftRectOffset.x > 0) wrapSize.height else topLeftRectOffset.y).toFloat()
+  val topLeftRectWidth =
+    (if (topLeftRectOffset.y > 0) wrapSize.width else topLeftRectOffset.x).toFloat()
+  val topLeftRectHeight =
+    (if (topLeftRectOffset.x > 0) wrapSize.height else topLeftRectOffset.y).toFloat()
 
-    drawRect(
-      color = maskColor,
-      topLeft = Offset(0F, 0F),
-      size = Size(width = topLeftRectWidth, height = topLeftRectHeight),
-    )
+  drawRect(
+    color = maskColor,
+    topLeft = Offset(0F, 0F),
+    size = Size(width = topLeftRectWidth, height = topLeftRectHeight),
+  )
 
-    val bottomRightRectWidth =
-      (if (topLeftRectOffset.y > 0) wrapSize.width else topLeftRectOffset.x).toFloat()
-    val bottomRightRectHeight =
-      (if (topLeftRectOffset.x > 0) wrapSize.height else topLeftRectOffset.y).toFloat()
+  val bottomRightRectWidth =
+    (if (topLeftRectOffset.y > 0) wrapSize.width else topLeftRectOffset.x).toFloat()
+  val bottomRightRectHeight =
+    (if (topLeftRectOffset.x > 0) wrapSize.height else topLeftRectOffset.y).toFloat()
 
-    drawRect(
-      color = maskColor,
-      topLeft = Offset(
-        x = (if (topLeftRectOffset.x > 0) topLeftRectOffset.x + contentContainerSize.width else 0).toFloat(),
-        y = (if (topLeftRectOffset.y > 0) topLeftRectOffset.y + contentContainerSize.height else 0).toFloat(),
-      ),
-      size = Size(width = bottomRightRectWidth, height = bottomRightRectHeight),
-    )
-  }
+  drawRect(
+    color = maskColor,
+    topLeft = Offset(
+      x = (if (topLeftRectOffset.x > 0) topLeftRectOffset.x + cropContainerSize.width else 0).toFloat(),
+      y = (if (topLeftRectOffset.y > 0) topLeftRectOffset.y + cropContainerSize.height else 0).toFloat(),
+    ),
+    size = Size(width = bottomRightRectWidth, height = bottomRightRectHeight),
+  )
 }
 
 @Composable
 internal fun GesturesTransformView(
   /**
-   * it [transformable] applied
+   * if should apply [transformable]
    */
   isEnabled: Boolean,
 
@@ -110,11 +108,11 @@ internal fun GesturesTransformView(
   /**
    * visible content should occupy this size
    */
-  actualContentSize: AssetSize,
+  displayedContentSize: AssetSize,
   /**
    * visible content will be anchored to window of this size
    */
-  contentContainerSize: AssetSize,
+  cropContainerSize: AssetSize,
 
   /**
    * called when applied [Transformations] are [clamped][Transformations.toClamped]
@@ -129,8 +127,16 @@ internal fun GesturesTransformView(
       height = constraints.maxHeight.toDouble(),
     )
 
-    var scale by remember { mutableFloatStateOf(initialTransformations?.scale ?: minScale) }
-    var offset by remember { mutableStateOf(initialTransformations?.offset ?: Offset.Zero) }
+    var displayedContentScale by remember {
+      mutableFloatStateOf(
+        initialTransformations?.scale ?: minScale
+      )
+    }
+    var displayedContentOffset by remember {
+      mutableStateOf(
+        initialTransformations?.offset ?: Offset.Zero
+      )
+    }
 
     val scope = rememberCoroutineScope()
     val transformationsClampAnimationsJobs = remember { mutableListOf<Job>() }
@@ -142,75 +148,72 @@ internal fun GesturesTransformView(
 
     fun clampTransformations(): Transformations {
       val clampedTransformations = Transformations.toClamped(
-        rawScale = scale,
+        rawScale = displayedContentScale,
         minScale = minScale,
         maxScale = maxScale,
-        actualContentSize = actualContentSize,
-        contentContainerSize = contentContainerSize,
-        rawOffset = offset,
+        displayedContentSize = displayedContentSize,
+        cropContainerSize = cropContainerSize,
+        rawOffset = displayedContentOffset,
       )
 
-      val animatableScale = Animatable(scale)
-      val animatableOffset = Animatable(offset, Offset.VectorConverter)
+      val animatableScale = Animatable(displayedContentScale)
+      val animatableOffset = Animatable(displayedContentOffset, Offset.VectorConverter)
 
       clearTransformationsClampAnimations()
       // todo: animate velocity
       transformationsClampAnimationsJobs += scope.launch {
-        if (scale != clampedTransformations.scale) {
+        if (displayedContentScale != clampedTransformations.scale) {
           animatableScale.animateTo(
             clampedTransformations.scale,
             animationSpec = tween(TRANSFORMATION_CLAMP_ANIMATION_DURATION_MS)
-          ) { scale = this.value }
+          ) { displayedContentScale = this.value }
         }
       }
       transformationsClampAnimationsJobs += scope.launch {
-        if (offset != clampedTransformations.offset) {
+        if (displayedContentOffset != clampedTransformations.offset) {
           animatableOffset.animateTo(
             clampedTransformations.offset,
             animationSpec = tween(TRANSFORMATION_CLAMP_ANIMATION_DURATION_MS)
-          ) { offset = this.value }
+          ) { displayedContentOffset = this.value }
         }
       }
 
       return clampedTransformations
     }
 
-    val transformableState = rememberTransformableState { zoomChange, panChange, rotationChange ->
+    val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
       clearTransformationsClampAnimations()
 
-      scale *= zoomChange
+      displayedContentScale *= zoomChange
 
       val scaleSpringModifier = 3
 
-      val scaledContentSize = AssetSize(
-        width = actualContentSize.width * scale,
-        height = actualContentSize.height * scale,
-      )
+      val scaledDisplayedContentSize = displayedContentSize * displayedContentScale
 
-      val baseNextOffsetX = offset.x + panChange.x * scale
+      val baseNextOffsetX = displayedContentOffset.x + panChange.x * displayedContentScale
 
-      val leftXBound = (actualContentSize.width * (scale - 1)) / 2
-      val rightXBound = leftXBound + contentContainerSize.width
+      val leftXBound = (displayedContentSize.width * (displayedContentScale - 1)) / 2
+      val rightXBound = leftXBound + cropContainerSize.width
       val isNextBaseOffsetXOutOfLeftXBound = baseNextOffsetX > leftXBound
       val isNextBaseOffsetXOutOfRightXBound =
-        baseNextOffsetX + scaledContentSize.width < rightXBound
+        baseNextOffsetX + scaledDisplayedContentSize.width < rightXBound
       val shouldSpringifyX = isNextBaseOffsetXOutOfLeftXBound || isNextBaseOffsetXOutOfRightXBound
       val springifiedNextOffsetX =
-        if (shouldSpringifyX) offset.x + panChange.x * scale / scaleSpringModifier
+        if (shouldSpringifyX) displayedContentOffset.x + panChange.x * displayedContentScale / scaleSpringModifier
         else baseNextOffsetX
 
-      val baseNextOffsetY = offset.y + panChange.y * scale
-      val topYBound = (actualContentSize.height * (scale - 1)) / 2
-      val bottomYBound = topYBound + contentContainerSize.height
+      val baseNextOffsetY = displayedContentOffset.y + panChange.y * displayedContentScale
+      val topYBound = (displayedContentSize.height * (displayedContentScale - 1)) / 2
+      val bottomYBound = topYBound + cropContainerSize.height
       val isNextBaseOffsetYOutOfTopYBound = baseNextOffsetY > topYBound
       val isNextBaseOffsetYOutOfBottomYBound =
-        baseNextOffsetY + scaledContentSize.height < bottomYBound
+        baseNextOffsetY + scaledDisplayedContentSize.height < bottomYBound
       val shouldSpringifyY = isNextBaseOffsetYOutOfTopYBound || isNextBaseOffsetYOutOfBottomYBound
       val springifiedNextOffsetY =
-        if (shouldSpringifyY) offset.y + panChange.y * scale / scaleSpringModifier
+        if (shouldSpringifyY) displayedContentOffset.y + panChange.y * displayedContentScale / scaleSpringModifier
         else baseNextOffsetY
 
-      offset = Offset(x = springifiedNextOffsetX, y = springifiedNextOffsetY)
+      displayedContentOffset = Offset(x = springifiedNextOffsetX, y = springifiedNextOffsetY)
     }
 
     LaunchedEffect(
@@ -226,31 +229,31 @@ internal fun GesturesTransformView(
       modifier = Modifier
         .background(Color.DarkGray)
         .fillMaxSize()
-        .drawContentWithContainerMask(
+        .drawContentWithCropContainerMask(
           wrapSize = wrapSize,
-          contentContainerSize = contentContainerSize,
+          cropContainerSize = cropContainerSize,
         )
     ) {
-      val contentBaseOffset = getTopLeftContentContainerOffset(wrapSize, contentContainerSize)
+      val cropContainerTopLeftOffset = getCropContainerTopLeftOffset(wrapSize, cropContainerSize)
 
       Box(
         content = content,
         modifier = Modifier
           .graphicsLayer {
-            scaleX = scale
-            scaleY = scale
-            translationX = contentBaseOffset.x + offset.x
-            translationY = contentBaseOffset.y + offset.y
+            scaleX = displayedContentScale
+            scaleY = displayedContentScale
+            translationX = cropContainerTopLeftOffset.x + displayedContentOffset.x
+            translationY = cropContainerTopLeftOffset.y + displayedContentOffset.y
           }
           .conditional(isEnabled) { transformable(state = transformableState) },
       )
 
       Grid(
-        actualContentSize = actualContentSize,
-        contentBaseOffset = contentBaseOffset,
-        contentContainerSize = contentContainerSize,
-        scale = scale,
-        offset = offset,
+        displayedContentSize = displayedContentSize,
+        cropContainerTopLeftOffset = cropContainerTopLeftOffset,
+        cropContainerSize = cropContainerSize,
+        displayedContentScale = displayedContentScale,
+        displayedContentOffset = displayedContentOffset,
         isVisible = transformableState.isTransformInProgress,
       )
     }
@@ -265,39 +268,34 @@ private val GRID_COLOR = Color(0, 0, 0)
 
 @Composable
 private fun Grid(
-  actualContentSize: AssetSize,
-  contentBaseOffset: Offset,
-  contentContainerSize: AssetSize,
-  scale: Float,
-  offset: Offset,
+  displayedContentSize: AssetSize,
+  cropContainerTopLeftOffset: Offset,
+  cropContainerSize: AssetSize,
+  displayedContentScale: Float,
+  displayedContentOffset: Offset,
   isVisible: Boolean,
 ) {
   val density = LocalDensity.current
 
   val animatedAlpha = animateFloatAsState(
-    if (isVisible) 1f else 0f,
-    animationSpec = tween(
-      durationMillis = 200,
-      delayMillis = if (isVisible) 0 else 250
+    if (isVisible) 1f else 0f, animationSpec = tween(
+      durationMillis = 200, delayMillis = if (isVisible) 0 else 250
     )
   )
 
   // todo: optimize
   val modifier = run {
-    val scaledContentSize = AssetSize(
-      width = actualContentSize.width * scale,
-      height = actualContentSize.height * scale,
-    )
+    val scaledDisplayedContentSize = displayedContentSize * displayedContentScale
 
     /** Horizontal -- START */
-    val contentContainerLeftBorderX = (actualContentSize.width * (scale - 1)) / 2
-    val wrapLeftBorderX = contentContainerLeftBorderX - contentBaseOffset.x
+    val contentContainerLeftBorderX = (displayedContentSize.width * (displayedContentScale - 1)) / 2
+    val wrapLeftBorderX = contentContainerLeftBorderX - cropContainerTopLeftOffset.x
 
-    val contentContainerRightBorderX = contentContainerLeftBorderX + contentContainerSize.width
-    val wrapRightBorderX = contentContainerRightBorderX + contentBaseOffset.x
+    val contentContainerRightBorderX = contentContainerLeftBorderX + cropContainerSize.width
+    val wrapRightBorderX = contentContainerRightBorderX + cropContainerTopLeftOffset.x
 
-    val offsetContentLeftBorderX = offset.x
-    val offsetContentRightBorderX = offset.x + scaledContentSize.width
+    val offsetContentLeftBorderX = displayedContentOffset.x
+    val offsetContentRightBorderX = displayedContentOffset.x + scaledDisplayedContentSize.width
 
     val visibleContentLeftBorderX = max(wrapLeftBorderX, offsetContentLeftBorderX.toDouble())
     val visibleContentRightBorderX = min(wrapRightBorderX, offsetContentRightBorderX)
@@ -307,14 +305,14 @@ private fun Grid(
     /** Horizontal -- END */
 
     /** Vertical -- START */
-    val contentContainerTopBorderY = (actualContentSize.height * (scale - 1)) / 2
-    val wrapTopBorderY = contentContainerTopBorderY - contentBaseOffset.y
+    val contentContainerTopBorderY = (displayedContentSize.height * (displayedContentScale - 1)) / 2
+    val wrapTopBorderY = contentContainerTopBorderY - cropContainerTopLeftOffset.y
 
-    val contentContainerBottomBorderY = contentContainerTopBorderY + contentContainerSize.height
-    val wrapBottomBorderY = contentContainerBottomBorderY + contentBaseOffset.y
+    val contentContainerBottomBorderY = contentContainerTopBorderY + cropContainerSize.height
+    val wrapBottomBorderY = contentContainerBottomBorderY + cropContainerTopLeftOffset.y
 
-    val offsetContentTopBorderY = offset.y
-    val offsetContentBottomBorderY = offset.y + scaledContentSize.height
+    val offsetContentTopBorderY = displayedContentOffset.y
+    val offsetContentBottomBorderY = displayedContentOffset.y + scaledDisplayedContentSize.height
 
     val visibleContentTopBorderY = max(wrapTopBorderY, offsetContentTopBorderY.toDouble())
     val visibleContentBottomBorderY = min(wrapBottomBorderY, offsetContentBottomBorderY)
@@ -327,10 +325,10 @@ private fun Grid(
       .width(gridWidthDp)
       .height(gridHeightDp)
       .graphicsLayer {
-        translationX = contentBaseOffset.x - contentContainerLeftBorderX.toFloat() +
-          visibleContentLeftBorderX.toFloat()
-        translationY = contentBaseOffset.y - contentContainerTopBorderY.toFloat() +
-          visibleContentTopBorderY.toFloat()
+        translationX =
+          cropContainerTopLeftOffset.x - contentContainerLeftBorderX.toFloat() + visibleContentLeftBorderX.toFloat()
+        translationY =
+          cropContainerTopLeftOffset.y - contentContainerTopBorderY.toFloat() + visibleContentTopBorderY.toFloat()
 
         alpha = animatedAlpha.value
       }
@@ -342,10 +340,10 @@ private fun Grid(
   ) {
     repeat(GRID_CELLS_AMOUNT) { index ->
       val borderSidesToPaint = remember {
-        val isOnLeftEdge = index % GRID_COLUMNS_AMOUNT == 0;
-        val isOnRightEdge = (index + 1) % GRID_COLUMNS_AMOUNT == 0;
-        val isOnTopEdge = index < GRID_COLUMNS_AMOUNT;
-        val isOnBottomEdge = index >= GRID_CELLS_AMOUNT - GRID_COLUMNS_AMOUNT;
+        val isOnLeftEdge = index % GRID_COLUMNS_AMOUNT == 0
+        val isOnRightEdge = (index + 1) % GRID_COLUMNS_AMOUNT == 0
+        val isOnTopEdge = index < GRID_COLUMNS_AMOUNT
+        val isOnBottomEdge = index >= GRID_CELLS_AMOUNT - GRID_COLUMNS_AMOUNT
 
         val result = BorderSide.entries.toMutableList()
         if (isOnLeftEdge) result -= BorderSide.Left

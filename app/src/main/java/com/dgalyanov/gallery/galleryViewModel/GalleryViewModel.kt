@@ -349,16 +349,14 @@ internal class GalleryViewModel(
         if (asset != null) {
           clampAssetTransformationsAndCropData(
             asset = asset,
-            density = density,
             wrapSize = previewedAssetViewWrapSize,
             cropContainerAspectRatio = usedAspectRatio,
           )
           return@async AssetCropper.getCroppedAsset(
             asset = asset,
-            context = context
+            context = context,
           )
-        }
-        else return@async null
+        } else return@async null
       }
     }.awaitAll().filterNotNull()
     onEmitSelection?.let { it(croppedSelectedAssets) }

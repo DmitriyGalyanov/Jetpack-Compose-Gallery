@@ -11,20 +11,20 @@ internal data class Transformations(val scale: Float, val offset: Offset) {
       rawScale: Float,
       minScale: Float,
       maxScale: Float,
-      actualContentSize: AssetSize,
-      contentContainerSize: AssetSize,
+      displayedContentSize: AssetSize,
+      cropContainerSize: AssetSize,
       rawOffset: Offset,
     ): Transformations {
       val coercedMaxScale = maxScale.coerceAtLeast(minScale)
       val scale = rawScale.coerceIn(minScale, coercedMaxScale)
 
       val scaledContentSize = AssetSize(
-        width = actualContentSize.width * scale,
-        height = actualContentSize.height * scale,
+        width = displayedContentSize.width * scale,
+        height = displayedContentSize.height * scale,
       )
 
-      val leftEdgeX = (actualContentSize.width * (scale - 1)) / 2
-      val rightEdgeX = leftEdgeX + contentContainerSize.width
+      val leftEdgeX = (displayedContentSize.width * (scale - 1)) / 2
+      val rightEdgeX = leftEdgeX + cropContainerSize.width
 
       var clampedX = rawOffset.x
       var clampedY = rawOffset.y
@@ -44,8 +44,8 @@ internal data class Transformations(val scale: Float, val offset: Offset) {
       // HORIZONTAL ADJUSTMENT -- END
 
       // VERTICAL ADJUSTMENT -- START
-      val topEdgeY = (actualContentSize.height * (scale - 1)) / 2
-      val bottomEdgeY = topEdgeY + contentContainerSize.height
+      val topEdgeY = (displayedContentSize.height * (scale - 1)) / 2
+      val bottomEdgeY = topEdgeY + cropContainerSize.height
 
       val doesContentIntersectTopEdge =
         rawOffset.y <= topEdgeY && scaledContentSize.height + rawOffset.y >= topEdgeY
