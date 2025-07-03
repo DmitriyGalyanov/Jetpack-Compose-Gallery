@@ -8,13 +8,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyLayoutScrollScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,13 +27,17 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.dgalyanov.gallery.dataClasses.AssetAspectRatio
+import com.dgalyanov.gallery.dataClasses.CreativityType
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
+import com.dgalyanov.gallery.ui.galleryView.CreativityTypeSelector
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.assetThumbnailView.AssetThumbnailView
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem.CameraSheetButton
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GALLERY_VIEW_TOOLBAR_HEIGHT
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GalleryViewToolbar
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.TransformableAssetView
+import com.dgalyanov.gallery.ui.utils.modifiers.conditional
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -44,52 +48,60 @@ private const val CAMERA_BUTTON_ITEM_KEY = "Camera"
 private const val GRID_NON_THUMBNAILS_ITEMS_AMOUNT = 2
 
 @Composable
-internal fun GalleryViewContent(assets: List<GalleryAsset>) {
+internal fun GalleryViewContent(
+  assets: List<GalleryAsset>, thumbnailAspectRatio: AssetAspectRatio, isPreviewEnabled: Boolean
+) {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
-
-  val thumbnailSize = galleryViewModel.windowWidthDp.dp / COLUMNS_AMOUNT
 
   val density = LocalDensity.current
 
-  val previewedAssetContainerHeightPx = galleryViewModel.previewedAssetContainerHeightPx
+  val thumbnailWidthPx = galleryViewModel.windowWidthPx / COLUMNS_AMOUNT
+  val thumbnailHeightPx =
+    (thumbnailWidthPx * thumbnailAspectRatio.heightToWidthNumericValue).toFloat()
+
+  val thumbnailWidthDp = with(density) { thumbnailWidthPx.toDp() }
+  val thumbnailHeightDp = with(density) { thumbnailHeightPx.toDp() }
+
+  val previewedAssetContainerHeightPx = galleryViewModel.previewedAssetViewWrapSize.height.toInt()
 
   val scope = rememberCoroutineScope()
   val gridState = rememberLazyGridState()
 
   val gridFlingDecayAnimationSpec = rememberSplineBasedDecay<Float>()
 
-  val nestedScrollConnection =
-    remember(previewedAssetContainerHeightPx) {
-      GalleryViewContentNestedScrollConnection(
-        previewedAssetContainerHeightPx = previewedAssetContainerHeightPx,
-        scope = scope,
-        gridState = gridState,
-        /** LazyVerticalGrid uses [ScrollableDefaults.flingBehavior], which uses [rememberSplineBasedDecay] */
-        gridFlingDecayAnimationSpec = gridFlingDecayAnimationSpec,
-        gridNonThumbnailsItemsAmount = GRID_NON_THUMBNAILS_ITEMS_AMOUNT,
-        gridColumnsAmount = COLUMNS_AMOUNT,
-        gridItemHeightPx = (thumbnailSize * density.density).value.toInt(),
-        onPreviewedAssetDidHide = galleryViewModel.exoPlayerController::pause,
-        onPreviewedAssetDidUnhide = galleryViewModel.exoPlayerController::play,
-      )
-    }
+  val nestedScrollConnection = remember(previewedAssetContainerHeightPx) {
+    GalleryViewContentNestedScrollConnection(
+      previewedAssetContainerHeightPx = previewedAssetContainerHeightPx,
+      scope = scope,
+      gridState = gridState,
+      /** LazyVerticalGrid uses [ScrollableDefaults.flingBehavior], which uses [rememberSplineBasedDecay] */
+      gridFlingDecayAnimationSpec = gridFlingDecayAnimationSpec,
+      gridNonThumbnailsItemsAmount = GRID_NON_THUMBNAILS_ITEMS_AMOUNT,
+      gridColumnsAmount = COLUMNS_AMOUNT,
+      gridItemHeightPx = thumbnailWidthPx,
+      onPreviewedAssetDidHide = galleryViewModel.exoPlayerController::pause,
+      onPreviewedAssetDidUnhide = galleryViewModel.exoPlayerController::play,
+    )
+  }
 
-  fun scrollToAssetByIndex(index: Int) {
+  fun scrollToAssetByIndex(
+    index: Int,
+    /** ignored if [isPreviewEnabled] is `false` */
+    shouldShowPreview: Boolean = true,
+  ) {
     // minus 1 is to allow user to scroll backwards selecting first asset in a row
     val listItemIndex = index + GRID_NON_THUMBNAILS_ITEMS_AMOUNT - 1
     val stickyHeaderOffset = (GALLERY_VIEW_TOOLBAR_HEIGHT.value * density.density).toInt()
 
 //            https://issuetracker.google.com/issues/240449680
 //            https://issuetracker.google.com/issues/203855802
-    nestedScrollConnection.showPreviewedAsset()
+    if (isPreviewEnabled && shouldShowPreview) nestedScrollConnection.showPreviewedAsset()
 
     scope.launch {
       gridState.scroll {
-        val distanceToSelectedItem =
-          LazyLayoutScrollScope(gridState, this).calculateDistanceTo(
-            listItemIndex,
-            -stickyHeaderOffset
-          )
+        val distanceToSelectedItem = LazyLayoutScrollScope(gridState, this).calculateDistanceTo(
+          listItemIndex, -stickyHeaderOffset
+        )
 
         val animatable = Animatable(0F)
         var previouslyScrolledDistance = 0F
@@ -113,18 +125,22 @@ internal fun GalleryViewContent(assets: List<GalleryAsset>) {
     scrollToAssetByIndex(previewedAssetIndex)
   }
 
-  Box(Modifier.nestedScroll(nestedScrollConnection)) {
-    galleryViewModel.previewedAsset?.let {
-      TransformableAssetView(asset = it, Modifier.offset {
-        IntOffset(0, nestedScrollConnection.previewedAssetOffset)
-      })
+  Box(Modifier.conditional(isPreviewEnabled) { nestedScroll(nestedScrollConnection) }) {
+    if (isPreviewEnabled) {
+      galleryViewModel.previewedAsset?.let {
+        TransformableAssetView(asset = it, Modifier.offset {
+          IntOffset(0, nestedScrollConnection.previewedAssetOffset)
+        })
+      }
     }
 
     Column {
-      InnerSpacer(
-        previewedAssetContainerHeightPx = previewedAssetContainerHeightPx,
-        nestedScrollConnection = nestedScrollConnection
-      )
+      if (isPreviewEnabled) {
+        InnerSpacer(
+          previewedAssetContainerHeightPx = previewedAssetContainerHeightPx,
+          nestedScrollConnection = nestedScrollConnection
+        )
+      }
 
       LazyVerticalGrid(
         state = gridState,
@@ -139,9 +155,7 @@ internal fun GalleryViewContent(assets: List<GalleryAsset>) {
 
         item(key = CAMERA_BUTTON_ITEM_KEY) {
           CameraSheetButton(
-            modifier = Modifier
-              .height(thumbnailSize)
-              .fillMaxWidth(),
+            modifier = Modifier.size(width = thumbnailWidthDp, height = thumbnailHeightDp),
             onSheetGoingToDisplay = {
               scope.launch {
                 // todo: pause before request
@@ -158,14 +172,35 @@ internal fun GalleryViewContent(assets: List<GalleryAsset>) {
           )
         }
 
-        items(assets, key = { it.id }) { asset ->
+        itemsIndexed(assets, key = { _, item -> item.id }) { index, asset ->
           AssetThumbnailView(
-            asset = asset,
-            size = thumbnailSize,
+            asset = asset, widthDp = thumbnailWidthDp, heightDp = thumbnailHeightDp
           ) {
+            if (asset == galleryViewModel.previewedAsset) {
+              scrollToAssetByIndex(index)
+            }
             galleryViewModel.onThumbnailClick(asset)
           }
         }
+      }
+    }
+
+    CreativityTypeSelector { selected: CreativityType, isByClick ->
+      val assetToScrollToIndex = if (isByClick) {
+        if (selected == galleryViewModel.selectedCreativityType) 0
+        else {
+          assets.indexOf(
+            galleryViewModel.nextPreviewedAsset ?: galleryViewModel.previewedAsset
+          )
+        }
+      } else -1
+
+      galleryViewModel.selectedCreativityType = selected
+
+      scope.launch {
+        // todo: depend on device Performance Class
+        delay(100)
+        if (assetToScrollToIndex != -1) scrollToAssetByIndex(assetToScrollToIndex, false)
       }
     }
   }

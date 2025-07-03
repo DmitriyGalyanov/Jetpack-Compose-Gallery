@@ -27,12 +27,13 @@ import kotlin.time.DurationUnit
 @Composable
 internal fun AssetThumbnailView(
   asset: GalleryAsset,
-  size: Dp,
+  widthDp: Dp,
+  heightDp: Dp,
   onClick: () -> Unit,
 ) {
   Box(
     modifier = Modifier
-      .size(size)
+      .size(width = widthDp, height = heightDp)
       .clickable(onClick = onClick)
   ) {
     GlideImage(
@@ -40,7 +41,7 @@ internal fun AssetThumbnailView(
       contentDescription = null,
       contentScale = ContentScale.Crop,
       modifier = Modifier
-        .size(size)
+        .size(width = widthDp, height = heightDp)
         .background(Color.Gray),
     )
 

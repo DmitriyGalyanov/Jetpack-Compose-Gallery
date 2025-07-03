@@ -26,7 +26,11 @@ internal fun GalleryView(
     Column(modifier = Modifier.fillMaxSize()) {
       GalleryViewHeader()
 
-      if (assets.isNotEmpty()) GalleryViewContent(assets)
+      if (assets.isNotEmpty()) GalleryViewContent(
+        assets = assets,
+        thumbnailAspectRatio = galleryViewModel.thumbnailAspectRatio,
+        isPreviewEnabled = galleryViewModel.isPreviewEnabled,
+      )
       else EmptyGalleryView()
     }
   }

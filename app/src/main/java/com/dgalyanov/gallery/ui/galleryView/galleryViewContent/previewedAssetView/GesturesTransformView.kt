@@ -339,7 +339,7 @@ private fun Grid(
     modifier = modifier,
   ) {
     repeat(GRID_CELLS_AMOUNT) { index ->
-      val borderSidesToPaint = remember {
+      val borderSidesToPaint: List<BorderSide> = remember {
         val isOnLeftEdge = index % GRID_COLUMNS_AMOUNT == 0
         val isOnRightEdge = (index + 1) % GRID_COLUMNS_AMOUNT == 0
         val isOnTopEdge = index < GRID_COLUMNS_AMOUNT
@@ -351,7 +351,7 @@ private fun Grid(
         if (isOnTopEdge) result -= BorderSide.Top
         if (isOnBottomEdge) result -= BorderSide.Bottom
 
-        return@remember result.toList()
+        return@remember result
       }
 
       Box(

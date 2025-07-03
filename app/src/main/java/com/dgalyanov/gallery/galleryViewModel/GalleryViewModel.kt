@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dgalyanov.gallery.cropper.AssetCropper
@@ -21,6 +22,7 @@ import com.dgalyanov.gallery.dataClasses.Asset
 import com.dgalyanov.gallery.galleryContentResolver.GalleryContentResolver
 import com.dgalyanov.gallery.dataClasses.AssetAspectRatio
 import com.dgalyanov.gallery.dataClasses.AssetSize
+import com.dgalyanov.gallery.dataClasses.CreativityType
 import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.dataClasses.GalleryAssetId
@@ -68,12 +70,11 @@ internal class GalleryViewModel(
 
   private var density by mutableFloatStateOf(1F)
 
-  private var windowWidthPx by mutableIntStateOf(0)
-  val windowWidthDp by derivedStateOf { windowWidthPx / density }
+  var windowWidthPx by mutableIntStateOf(0)
 
-  val previewedAssetContainerWidthPx by derivedStateOf { windowWidthPx }
+  private val previewedAssetContainerWidthPx by derivedStateOf { windowWidthPx }
   private val previewedAssetContainerAspectRatio = AssetAspectRatio._1x1
-  val previewedAssetContainerHeightPx by derivedStateOf {
+  private val previewedAssetContainerHeightPx by derivedStateOf {
     (previewedAssetContainerWidthPx * previewedAssetContainerAspectRatio.heightToWidthNumericValue).toInt()
   }
 
@@ -156,13 +157,30 @@ internal class GalleryViewModel(
     log { "calculated selectedAlbumAssetsMap, selectedAlbum: $selectedAlbum, allAssetsMap.size: ${allAssetsMap.size} result.size: ${result.size}" }
     return@derivedStateOf result
   }
+
   /** Albums -- END */
+
+  /** CreativityType -- START */
+  val availableCreativityTypes = CreativityType.entries
+  var selectedCreativityType by mutableStateOf(availableCreativityTypes.first())
+
+  val thumbnailAspectRatio by derivedStateOf {
+    when {
+      (selectedCreativityType == CreativityType.Post || selectedCreativityType == CreativityType.Neuro) -> AssetAspectRatio._1x1
+      (selectedCreativityType == CreativityType.Story || selectedCreativityType == CreativityType.Reel) -> AssetAspectRatio._16x9
+      else -> AssetAspectRatio._1x1
+    }
+  }
+
+  val isPreviewEnabled by derivedStateOf {
+    selectedCreativityType == CreativityType.Post || selectedCreativityType == CreativityType.Neuro
+  }
+  /** CreativityType -- END */
 
   /** Assets Selection -- START */
   /** Aspect Ratio -- START */
   var availableAspectRatios by mutableStateOf(AssetAspectRatio.entries)
-  var autoSelectedAspectRatio by mutableStateOf<AssetAspectRatio?>(null)
-    private set
+  private var autoSelectedAspectRatio by mutableStateOf<AssetAspectRatio?>(null)
   var userSelectedAspectRatio by mutableStateOf<AssetAspectRatio?>(null)
   val usedAspectRatio by derivedStateOf {
     userSelectedAspectRatio ?: autoSelectedAspectRatio ?: previewedAsset?.closestAspectRatio
@@ -327,6 +345,7 @@ internal class GalleryViewModel(
 
   /** Selection Emission -- START */
   // todo: come up with a better name
+  // todo: emit aspectRatio
   private var onEmitSelection: ((assets: List<Asset>) -> Unit)? = null
   fun setOnEmitSelection(value: (assets: List<Asset>) -> Unit) {
     log { "setOnEmitSelection" }

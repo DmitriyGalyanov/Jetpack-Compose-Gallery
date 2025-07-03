@@ -12,7 +12,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.unit.Velocity
-import com.dgalyanov.gallery.utils.galleryGenericLog
+import com.dgalyanov.gallery.utils.GalleryLogFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -32,6 +32,8 @@ internal class GalleryViewContentNestedScrollConnection(
   private val onPreviewedAssetDidHide: () -> Unit,
   private val onPreviewedAssetDidUnhide: () -> Unit,
 ) : NestedScrollConnection {
+  private val log = GalleryLogFactory("GalleryViewContentNestedScrollConnection")
+
   var previewedAssetOffset by mutableIntStateOf(0)
     private set
 
@@ -47,7 +49,7 @@ internal class GalleryViewContentNestedScrollConnection(
   }
 
   fun showPreviewedAsset() {
-    galleryGenericLog { "showPreviewedAsset()" }
+    log { "showPreviewedAsset()" }
     animatePreviewedAssetOffset(0) {
       isPreviewedAssetLockedAsHidden = false
       onPreviewedAssetDidUnhide()
@@ -55,7 +57,7 @@ internal class GalleryViewContentNestedScrollConnection(
   }
 
   private fun hidePreviewedAsset() {
-    galleryGenericLog { "hidePreviewedAsset()" }
+    log { "hidePreviewedAsset()" }
     animatePreviewedAssetOffset(-previewedAssetContainerHeightPx) {
       isPreviewedAssetLockedAsHidden = true
       onPreviewedAssetDidHide()
@@ -68,7 +70,7 @@ internal class GalleryViewContentNestedScrollConnection(
 
   private var isPreviewedAssetLockedAsHidden = isPreviewedAssetHidden
     set(value) {
-      if (value != field) galleryGenericLog { "setIsPreviewedAssetLockedAsHidden to $value" }
+      if (value != field) log { "setIsPreviewedAssetLockedAsHidden to $value" }
       field = value
     }
 
@@ -94,7 +96,7 @@ internal class GalleryViewContentNestedScrollConnection(
   override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
     if (!gridState.canScrollBackward) isPreviewedAssetLockedAsHidden = false
 
-    galleryGenericLog { "onPreScroll(available.y: ${available.y}), approximateNonStickyGridOffset: ${getApproximateNonStickyGridOffset()}" }
+    log { "onPreScroll(available.y: ${available.y}, source: $source), approximateNonStickyGridOffset: ${getApproximateNonStickyGridOffset()}" }
 
     if (available.y > 0 && isPreviewedAssetLockedAsHidden) return super.onPreScroll(
       available,
@@ -151,7 +153,7 @@ internal class GalleryViewContentNestedScrollConnection(
 //  }
 
   override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-    galleryGenericLog { "onPostFling" }
+    log { "onPostFling(consumed.y: ${consumed.y}, available.y: ${available.y})" }
     isPreviewedAssetOffsetUnlockedByCurrentFling = false
     dockPreviewedAssetToClosestPosition()
     return super.onPostFling(consumed, available)
