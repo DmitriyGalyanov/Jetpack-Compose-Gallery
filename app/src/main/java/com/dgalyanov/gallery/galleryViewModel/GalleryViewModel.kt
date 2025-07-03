@@ -339,12 +339,17 @@ internal class GalleryViewModel(
     onEmitSelection = value
   }
 
+  var isPreparingSelectedAssetsForEmission by mutableStateOf(false)
   fun emitCurrentlySelected() = viewModelScope.launch(Dispatchers.IO) {
+    log { "emitCurrentlySelected() | isPreparingSelectedAssetsForEmission: $isPreparingSelectedAssetsForEmission, selectedAssetsIds: $selectedAssetsIds" }
+    if (isPreparingSelectedAssetsForEmission) return@launch
+    isPreparingSelectedAssetsForEmission = true
+
     val croppedSelectedAssets = selectedAssetsIds.map { selectedAssetId ->
       async {
-        val asset = allAssetsMap[selectedAssetId]
-        // it's a fallback, all selected assets should be available here
-          ?: GalleryContentResolver.getGalleryAssetById(selectedAssetId)
+        val asset = allAssetsMap[selectedAssetId] ?: GalleryContentResolver.getGalleryAssetById(
+          selectedAssetId
+        )
 
         if (asset != null) {
           clampAssetTransformationsAndCropData(
@@ -360,7 +365,7 @@ internal class GalleryViewModel(
       }
     }.awaitAll().filterNotNull()
     onEmitSelection?.let { it(croppedSelectedAssets) }
-  }
+  }.invokeOnCompletion { isPreparingSelectedAssetsForEmission = false }
 
   fun emitCapturedImage(capturedImageFile: ImageCapture.OutputFileResults) {
     val logTag = "emitCapturedImage(capturedImageFile: $capturedImageFile)"

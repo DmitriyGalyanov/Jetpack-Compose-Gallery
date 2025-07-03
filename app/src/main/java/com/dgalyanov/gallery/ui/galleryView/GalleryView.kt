@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.ui.commonViews.FillingLoaderView
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.GalleryViewContent
-import com.dgalyanov.gallery.ui.utils.useDelayedShouldShowLoader
 
 @Composable
 internal fun GalleryView(
@@ -17,13 +16,12 @@ internal fun GalleryView(
   val assets = galleryViewModel.selectedAlbumAssetsMap.values.toList()
 
   val shouldShowLoader =
-    useDelayedShouldShowLoader(galleryViewModel.isFetchingAllAssets)
+    galleryViewModel.isFetchingAllAssets || galleryViewModel.isPreparingSelectedAssetsForEmission
 
   Box(
-    modifier = Modifier
-      .fillMaxSize()
+    modifier = Modifier.fillMaxSize()
   ) {
-    if (shouldShowLoader) FillingLoaderView()
+    FillingLoaderView(shouldShowLoader)
 
     Column(modifier = Modifier.fillMaxSize()) {
       GalleryViewHeader()
