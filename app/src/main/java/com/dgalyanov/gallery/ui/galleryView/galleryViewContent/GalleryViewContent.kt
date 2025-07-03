@@ -33,7 +33,7 @@ import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.assetThumbnailVie
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem.CameraSheetButton
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GALLERY_VIEW_TOOLBAR_HEIGHT
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GalleryViewToolbar
-import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.PreviewedAssetView
+import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.TransformableAssetView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -114,9 +114,11 @@ internal fun GalleryViewContent(assets: List<GalleryAsset>) {
   }
 
   Box(Modifier.nestedScroll(nestedScrollConnection)) {
-    PreviewedAssetView(Modifier.offset {
-      IntOffset(0, nestedScrollConnection.previewedAssetOffset)
-    })
+    galleryViewModel.previewedAsset?.let {
+      TransformableAssetView(asset = it, Modifier.offset {
+        IntOffset(0, nestedScrollConnection.previewedAssetOffset)
+      })
+    }
 
     Column {
       InnerSpacer(

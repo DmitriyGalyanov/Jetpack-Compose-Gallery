@@ -105,7 +105,7 @@ internal fun GesturesTransformView(
   initialTransformations: Transformations?,
 
   minScale: Float,
-  maxScale: Float = 3F,
+  maxScale: Float,
 
   /**
    * visible content should occupy this size
@@ -119,7 +119,7 @@ internal fun GesturesTransformView(
   /**
    * called when applied [Transformations] are [clamped][Transformations.toClamped]
    */
-  onTransformationDidClamp: (transformations: Transformations) -> Unit,
+  onTransformationsDidClamp: (transformations: Transformations) -> Unit,
 
   content: @Composable BoxScope.() -> Unit,
 ) {
@@ -219,7 +219,7 @@ internal fun GesturesTransformView(
       transformableState.isTransformInProgress,
     ) {
       if (transformableState.isTransformInProgress) return@LaunchedEffect
-      onTransformationDidClamp(clampTransformations())
+      onTransformationsDidClamp(clampTransformations())
     }
 
     Box(

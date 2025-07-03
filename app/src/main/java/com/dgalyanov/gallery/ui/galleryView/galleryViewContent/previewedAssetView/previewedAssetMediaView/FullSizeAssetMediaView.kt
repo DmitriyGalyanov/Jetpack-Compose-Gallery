@@ -9,7 +9,7 @@ import com.dgalyanov.gallery.dataClasses.GalleryAssetType
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.previewedAssetMediaView.previewedVideoView.PreviewedVideoView
 
 @Composable
-internal fun PreviewedAssetMediaView(asset: GalleryAsset?, nextAsset: GalleryAsset?) {
+internal fun FullSizeAssetMediaView(asset: GalleryAsset, nextAsset: GalleryAsset?) {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
 
   val exoPlayerController = galleryViewModel.exoPlayerController
@@ -17,7 +17,7 @@ internal fun PreviewedAssetMediaView(asset: GalleryAsset?, nextAsset: GalleryAss
   LaunchedEffect(asset, nextAsset) {
     val assetToApply = nextAsset ?: asset
 
-    if (assetToApply?.type == GalleryAssetType.Video) {
+    if (assetToApply.type == GalleryAssetType.Video) {
       exoPlayerController.setMedia(assetToApply.uri)
       if (nextAsset == null) {
         exoPlayerController.allowPlay()
@@ -35,14 +35,12 @@ internal fun PreviewedAssetMediaView(asset: GalleryAsset?, nextAsset: GalleryAss
     }
   }
 
-  asset?.let {
-    if (it.type == GalleryAssetType.Image) {
-      PreviewedImageView(it.uri)
-    } else {
-      PreviewedVideoView(
-        exoPlayerController = exoPlayerController,
-        aspectRatio = it.actualNumericWidthToHeightRatio.toFloat()
-      )
-    }
+  if (asset.type == GalleryAssetType.Image) {
+    PreviewedImageView(asset.uri)
+  } else {
+    PreviewedVideoView(
+      exoPlayerController = exoPlayerController,
+      aspectRatio = asset.actualNumericWidthToHeightRatio.toFloat()
+    )
   }
 }

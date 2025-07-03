@@ -24,6 +24,7 @@ import com.dgalyanov.gallery.dataClasses.AssetSize
 import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.dataClasses.GalleryAssetId
+import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.clampAssetTransformationsAndCropData
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -344,10 +345,19 @@ internal class GalleryViewModel(
         val asset = allAssetsMap[selectedAssetId]
         // it's a fallback, all selected assets should be available here
           ?: GalleryContentResolver.getGalleryAssetById(selectedAssetId)
-        if (asset != null) return@async AssetCropper.getCroppedAsset(
-          asset = asset,
-          context = context
-        )
+
+        if (asset != null) {
+          clampAssetTransformationsAndCropData(
+            asset = asset,
+            density = density,
+            wrapSize = previewedAssetViewWrapSize,
+            cropContainerAspectRatio = usedAspectRatio,
+          )
+          return@async AssetCropper.getCroppedAsset(
+            asset = asset,
+            context = context
+          )
+        }
         else return@async null
       }
     }.awaitAll().filterNotNull()
