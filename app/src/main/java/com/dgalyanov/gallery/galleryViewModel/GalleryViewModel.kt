@@ -39,10 +39,8 @@ import kotlinx.coroutines.launch
 
 // todo: add Content Modes (post, story, reels, aiFilters)
 internal class GalleryViewModel(
-  @SuppressLint("StaticFieldLeak")
-  private val context: Context
-) :
-  ViewModel() {
+  @SuppressLint("StaticFieldLeak") private val context: Context
+) : ViewModel() {
   companion object {
     val LocalGalleryViewModel =
       staticCompositionLocalOf<GalleryViewModel> { error("CompositionLocal of GalleryViewModel not present") }
@@ -152,9 +150,8 @@ internal class GalleryViewModel(
   }
 
   val selectedAlbumAssetsMap by derivedStateOf {
-    val result =
-      if (selectedAlbum.id == GalleryAssetsAlbum.RecentsAlbum.id) allAssetsMap
-      else allAssetsMap.filter { it.value.albumId == selectedAlbum.id }
+    val result = if (selectedAlbum.id == GalleryAssetsAlbum.RecentsAlbum.id) allAssetsMap
+    else allAssetsMap.filter { it.value.albumId == selectedAlbum.id }
 
     log { "calculated selectedAlbumAssetsMap, selectedAlbum: $selectedAlbum, allAssetsMap.size: ${allAssetsMap.size} result.size: ${result.size}" }
     return@derivedStateOf result
@@ -271,9 +268,8 @@ internal class GalleryViewModel(
     selectedAssetsIds.remove(asset.id)
 
     if (previewedAsset == asset) {
-      val newPreviewedAsset =
-        if (selectedAssetsIds.isEmpty()) null
-        else allAssetsMap[selectedAssetsIds.last()]
+      val newPreviewedAsset = if (selectedAssetsIds.isEmpty()) null
+      else allAssetsMap[selectedAssetsIds.last()]
       _setPreviewedAsset(newPreviewedAsset)
     }
 
@@ -306,9 +302,7 @@ internal class GalleryViewModel(
   private fun subscribeToSelectedAlbumAssetsMapChange(): Job {
     log { "subscribeToSelectedAlbumAssetsMapChange()" }
     return viewModelScope.launch {
-      snapshotFlow { selectedAlbumAssetsMap }
-        .cancellable()
-        .distinctUntilChanged()
+      snapshotFlow { selectedAlbumAssetsMap }.cancellable().distinctUntilChanged()
         .collectLatest { result ->
           log { "collected latest selectedAlbumAssetsMap update, result.size: ${result.size}, selectedAlbumAssetsMap.size: ${selectedAlbumAssetsMap.size}" }
 
@@ -383,9 +377,8 @@ internal class GalleryViewModel(
     val logTag = "emitRecordedVideo(recordedVideoOutputResults: $recordedVideoOutputResults)"
     log { logTag }
 
-    val asset =
-      GalleryContentResolver.getGalleryAssetByUri(recordedVideoOutputResults.outputUri)
-        ?: return log { "$logTag | couldn't get asset" }
+    val asset = GalleryContentResolver.getGalleryAssetByUri(recordedVideoOutputResults.outputUri)
+      ?: return log { "$logTag | couldn't get asset" }
 
     onEmitSelection?.let { it(listOf(asset)) }
   }
