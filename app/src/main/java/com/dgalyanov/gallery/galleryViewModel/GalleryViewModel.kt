@@ -192,7 +192,7 @@ internal class GalleryViewModel(
   /**
    * filtered with [allowedAssetsTypes]
    */
-  val selectedAlbumAssetsMap by derivedStateOf() {
+  val selectedAlbumAssetsMap by derivedStateOf {
     val shouldFilterByAssetType = allowedAssetsTypes.size != GalleryAssetType.entries.size
     log { "shouldFilterByAssetType:$shouldFilterByAssetType" }
 

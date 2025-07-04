@@ -16,9 +16,7 @@ internal fun GalleryView(
   val shouldShowLoader =
     galleryViewModel.isFetchingAllAssets || galleryViewModel.isPreparingSelectedAssetsForEmission
 
-  Box(
-    modifier = Modifier.fillMaxSize()
-  ) {
+  Box(modifier = Modifier.fillMaxSize()) {
     FillingLoaderView(shouldShowLoader)
 
     Column(modifier = Modifier.fillMaxSize()) {
