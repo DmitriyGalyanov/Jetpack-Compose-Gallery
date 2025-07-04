@@ -25,7 +25,7 @@ import com.dgalyanov.gallery.utils.GalleryLogFactory
 import kotlin.math.max
 import kotlin.math.min
 
-val log = GalleryLogFactory("TransformableAssetView")
+private val log = GalleryLogFactory("TransformableAssetView")
 
 // todo: come up with a better name
 private data class TransformableAssetViewValues(

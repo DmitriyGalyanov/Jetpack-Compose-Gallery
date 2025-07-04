@@ -82,7 +82,7 @@ internal class CameraControl(
     }
   }
 
-  val log = GalleryLogFactory("CameraControl")
+  private val log = GalleryLogFactory("CameraControl")
 
   private fun showToast(message: String) =
     postToMainThread { Toast.makeText(context, message, Toast.LENGTH_LONG).show() }

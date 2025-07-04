@@ -33,7 +33,7 @@ internal class GalleryAsset(
 
   val closestAspectRatio by lazy { AssetAspectRatio.getClosest(width = width, height = height) }
 
-  val log = GalleryLogFactory(GalleryAsset.toString(), toString())
+  private val log = GalleryLogFactory(GalleryAsset.toString(), toString())
 
   private val _selectionIndex = mutableIntStateOf(NOT_SELECTED_INDEX)
   val selectionIndex get() = _selectionIndex.intValue

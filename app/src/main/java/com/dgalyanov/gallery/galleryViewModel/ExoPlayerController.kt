@@ -21,7 +21,7 @@ internal class ExoPlayerController(context: Context) {
     private const val DEFAULT_IS_MUTED = false
   }
 
-  val log = GalleryLogFactory("ExoPlayerController")
+  private val log = GalleryLogFactory("ExoPlayerController")
 
   val exoPlayer = ExoPlayer.Builder(context).build().apply {
     volume = if (DEFAULT_IS_MUTED) 0F else 1F
