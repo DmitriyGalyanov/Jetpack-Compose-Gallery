@@ -14,7 +14,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dgalyanov.gallery.cropper.AssetCropper
@@ -26,6 +25,7 @@ import com.dgalyanov.gallery.dataClasses.CreativityType
 import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.dataClasses.GalleryAssetId
+import com.dgalyanov.gallery.dataClasses.GalleryAssetType
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.clampAssetTransformationsAndCropData
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import kotlinx.coroutines.Dispatchers
@@ -97,6 +97,43 @@ internal class GalleryViewModel(
   }
   /** Layout Data -- END */
 
+  /** CreativityType -- START */
+  val availableCreativityTypes = CreativityType.entries
+  var selectedCreativityType by mutableStateOf(availableCreativityTypes.first())
+
+  val thumbnailAspectRatio by derivedStateOf {
+    when {
+      (selectedCreativityType == CreativityType.Post || selectedCreativityType == CreativityType.Neuro) -> AssetAspectRatio._1x1
+      (selectedCreativityType == CreativityType.Story || selectedCreativityType == CreativityType.Reel) -> AssetAspectRatio._16x9
+      else -> AssetAspectRatio._1x1
+    }
+  }
+
+  val isPreviewEnabled by derivedStateOf {
+    selectedCreativityType == CreativityType.Post || selectedCreativityType == CreativityType.Neuro
+  }
+
+  /**
+   * enabled at all, independent of [selectedCreativityType]
+   *
+   * given we can't determine Asset's [Type][GalleryAssetType] before fetch
+   * –> all Assets are stored in [allAssetsMap] (even the ones with "disabled" [types][GalleryAssetType])
+   */
+  private val enabledAssetsTypes = GalleryAssetType.entries
+
+  /**
+   * enabled for [selectedCreativityType]
+   */
+  private val allowedAssetsTypes by derivedStateOf {
+    val list = enabledAssetsTypes.toMutableSet()
+
+    if (selectedCreativityType == CreativityType.Reel) list -= GalleryAssetType.Image
+    if (selectedCreativityType == CreativityType.Neuro) list -= GalleryAssetType.Video
+
+    return@derivedStateOf list
+  }
+  /** CreativityType -- END */
+
   /** Albums -- START */
   var albumsList by mutableStateOf(listOf<GalleryAssetsAlbum>())
 
@@ -128,6 +165,7 @@ internal class GalleryViewModel(
   var isFetchingAllAssets by mutableStateOf(false)
     private set
   private var allAssetsMap by mutableStateOf(mapOf<GalleryAssetId, GalleryAsset>())
+  val isGalleryEmpty by derivedStateOf { allAssetsMap.isEmpty() }
 
   fun populateAllAssetsMap() {
     val startTimeMs = System.currentTimeMillis()
@@ -150,32 +188,27 @@ internal class GalleryViewModel(
     }
   }
 
-  val selectedAlbumAssetsMap by derivedStateOf {
-    val result = if (selectedAlbum.id == GalleryAssetsAlbum.RecentsAlbum.id) allAssetsMap
-    else allAssetsMap.filter { it.value.albumId == selectedAlbum.id }
+  /**
+   * filtered with [allowedAssetsTypes]
+   */
+  val selectedAlbumAssetsMap by derivedStateOf() {
+    val shouldFilterByAssetType = allowedAssetsTypes.size != GalleryAssetType.entries.size
+    log { "shouldFilterByAssetType:$shouldFilterByAssetType" }
 
-    log { "calculated selectedAlbumAssetsMap, selectedAlbum: $selectedAlbum, allAssetsMap.size: ${allAssetsMap.size} result.size: ${result.size}" }
+    val result = if (selectedAlbum.id == GalleryAssetsAlbum.RecentsAlbum.id) {
+      if (shouldFilterByAssetType) allAssetsMap.filter { allowedAssetsTypes.contains(it.value.type) }
+      else allAssetsMap
+    } else allAssetsMap.filter {
+      it.value.albumId == selectedAlbum.id && (!shouldFilterByAssetType || allowedAssetsTypes.contains(
+        it.value.type
+      ))
+    }
+
+    log { "calculated selectedAlbumAssetsMap, allowedAssetsTypes: $allowedAssetsTypes, selectedAlbum: $selectedAlbum, allAssetsMap.size: ${allAssetsMap.size} result.size: ${result.size}" }
     return@derivedStateOf result
   }
 
   /** Albums -- END */
-
-  /** CreativityType -- START */
-  val availableCreativityTypes = CreativityType.entries
-  var selectedCreativityType by mutableStateOf(availableCreativityTypes.first())
-
-  val thumbnailAspectRatio by derivedStateOf {
-    when {
-      (selectedCreativityType == CreativityType.Post || selectedCreativityType == CreativityType.Neuro) -> AssetAspectRatio._1x1
-      (selectedCreativityType == CreativityType.Story || selectedCreativityType == CreativityType.Reel) -> AssetAspectRatio._16x9
-      else -> AssetAspectRatio._1x1
-    }
-  }
-
-  val isPreviewEnabled by derivedStateOf {
-    selectedCreativityType == CreativityType.Post || selectedCreativityType == CreativityType.Neuro
-  }
-  /** CreativityType -- END */
 
   /** Assets Selection -- START */
   /** Aspect Ratio -- START */
@@ -294,6 +327,20 @@ internal class GalleryViewModel(
     fixAssetsSelection()
   }
 
+  private fun deselectDisallowedAssets() {
+    val logTag = "deselectDisallowedAssets()"
+    log { "$logTag | currentlySelectedAssets: ${selectedAssetsIds.map { allAssetsMap[it] }}, allowedAssetsTypes: $allowedAssetsTypes" }
+
+    selectedAssetsIds.mapNotNull {
+      val asset = allAssetsMap[it]
+      return@mapNotNull if (allowedAssetsTypes.contains(asset?.type)) null
+      else asset
+    }.forEach(action = ::deselectAsset)
+
+    log { "$logTag finished | currentlySelectedAssetsIds: ${selectedAssetsIds.map { allAssetsMap[it] }}" }
+  }
+
+
   fun onThumbnailClick(asset: GalleryAsset) {
     log { "onThumbnailClick(asset: $asset)" }
 
@@ -309,10 +356,10 @@ internal class GalleryViewModel(
     }
   }
 
-  private fun maybeSelectAppropriateAsset(map: Map<GalleryAssetId, GalleryAsset>) {
-    log { "maybeSelectAppropriateAsset(map: { size: ${map.size} }) | isMultiselectEnabled: $isMultiselectEnabled, selectedAssetsIds.isEmpty(): ${selectedAssetsIds.isEmpty()}" }
-    if (map.isNotEmpty() && (!isMultiselectEnabled || selectedAssetsIds.isEmpty())) {
-      selectAsset(map.values.first())
+  private fun maybeSelectAppropriateAsset() {
+    log { "maybeSelectAppropriateAsset() | isMultiselectEnabled: $isMultiselectEnabled, selectedAssetsIds.isEmpty(): ${selectedAssetsIds.isEmpty()}, allowedAssetsTypes: $allowedAssetsTypes" }
+    if (selectedAlbumAssetsMap.isNotEmpty() && (!isMultiselectEnabled || selectedAssetsIds.isEmpty())) {
+      selectAsset(selectedAlbumAssetsMap.values.first { allowedAssetsTypes.contains(it.type) })
     }
   }
 
@@ -324,7 +371,8 @@ internal class GalleryViewModel(
         .collectLatest { result ->
           log { "collected latest selectedAlbumAssetsMap update, result.size: ${result.size}, selectedAlbumAssetsMap.size: ${selectedAlbumAssetsMap.size}" }
 
-          maybeSelectAppropriateAsset(result)
+          deselectDisallowedAssets()
+          maybeSelectAppropriateAsset()
         }
     }
   }
@@ -336,7 +384,7 @@ internal class GalleryViewModel(
   private fun resetAssetsSelection() {
     log { "resetAssetsSelection()" }
     _setIsMultiselectEnabled(false)
-    maybeSelectAppropriateAsset(selectedAlbumAssetsMap)
+    maybeSelectAppropriateAsset()
   }
 
   /** Assets Selection -- END */

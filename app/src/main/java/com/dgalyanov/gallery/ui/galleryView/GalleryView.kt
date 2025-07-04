@@ -13,8 +13,6 @@ import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.GalleryViewConten
 internal fun GalleryView(
   galleryViewModel: GalleryViewModel,
 ) {
-  val assets = galleryViewModel.selectedAlbumAssetsMap.values.toList()
-
   val shouldShowLoader =
     galleryViewModel.isFetchingAllAssets || galleryViewModel.isPreparingSelectedAssetsForEmission
 
@@ -26,12 +24,8 @@ internal fun GalleryView(
     Column(modifier = Modifier.fillMaxSize()) {
       GalleryViewHeader()
 
-      if (assets.isNotEmpty()) GalleryViewContent(
-        assets = assets,
-        thumbnailAspectRatio = galleryViewModel.thumbnailAspectRatio,
-        isPreviewEnabled = galleryViewModel.isPreviewEnabled,
-      )
-      else EmptyGalleryView()
+      if (galleryViewModel.selectedAlbumAssetsMap.values.isEmpty()) EmptyGalleryView()
+      else GalleryViewContent()
     }
   }
 }

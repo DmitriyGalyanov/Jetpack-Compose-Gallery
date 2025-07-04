@@ -20,17 +20,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.dgalyanov.gallery.dataClasses.AssetAspectRatio
 import com.dgalyanov.gallery.dataClasses.CreativityType
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
-import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.ui.galleryView.CreativityTypeSelector
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.assetThumbnailView.AssetThumbnailView
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem.CameraSheetButton
@@ -38,6 +38,8 @@ import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolba
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GalleryViewToolbar
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.TransformableAssetView
 import com.dgalyanov.gallery.ui.utils.modifiers.conditional
+import com.dgalyanov.gallery.utils.GalleryLogFactory
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -47,11 +49,14 @@ private const val TOOLBAR_ITEM_KEY = "Toolbar"
 private const val CAMERA_BUTTON_ITEM_KEY = "Camera"
 private const val GRID_NON_THUMBNAILS_ITEMS_AMOUNT = 2
 
+private val log = GalleryLogFactory("GalleryViewContent")
+
 @Composable
-internal fun GalleryViewContent(
-  assets: List<GalleryAsset>, thumbnailAspectRatio: AssetAspectRatio, isPreviewEnabled: Boolean
-) {
+internal fun GalleryViewContent() {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
+
+  val thumbnailAspectRatio = galleryViewModel.thumbnailAspectRatio
+  val isPreviewEnabled = galleryViewModel.isPreviewEnabled
 
   val density = LocalDensity.current
 
@@ -89,6 +94,7 @@ internal fun GalleryViewContent(
     /** ignored if [isPreviewEnabled] is `false` */
     shouldShowPreview: Boolean = true,
   ) {
+    log { "scrollToAssetByIndex(index: $index, shouldShowPreview: $shouldShowPreview) | isPreviewEnabled: $isPreviewEnabled" }
     // minus 1 is to allow user to scroll backwards selecting first asset in a row
     val listItemIndex = index + GRID_NON_THUMBNAILS_ITEMS_AMOUNT - 1
     val stickyHeaderOffset = (GALLERY_VIEW_TOOLBAR_HEIGHT.value * density.density).toInt()
@@ -121,7 +127,8 @@ internal fun GalleryViewContent(
   LaunchedEffect(galleryViewModel.nextPreviewedAsset) {
     if (galleryViewModel.nextPreviewedAsset == null) return@LaunchedEffect
 
-    val previewedAssetIndex = assets.indexOf(galleryViewModel.nextPreviewedAsset)
+    val previewedAssetIndex =
+      galleryViewModel.selectedAlbumAssetsMap.values.indexOf(galleryViewModel.nextPreviewedAsset)
     scrollToAssetByIndex(previewedAssetIndex)
   }
 
@@ -172,7 +179,9 @@ internal fun GalleryViewContent(
           )
         }
 
-        itemsIndexed(assets, key = { _, item -> item.id }) { index, asset ->
+        itemsIndexed(
+          galleryViewModel.selectedAlbumAssetsMap.values.toList(),
+          key = { _, item -> item.id }) { index, asset ->
           AssetThumbnailView(
             asset = asset, widthDp = thumbnailWidthDp, heightDp = thumbnailHeightDp
           ) {
@@ -185,22 +194,23 @@ internal fun GalleryViewContent(
       }
     }
 
+    var scrollToPreviewedAssetJob by remember { mutableStateOf<Job?>(null) }
     CreativityTypeSelector { selected: CreativityType, isByClick ->
-      val assetToScrollToIndex = if (isByClick) {
-        if (selected == galleryViewModel.selectedCreativityType) 0
-        else {
-          assets.indexOf(
-            galleryViewModel.nextPreviewedAsset ?: galleryViewModel.previewedAsset
-          )
-        }
-      } else -1
+      log { "selected (isByClick: $isByClick) creativityType ($selected) (lastSelected is: ${galleryViewModel.selectedCreativityType}" }
 
       galleryViewModel.selectedCreativityType = selected
 
-      scope.launch {
+      scrollToPreviewedAssetJob?.cancel()
+      scrollToPreviewedAssetJob = scope.launch {
         // todo: depend on device Performance Class
-        delay(100)
-        if (assetToScrollToIndex != -1) scrollToAssetByIndex(assetToScrollToIndex, false)
+        if (!isByClick) delay(30)
+
+        if (selected != galleryViewModel.selectedCreativityType) return@launch
+
+        val assetToScrollToIndex = galleryViewModel.selectedAlbumAssetsMap.values.indexOf(
+          galleryViewModel.nextPreviewedAsset ?: galleryViewModel.previewedAsset
+        )
+        scrollToAssetByIndex(assetToScrollToIndex, false)
       }
     }
   }
