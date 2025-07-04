@@ -49,6 +49,16 @@ internal class GalleryAsset(
     setSelectionIndex(NOT_SELECTED_INDEX)
   }
 
+  fun copy() = GalleryAsset(
+    id = this.id,
+    albumId = this.albumId,
+    uri = this.uri,
+    durationMs = this.durationMs,
+    rawHeight = this.rawHeight,
+    rawWidth = this.rawWidth,
+    orientationDegrees = this.orientationDegrees,
+  )
+
   override fun toString() =
     "GalleryAsset(id: $id, albumId: $albumId, uri: $uri, durationMs: $durationMs, type: $type,\ntransformations: $transformations, cropData: $cropData,\norientationDegrees: $orientationDegrees, rawHeight: $rawHeight, rotatedHeight: $height, rawWidth: $rawWidth, rotatedWidth: $width,\nclosestAspectRatio: $closestAspectRatio,\nactualNumericWidthToHeightRatio: $actualNumericWidthToHeightRatio, isVertical: $isVertical)"
 }

@@ -28,6 +28,7 @@ import com.dgalyanov.gallery.dataClasses.GalleryAssetId
 import com.dgalyanov.gallery.dataClasses.GalleryAssetType
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.clampAssetTransformationsAndCropData
 import com.dgalyanov.gallery.utils.GalleryLogFactory
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -221,8 +222,7 @@ internal class GalleryViewModel(
   }
 
   /** Aspect Ratio -- END */
-
-  private val selectedAssetsIds = mutableListOf<GalleryAssetId>()
+  private val selectedAssetsIds = mutableSetOf<GalleryAssetId>()
 
   private fun fixAssetsSelection() {
     log { "fixAssetsSelection() | selectedAssetsIds: $selectedAssetsIds" }
@@ -394,14 +394,20 @@ internal class GalleryViewModel(
   /** Selection Emission -- START */
   // todo: come up with a better name
   // todo: emit aspectRatio
-  private var onEmitSelection: ((assets: List<Asset>) -> Unit)? = null
-  fun setOnEmitSelection(value: (assets: List<Asset>) -> Unit) {
-    log { "setOnEmitSelection" }
-    onEmitSelection = value
+  private var onAssetsEmission: ((assets: List<Asset>) -> Unit)? = null
+  fun setOnAssetsEmission(value: (assets: List<Asset>) -> Unit) {
+    log { "setOnAssetsEmission(...)" }
+    onAssetsEmission = value
+  }
+
+  private fun emitAssets(assets: List<Asset>) {
+    log { "emitAssets(assets: $assets)" }
+    onAssetsEmission?.invoke(assets)
+    resetAssetsSelection()
   }
 
   var isPreparingSelectedAssetsForEmission by mutableStateOf(false)
-  fun emitCurrentlySelected() {
+  fun emitCurrentlySelectedAssets() {
     viewModelScope.launch(Dispatchers.Main) { exoPlayerController.pause() }
 
     viewModelScope.launch(Dispatchers.IO) {
@@ -413,7 +419,7 @@ internal class GalleryViewModel(
         async {
           val asset = allAssetsMap[selectedAssetId] ?: GalleryContentResolver.getGalleryAssetById(
             selectedAssetId
-          )
+          )?.copy()
 
           if (asset != null) {
             clampAssetTransformationsAndCropData(
@@ -428,30 +434,43 @@ internal class GalleryViewModel(
           } else return@async null
         }
       }.awaitAll().filterNotNull()
-      onEmitSelection?.let { it(croppedSelectedAssets) }
+      emitAssets(croppedSelectedAssets)
     }.invokeOnCompletion { isPreparingSelectedAssetsForEmission = false }
   }
 
-  fun emitCapturedImage(capturedImageFile: ImageCapture.OutputFileResults) {
-    val logTag = "emitCapturedImage(capturedImageFile: $capturedImageFile)"
+  fun emitCapturedImage(
+    capturedImageFile: ImageCapture.OutputFileResults,
+    afterCompletion: (suspend CoroutineScope.() -> Unit)? = null,
+  ) {
+    val startTime = System.currentTimeMillis()
+    val logTag = "emitCapturedImage(...)"
     log { logTag }
 
-    val uri =
-      capturedImageFile.savedUri ?: return log { "$logTag | capturedImageFile has no savedUri" }
-    val asset = GalleryContentResolver.getGalleryAssetByUri(uri)
-      ?: return log { "$logTag | couldn't get asset" }
+    capturedImageFile.savedUri?.let { uri ->
+      GalleryContentResolver.getGalleryAssetByUri(uri)?.let { asset ->
+        emitAssets(listOf(asset))
+      } ?: log { "$logTag | couldn't get asset" }
+    } ?: log { "$logTag | capturedImageFile has no savedUri" }
 
-    onEmitSelection?.let { it(listOf(asset)) }
+    log { "$logTag finished, time (ms) taken: ${System.currentTimeMillis() - startTime}" }
+    if (afterCompletion != null) viewModelScope.launch { afterCompletion() }
   }
 
-  fun emitRecordedVideo(recordedVideoOutputResults: OutputResults) {
+  fun emitRecordedVideo(
+    recordedVideoOutputResults: OutputResults,
+    afterCompletion: (suspend CoroutineScope.() -> Unit)? = null,
+  ) {
+    val startTime = System.currentTimeMillis()
     val logTag = "emitRecordedVideo(recordedVideoOutputResults: $recordedVideoOutputResults)"
     log { logTag }
 
-    val asset = GalleryContentResolver.getGalleryAssetByUri(recordedVideoOutputResults.outputUri)
-      ?: return log { "$logTag | couldn't get asset" }
+    GalleryContentResolver.getGalleryAssetByUri(recordedVideoOutputResults.outputUri)
+      ?.let { asset ->
+        emitAssets(listOf(asset))
+      } ?: log { "$logTag | couldn't get asset" }
 
-    onEmitSelection?.let { it(listOf(asset)) }
+    log { "$logTag finished, time (ms) taken: ${System.currentTimeMillis() - startTime}" }
+    if (afterCompletion != null) viewModelScope.launch { afterCompletion() }
   }
 
   /** Selection Emission -- END */

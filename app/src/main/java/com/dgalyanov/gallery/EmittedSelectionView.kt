@@ -49,7 +49,7 @@ internal fun EmittedSelectionView(galleryViewModel: GalleryViewModel) {
   var emittedAssets by remember { mutableStateOf(listOf<Asset>()) }
 
   LaunchedEffect(Unit) {
-    galleryViewModel.setOnEmitSelection {
+    galleryViewModel.setOnAssetsEmission {
       emittedAssets = it
     }
   }

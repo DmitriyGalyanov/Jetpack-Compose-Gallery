@@ -191,12 +191,16 @@ internal fun GalleryViewContent() {
             onSheetDidDismiss = galleryViewModel.exoPlayerController::play,
             enabled = !galleryViewModel.isMultiselectEnabled,
             onDidTakePicture = {
-              galleryViewModel.emitCapturedImage(it)
-              galleryViewModel.populateAllAssetsMap()
+              galleryViewModel.emitCapturedImage(it) {
+                delay(30)
+                galleryViewModel.populateAllAssetsMap()
+              }
             },
             onDidRecordVideo = {
-              galleryViewModel.emitRecordedVideo(it)
-              galleryViewModel.populateAllAssetsMap()
+              galleryViewModel.emitRecordedVideo(it) {
+                delay(30)
+                galleryViewModel.populateAllAssetsMap()
+              }
             }
           )
         }
