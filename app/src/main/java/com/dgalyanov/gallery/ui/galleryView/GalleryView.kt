@@ -24,7 +24,7 @@ internal fun GalleryView(
     Column(modifier = Modifier.fillMaxSize()) {
       GalleryViewHeader()
 
-      if (galleryViewModel.selectedAlbumAssetsMap.values.isEmpty()) EmptyGalleryView()
+      if (galleryViewModel.isGalleryEmpty) EmptyGalleryView()
       else GalleryViewContent()
     }
   }
