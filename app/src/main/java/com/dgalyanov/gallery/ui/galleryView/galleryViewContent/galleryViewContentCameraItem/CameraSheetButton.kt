@@ -1,11 +1,14 @@
 package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem
 
 import androidx.activity.compose.LocalActivity
+import androidx.camera.core.ImageCapture
+import androidx.camera.video.OutputResults
 import androidx.compose.runtime.Composable
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,31 +31,45 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.utils.galleryGenericLog
 import com.dgalyanov.gallery.utils.openAppSettings
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 internal fun CameraSheetButton(
   modifier: Modifier = Modifier,
-  onSheetGoingToDisplay: () -> Unit,
-  onSheetDidDismiss: () -> Unit,
-  enabled: Boolean,
+  labelModifier: Modifier = Modifier,
+  onSheetGoingToDisplay: (() -> Unit)? = null,
+  onSheetDidDismiss: (() -> Unit)? = null,
+  enabled: Boolean = true,
+  /**
+   * called after picture is added to MediaStore and Sheet is dismissed
+   */
+  onDidTakePicture: ((capturedImage: ImageCapture.OutputFileResults) -> Unit)? = null,
+  /**
+   * called after Video is added to MediaStore and Sheet is dismissed
+   */
+  onDidRecordVideo: ((recordedVideoOutputResults: OutputResults) -> Unit)? = null,
+  label: @Composable BoxScope.(modifier: Modifier) -> Unit = {
+    // todo: add Icon
+    Text("Camera", modifier = it)
+  }
 ) {
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   var isSheetDisplayed by remember { mutableStateOf(false) }
   fun displaySheet() {
     isSheetDisplayed = true
-    onSheetGoingToDisplay()
+    onSheetGoingToDisplay?.invoke()
   }
 
   val cameraPermissionsState = rememberMultiplePermissionsState(
     listOf(
-      android.Manifest.permission.CAMERA,
-      android.Manifest.permission.RECORD_AUDIO
+      android.Manifest.permission.CAMERA, android.Manifest.permission.RECORD_AUDIO
     )
   ) {
     galleryGenericLog { "after permissions request $it" }
@@ -63,7 +80,6 @@ internal fun CameraSheetButton(
 
   Box(
     modifier = modifier
-      .background(Color.Black)
       .alpha(if (enabled) 1f else 0.6f)
       .clickable(enabled = enabled) {
         if (cameraPermissionsState.allPermissionsGranted) {
@@ -73,16 +89,18 @@ internal fun CameraSheetButton(
         } else if (activity != null) {
           openAppSettings(activity)
         }
-      },
-    contentAlignment = Alignment.Center
+      }, contentAlignment = Alignment.Center
   ) {
-    // todo: add Icon
-    Text("Camera")
+    label(labelModifier)
 
     if (isSheetDisplayed) {
-      CameraSheet(sheetState = sheetState) {
+      CameraSheet(
+        sheetState = sheetState,
+        onDidTakePicture = onDidTakePicture,
+        onDidRecordVideo = onDidRecordVideo,
+      ) {
         isSheetDisplayed = false
-        onSheetDidDismiss()
+        onSheetDidDismiss?.invoke()
       }
     }
   }
@@ -90,14 +108,16 @@ internal fun CameraSheetButton(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CameraSheet(sheetState: SheetState, onDidDismiss: () -> Unit) {
+private fun CameraSheet(
+  sheetState: SheetState,
+  onDidTakePicture: ((capturedImage: ImageCapture.OutputFileResults) -> Unit)?,
+  onDidRecordVideo: ((recordedVideoOutputResults: OutputResults) -> Unit)?,
+  onDidDismiss: () -> Unit,
+) {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
 
-  val cameraControl = CameraControl.use(
-    onDispose = galleryViewModel::populateAllAssetsMap,
-  )
-
   val scope = rememberCoroutineScope()
+  val cameraControl = CameraControl.use()
 
   ModalBottomSheet(
     sheetState = sheetState,
@@ -138,28 +158,26 @@ private fun CameraSheet(sheetState: SheetState, onDidDismiss: () -> Unit) {
 
         TextButton(
           onClick = {
+            // todo: update UI while loading
             cameraControl.takePicture { capturedImage ->
-              scope.launch { sheetState.hide() }
-                .invokeOnCompletion {
-                  onDidDismiss()
-                  galleryViewModel.emitCapturedImage(capturedImage)
-                }
+              scope.launch { sheetState.hide() }.invokeOnCompletion {
+                onDidDismiss()
+                onDidTakePicture?.invoke(capturedImage)
+              }
             }
-          },
-          enabled = !cameraControl.isRecording,
-          modifier = Modifier.weight(1F)
+          }, enabled = !cameraControl.isRecording, modifier = Modifier.weight(1F)
         ) {
           Text("Capture Picture")
         }
 
         TextButton(
           {
+            // todo: update UI while loading
             if (!cameraControl.isRecording) cameraControl.startVideoRecording { recordedVideoOutputResults ->
-              scope.launch { sheetState.hide() }
-                .invokeOnCompletion {
-                  onDidDismiss()
-                  galleryViewModel.emitRecordedVideo(recordedVideoOutputResults)
-                }
+              scope.launch { sheetState.hide() }.invokeOnCompletion {
+                onDidDismiss()
+                onDidRecordVideo?.invoke(recordedVideoOutputResults)
+              }
             } else cameraControl.finishVideoRecording()
           },
           modifier = Modifier.weight(1F),

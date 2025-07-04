@@ -58,7 +58,7 @@ internal class CameraControl(
 ) {
   companion object {
     @Composable
-    internal fun use(onDispose: () -> Unit): CameraControl {
+    internal fun use(onDispose: (() -> Unit)? = null): CameraControl {
       val context = LocalContext.current
       val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
       val lifecycleOwner = LocalLifecycleOwner.current
@@ -74,7 +74,7 @@ internal class CameraControl(
       DisposableEffect(Unit) {
         onDispose {
           cameraControl.onDispose()
-          onDispose()
+          onDispose?.invoke()
         }
       }
 

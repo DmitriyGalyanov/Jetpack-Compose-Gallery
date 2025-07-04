@@ -2,6 +2,7 @@ package com.dgalyanov.gallery.ui.galleryView.galleryViewContent
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -172,7 +174,9 @@ internal fun GalleryViewContent() {
 
         item(key = CAMERA_BUTTON_ITEM_KEY) {
           CameraSheetButton(
-            modifier = Modifier.size(width = thumbnailWidthDp, height = thumbnailHeightDp),
+            modifier = Modifier
+              .size(width = thumbnailWidthDp, height = thumbnailHeightDp)
+              .background(Color.Black),
             onSheetGoingToDisplay = {
               scope.launch {
                 // todo: pause before request
@@ -186,6 +190,14 @@ internal fun GalleryViewContent() {
             },
             onSheetDidDismiss = galleryViewModel.exoPlayerController::play,
             enabled = !galleryViewModel.isMultiselectEnabled,
+            onDidTakePicture = {
+              galleryViewModel.emitCapturedImage(it)
+              galleryViewModel.populateAllAssetsMap()
+            },
+            onDidRecordVideo = {
+              galleryViewModel.emitRecordedVideo(it)
+              galleryViewModel.populateAllAssetsMap()
+            }
           )
         }
 
