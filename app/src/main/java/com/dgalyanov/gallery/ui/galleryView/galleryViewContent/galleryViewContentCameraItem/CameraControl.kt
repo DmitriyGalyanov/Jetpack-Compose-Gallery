@@ -216,10 +216,10 @@ internal class CameraControl(
             currentRecording = null
 
             logWithDetails("Video recording failed, cause: ${event.cause}")
-            showToast("Video recording failed")
+//            showToast("Video recording failed")
           } else {
             log { "Video recording succeeded" }
-            showToast("Video recording succeeded")
+//            showToast("Video recording succeeded")
             postToMainThread {
               onVideoRecordedSuccessfully(event.outputResults)
             }
