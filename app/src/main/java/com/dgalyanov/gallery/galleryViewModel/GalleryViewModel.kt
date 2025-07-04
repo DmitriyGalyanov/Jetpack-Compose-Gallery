@@ -223,6 +223,7 @@ internal class GalleryViewModel(
 
   /** Aspect Ratio -- END */
   private val selectedAssetsIds = mutableSetOf<GalleryAssetId>()
+  val anAssetIsSelected by derivedStateOf { selectedAssetsIds.isNotEmpty() }
 
   private fun fixAssetsSelection() {
     log { "fixAssetsSelection() | selectedAssetsIds: $selectedAssetsIds" }

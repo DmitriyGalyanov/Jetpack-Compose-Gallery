@@ -82,11 +82,13 @@ internal fun GalleryViewHeader() {
         )
       }
       else {
-        Text(
-          "Emit selected",
-          modifier = Modifier
-            .clickable(onClick = galleryViewModel::emitCurrentlySelected)
-            .onSizeChanged { emissionButtonSize = it })
+        if (galleryViewModel.anAssetIsSelected) {
+          Text(
+            "Emit selected",
+            modifier = Modifier
+              .clickable(onClick = galleryViewModel::emitCurrentlySelectedAssets)
+              .onSizeChanged { emissionButtonSize = it })
+        }
       }
     }
   }
