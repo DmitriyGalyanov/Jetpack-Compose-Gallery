@@ -1,13 +1,10 @@
 package com.dgalyanov.gallery.dataClasses
 
 import androidx.compose.ui.geometry.Offset
-import com.dgalyanov.gallery.utils.GalleryLogFactory
 import kotlin.math.floor
 
 internal class CropData private constructor(val offset: Offset, val finalSize: AssetSize) {
   companion object {
-    val log = GalleryLogFactory("CropData.companion")
-
     private fun getOffset(
       asset: Asset,
       transformations: Transformations,
@@ -35,7 +32,7 @@ internal class CropData private constructor(val offset: Offset, val finalSize: A
       val finalWidth =
         floor(cropContainerSize.width * assetToWrapAspectRatio / transformations.scale)
       val finalHeight =
-       floor(cropContainerSize.height * assetToWrapAspectRatio / transformations.scale)
+        floor(cropContainerSize.height * assetToWrapAspectRatio / transformations.scale)
 
       return AssetSize(width = finalWidth, height = finalHeight)
     }

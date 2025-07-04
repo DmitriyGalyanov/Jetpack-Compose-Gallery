@@ -14,8 +14,6 @@ internal class AssetSizeDp(widthPx: Double, heightPx: Double, density: Float) {
 internal data class AssetSize(val width: Double, val height: Double) {
   fun toDp(density: Float) = AssetSizeDp(widthPx = width, heightPx = height, density = density)
 
-  val heightToWidthAspectRatio = height / width
-
   operator fun times(multiplier: Float) =
     AssetSize(width = this.width * multiplier, height = this.height * multiplier)
 }
