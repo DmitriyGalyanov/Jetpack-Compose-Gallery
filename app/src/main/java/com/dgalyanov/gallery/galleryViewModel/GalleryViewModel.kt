@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -222,7 +223,7 @@ internal class GalleryViewModel(
   }
 
   /** Aspect Ratio -- END */
-  private val selectedAssetsIds = mutableSetOf<GalleryAssetId>()
+  private val selectedAssetsIds = mutableStateSetOf<GalleryAssetId>()
   val anAssetIsSelected by derivedStateOf { selectedAssetsIds.isNotEmpty() }
 
   private fun fixAssetsSelection() {
