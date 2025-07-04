@@ -44,8 +44,11 @@ dependencies {
   implementation(libs.accompanist.permissions)
 
   // images
+  // given a Video's URI GlideImage shows its Preview (Image), which is great for Previews
+  // todo: show Video Preview as Image with coil (which is adapted for CMP out-of-the-box)
   implementation(libs.glide)
   implementation(libs.glideCompose)
+  implementation(libs.coil.compose)
 
   // camera
   implementation(libs.androidx.camera.core)

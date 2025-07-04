@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -19,9 +20,10 @@ import com.dgalyanov.gallery.dataClasses.GalleryAssetType
 import com.dgalyanov.gallery.dataClasses.Transformations
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.previewedAssetMediaView.FullSizeAssetMediaView
+import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.previewedAssetMediaView.previewedVideoView.ExoPlayerPlayerSurface
 import com.dgalyanov.gallery.utils.GalleryLogFactory
-import com.dgalyanov.gallery.utils.galleryGenericLog
-import kotlin.math.floor
+import kotlin.math.max
+import kotlin.math.min
 
 val log = GalleryLogFactory("TransformableAssetView")
 
@@ -34,36 +36,17 @@ private data class TransformableAssetViewValues(
 ) {
   companion object {
     fun get(
-      asset: GalleryAsset,
+      assetSize: AssetSize,
       wrapSize: AssetSize,
       cropContainerAspectRatio: AssetAspectRatio,
     ): TransformableAssetViewValues {
-      val assetSize = AssetSize(width = asset.width, height = asset.height)
+      val assetSizeScaledToFitWrap: AssetSize = run {
+        val widthScaleRatio = wrapSize.width / assetSize.width
+        val heightScaleRatio = wrapSize.height / assetSize.height
 
-      // width?
-      val assetToWrapWidthRatio = assetSize.height / wrapSize.width
+        val scale = min(widthScaleRatio, heightScaleRatio)
 
-      val isAssetVertical = asset.isVertical
-
-      val assetSizeScaledToFitWrap = run {
-        val wrapAspectRatio = wrapSize.heightToWidthAspectRatio
-        val assetAspectRatio = assetSize.heightToWidthAspectRatio
-
-        val scaledToWrapAssetWidth = assetSize.width / assetToWrapWidthRatio
-
-        val wrapToAssetAspectRatio = wrapAspectRatio / assetAspectRatio
-
-        var requiredToFitScale = wrapToAssetAspectRatio
-        if (assetAspectRatio > 1) {
-          if (scaledToWrapAssetWidth < wrapSize.width) {
-            requiredToFitScale = wrapSize.width / scaledToWrapAssetWidth
-          }
-        }
-
-        return@run AssetSize(
-          width = if (isAssetVertical) wrapSize.width / requiredToFitScale else wrapSize.width,
-          height = if (isAssetVertical) wrapSize.height else wrapSize.height / requiredToFitScale,
-        )
+        return@run AssetSize(width = assetSize.width * scale, height = assetSize.height * scale)
       }
 
       val cropContainerHeightToWidthAspectRatio = cropContainerAspectRatio.heightToWidthNumericValue
@@ -73,25 +56,10 @@ private data class TransformableAssetViewValues(
       )
 
       val minScaleToFillCropContainer = run {
-        val minScaleBasedOnWidth =
-          if (assetSizeScaledToFitWrap.width < cropContainerSize.width) {
-            cropContainerSize.width / assetSizeScaledToFitWrap.width
-          } else 1.0
+        val widthScaleRatio = cropContainerSize.width / assetSizeScaledToFitWrap.width
+        val heightScaleRatio = cropContainerSize.height / assetSizeScaledToFitWrap.height
 
-        val basedOnWidthScaledAssetSize = AssetSize(
-          width = assetSizeScaledToFitWrap.width * minScaleBasedOnWidth,
-          height = assetSizeScaledToFitWrap.height * minScaleBasedOnWidth,
-        )
-        if (floor(basedOnWidthScaledAssetSize.height) >= floor(cropContainerSize.height) && floor(
-            basedOnWidthScaledAssetSize.width
-          ) >= floor(cropContainerSize.width)
-        ) return@run minScaleBasedOnWidth
-
-        val minScaleBasedOnHeight =
-          if (assetSizeScaledToFitWrap.height < cropContainerSize.height) {
-            cropContainerSize.height / assetSizeScaledToFitWrap.height
-          } else 1.0
-        return@run minScaleBasedOnHeight
+        return@run max(widthScaleRatio, heightScaleRatio)
       }
 
       return TransformableAssetViewValues(
@@ -104,12 +72,12 @@ private data class TransformableAssetViewValues(
 
     @Composable
     fun rememberBy(
-      asset: GalleryAsset,
+      assetSize: AssetSize,
       wrapSize: AssetSize,
       cropContainerAspectRatio: AssetAspectRatio,
-    ) = remember(asset, wrapSize, cropContainerAspectRatio) {
+    ) = remember(assetSize, wrapSize, cropContainerAspectRatio) {
       get(
-        asset = asset,
+        assetSize = assetSize,
         wrapSize = wrapSize,
         cropContainerAspectRatio = cropContainerAspectRatio,
       )
@@ -130,7 +98,7 @@ internal fun clampAssetTransformationsAndCropData(
     "clampAssetTransformationsAndCropData(asset[captured]: $asset, wrapSize: $wrapSize, usedAspectRatio: $cropContainerAspectRatio)"
 
   val transformableAssetViewValues = TransformableAssetViewValues.get(
-    asset = asset,
+    assetSize = AssetSize(width = asset.width, height = asset.height),
     wrapSize = wrapSize,
     cropContainerAspectRatio = cropContainerAspectRatio,
   )
@@ -153,7 +121,7 @@ internal fun clampAssetTransformationsAndCropData(
     cropContainerSize = transformableAssetViewValues.cropContainerSize,
   )
 
-  galleryGenericLog {
+  log {
     "$logTag\n finished, clampedTransformations: ${asset.transformations}, clampedCropData: ${asset.cropData}"
   }
 }
@@ -168,8 +136,9 @@ internal fun TransformableAssetView(
   val wrapSize = galleryViewModel.previewedAssetViewWrapSize
   val wrapSizeDp = wrapSize.toDp(LocalDensity.current.density)
 
+  val assetSize = AssetSize(width = asset.width, height = asset.height)
   val transformableAssetViewValues = TransformableAssetViewValues.rememberBy(
-    asset = asset,
+    assetSize = assetSize,
     wrapSize = wrapSize,
     cropContainerAspectRatio = galleryViewModel.usedAspectRatio,
   )
@@ -181,6 +150,9 @@ internal fun TransformableAssetView(
   ) {
     val nextPreviewedAsset = galleryViewModel.nextPreviewedAsset
 
+    /** don't use [ReusableContent] here, as it re-uses [ExoPlayerPlayerSurface], which flickers on AspectRatio Change */
+    // todo: fix flickering, use ReusableContent
+//    ReusableContent(asset) {
     key(asset) {
       val animatedAlpha = remember { Animatable(0.0f) }
 
@@ -207,7 +179,7 @@ internal fun TransformableAssetView(
           displayedContentSize = transformableAssetViewValues.assetSizeScaledToFitWrap,
           cropContainerSize = transformableAssetViewValues.cropContainerSize,
           onTransformationsDidClamp = { transformations ->
-            galleryGenericLog { "PreviewedAssetView | onTransformationDidClamp(transformations: $transformations)" }
+            log { "onTransformationDidClamp(transformations: $transformations)" }
             asset.transformations = transformations
             asset.cropData = CropData.create(
               asset = asset,
@@ -215,8 +187,12 @@ internal fun TransformableAssetView(
               wrapSize = wrapSize,
               cropContainerSize = transformableAssetViewValues.cropContainerSize,
             )
-          }) {
-          FullSizeAssetMediaView(asset = asset, nextAsset = nextPreviewedAsset)
+          }) { contentSizeDp ->
+          FullSizeAssetMediaView(
+            asset = asset,
+            nextAsset = nextPreviewedAsset,
+            sizeDp = contentSizeDp,
+          )
         }
       }
     }

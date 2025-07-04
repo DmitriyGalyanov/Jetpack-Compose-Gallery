@@ -1,15 +1,23 @@
 package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.previewedAssetMediaView
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
+import com.dgalyanov.gallery.dataClasses.AssetSizeDp
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.dataClasses.GalleryAssetType
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.previewedAssetMediaView.previewedVideoView.PreviewedVideoView
 
 @Composable
-internal fun FullSizeAssetMediaView(asset: GalleryAsset, nextAsset: GalleryAsset?) {
+internal fun FullSizeAssetMediaView(
+  asset: GalleryAsset,
+  nextAsset: GalleryAsset?,
+  sizeDp: AssetSizeDp,
+) {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
 
   val exoPlayerController = galleryViewModel.exoPlayerController
@@ -36,11 +44,16 @@ internal fun FullSizeAssetMediaView(asset: GalleryAsset, nextAsset: GalleryAsset
   }
 
   if (asset.type == GalleryAssetType.Image) {
-    PreviewedImageView(asset.uri)
+    PreviewedImageView(asset.uri, sizeDp = sizeDp)
   } else {
-    PreviewedVideoView(
-      exoPlayerController = exoPlayerController,
-      aspectRatio = asset.actualNumericWidthToHeightRatio.toFloat()
-    )
+    Box(
+      Modifier
+        .requiredSize(width = sizeDp.width, height = sizeDp.height),
+    ) {
+      PreviewedVideoView(
+        exoPlayerController = exoPlayerController,
+        aspectRatio = asset.actualNumericWidthToHeightRatio.toFloat()
+      )
+    }
   }
 }

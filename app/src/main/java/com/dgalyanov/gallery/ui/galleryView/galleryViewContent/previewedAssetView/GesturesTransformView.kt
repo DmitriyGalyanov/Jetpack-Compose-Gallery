@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.dataClasses.AssetSize
+import com.dgalyanov.gallery.dataClasses.AssetSizeDp
 import com.dgalyanov.gallery.dataClasses.Transformations
 import com.dgalyanov.gallery.ui.utils.modifiers.BorderSide
 import com.dgalyanov.gallery.ui.utils.modifiers.conditional
@@ -119,7 +120,7 @@ internal fun GesturesTransformView(
    */
   onTransformationsDidClamp: (transformations: Transformations) -> Unit,
 
-  content: @Composable BoxScope.() -> Unit,
+  content: @Composable BoxScope.(contentSizeDp: AssetSizeDp) -> Unit,
 ) {
   BoxWithConstraints(Modifier.fillMaxSize()) {
     val wrapSize = AssetSize(
@@ -237,7 +238,9 @@ internal fun GesturesTransformView(
       val cropContainerTopLeftOffset = getCropContainerTopLeftOffset(wrapSize, cropContainerSize)
 
       Box(
-        content = content,
+        content = {
+          content(displayedContentSize.toDp(density = LocalDensity.current.density))
+        },
         modifier = Modifier
           .graphicsLayer {
             scaleX = displayedContentScale
