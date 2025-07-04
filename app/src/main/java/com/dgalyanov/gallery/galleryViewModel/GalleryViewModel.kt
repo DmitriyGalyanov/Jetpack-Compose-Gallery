@@ -401,32 +401,36 @@ internal class GalleryViewModel(
   }
 
   var isPreparingSelectedAssetsForEmission by mutableStateOf(false)
-  fun emitCurrentlySelected() = viewModelScope.launch(Dispatchers.IO) {
-    log { "emitCurrentlySelected() | isPreparingSelectedAssetsForEmission: $isPreparingSelectedAssetsForEmission, selectedAssetsIds: $selectedAssetsIds" }
-    if (isPreparingSelectedAssetsForEmission) return@launch
-    isPreparingSelectedAssetsForEmission = true
+  fun emitCurrentlySelected() {
+    viewModelScope.launch(Dispatchers.Main) { exoPlayerController.pause() }
 
-    val croppedSelectedAssets = selectedAssetsIds.map { selectedAssetId ->
-      async {
-        val asset = allAssetsMap[selectedAssetId] ?: GalleryContentResolver.getGalleryAssetById(
-          selectedAssetId
-        )
+    viewModelScope.launch(Dispatchers.IO) {
+      log { "emitCurrentlySelected() | isPreparingSelectedAssetsForEmission: $isPreparingSelectedAssetsForEmission, selectedAssetsIds: $selectedAssetsIds" }
+      if (isPreparingSelectedAssetsForEmission) return@launch
+      isPreparingSelectedAssetsForEmission = true
 
-        if (asset != null) {
-          clampAssetTransformationsAndCropData(
-            asset = asset,
-            wrapSize = previewedAssetViewWrapSize,
-            cropContainerAspectRatio = usedAspectRatio,
+      val croppedSelectedAssets = selectedAssetsIds.map { selectedAssetId ->
+        async {
+          val asset = allAssetsMap[selectedAssetId] ?: GalleryContentResolver.getGalleryAssetById(
+            selectedAssetId
           )
-          return@async AssetCropper.getCroppedAsset(
-            asset = asset,
-            context = context,
-          )
-        } else return@async null
-      }
-    }.awaitAll().filterNotNull()
-    onEmitSelection?.let { it(croppedSelectedAssets) }
-  }.invokeOnCompletion { isPreparingSelectedAssetsForEmission = false }
+
+          if (asset != null) {
+            clampAssetTransformationsAndCropData(
+              asset = asset,
+              wrapSize = previewedAssetViewWrapSize,
+              cropContainerAspectRatio = usedAspectRatio,
+            )
+            return@async AssetCropper.getCroppedAsset(
+              asset = asset,
+              context = context,
+            )
+          } else return@async null
+        }
+      }.awaitAll().filterNotNull()
+      onEmitSelection?.let { it(croppedSelectedAssets) }
+    }.invokeOnCompletion { isPreparingSelectedAssetsForEmission = false }
+  }
 
   fun emitCapturedImage(capturedImageFile: ImageCapture.OutputFileResults) {
     val logTag = "emitCapturedImage(capturedImageFile: $capturedImageFile)"
