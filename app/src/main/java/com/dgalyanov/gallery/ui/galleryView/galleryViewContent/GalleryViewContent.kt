@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dgalyanov.gallery.dataClasses.CreativityType
+import com.dgalyanov.gallery.dataClasses.GalleryAssetType
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.ui.galleryView.CreativityTypeSelector
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.assetThumbnailView.AssetThumbnailView
@@ -196,6 +197,8 @@ internal fun GalleryViewContent() {
             },
             onSheetDidDismiss = galleryViewModel.exoPlayerController::play,
             enabled = !galleryViewModel.isMultiselectEnabled,
+            isImageCapturingEnabled = galleryViewModel.allowedAssetsTypes.contains(GalleryAssetType.Image),
+            isVideoRecordingEnabled = galleryViewModel.allowedAssetsTypes.contains(GalleryAssetType.Video),
             onDidTakePicture = {
               galleryViewModel.emitCapturedImage(it) {
                 delay(30)

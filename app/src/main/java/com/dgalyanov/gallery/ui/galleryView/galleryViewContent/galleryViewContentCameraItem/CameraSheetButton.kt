@@ -44,6 +44,8 @@ internal fun CameraSheetButton(
   onSheetGoingToDisplay: (() -> Unit)? = null,
   onSheetDidDismiss: (() -> Unit)? = null,
   enabled: Boolean = true,
+  isImageCapturingEnabled: Boolean,
+  isVideoRecordingEnabled: Boolean,
   /**
    * called after picture is added to MediaStore and Sheet is dismissed
    */
@@ -94,6 +96,8 @@ internal fun CameraSheetButton(
     if (isSheetDisplayed) {
       CameraSheet(
         sheetState = sheetState,
+        isImageCapturingEnabled = isImageCapturingEnabled,
+        isVideoRecordingEnabled = isVideoRecordingEnabled,
         onDidTakePicture = onDidTakePicture,
         onDidRecordVideo = onDidRecordVideo,
       ) {
@@ -108,6 +112,8 @@ internal fun CameraSheetButton(
 @Composable
 private fun CameraSheet(
   sheetState: SheetState,
+  isImageCapturingEnabled: Boolean,
+  isVideoRecordingEnabled: Boolean,
   onDidTakePicture: ((capturedImage: ImageCapture.OutputFileResults) -> Unit)?,
   onDidRecordVideo: ((recordedVideoOutputResults: OutputResults) -> Unit)?,
   onDidDismiss: () -> Unit,
@@ -154,36 +160,40 @@ private fun CameraSheet(
           Text("Switch Camera")
         }
 
-        TextButton(
-          onClick = {
-            // todo: update UI while loading
-            cameraControl.takePicture { capturedImage ->
-              scope.launch { sheetState.hide() }.invokeOnCompletion {
-                onDidDismiss()
-                onDidTakePicture?.invoke(capturedImage)
+        if (isImageCapturingEnabled) {
+          TextButton(
+            onClick = {
+              // todo: update UI while loading
+              cameraControl.takePicture { capturedImage ->
+                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                  onDidDismiss()
+                  onDidTakePicture?.invoke(capturedImage)
+                }
               }
-            }
-          },
-          enabled = !cameraControl.isRecording,
-          modifier = Modifier.weight(1F)
-        ) {
-          Text("Capture Picture")
+            },
+            enabled = !cameraControl.isRecording,
+            modifier = Modifier.weight(1F)
+          ) {
+            Text("Capture Picture")
+          }
         }
 
-        TextButton(
-          {
-            // todo: update UI while loading
-            if (!cameraControl.isRecording) cameraControl.startVideoRecording { recordedVideoOutputResults ->
-              scope.launch { sheetState.hide() }.invokeOnCompletion {
-                onDidDismiss()
-                onDidRecordVideo?.invoke(recordedVideoOutputResults)
-              }
-            } else cameraControl.finishVideoRecording()
-          },
-          modifier = Modifier.weight(1F)
-        ) {
-          // todo: show current recording duration
-          Text(if (cameraControl.isRecording) "Stop recording" else "Record Video")
+        if (isVideoRecordingEnabled) {
+          TextButton(
+            {
+              // todo: update UI while loading
+              if (!cameraControl.isRecording) cameraControl.startVideoRecording { recordedVideoOutputResults ->
+                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                  onDidDismiss()
+                  onDidRecordVideo?.invoke(recordedVideoOutputResults)
+                }
+              } else cameraControl.finishVideoRecording()
+            },
+            modifier = Modifier.weight(1F)
+          ) {
+            // todo: show current recording duration
+            Text(if (cameraControl.isRecording) "Stop recording" else "Record Video")
+          }
         }
       }
     }

@@ -41,6 +41,8 @@ internal fun EmptyGalleryView() {
             .align(Alignment.Center)
             .padding(horizontal = 20.dp)
             .clip(RoundedCornerShape(4.dp)),
+          isImageCapturingEnabled = true,
+          isVideoRecordingEnabled = true,
           onDidTakePicture = {
             galleryViewModel.populateAllAssetsMap()
           },

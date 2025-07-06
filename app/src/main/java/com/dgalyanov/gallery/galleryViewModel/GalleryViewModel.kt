@@ -126,7 +126,7 @@ internal class GalleryViewModel(
   /**
    * enabled for [selectedCreativityType]
    */
-  private val allowedAssetsTypes by derivedStateOf {
+  val allowedAssetsTypes by derivedStateOf {
     val list = enabledAssetsTypes.toMutableSet()
 
     if (selectedCreativityType == CreativityType.Reel) list -= GalleryAssetType.Image
