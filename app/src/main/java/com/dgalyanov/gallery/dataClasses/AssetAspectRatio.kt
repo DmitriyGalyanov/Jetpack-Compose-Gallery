@@ -38,7 +38,7 @@ internal enum class AssetAspectRatio(
     private fun getClosestAvailableNumber(
       value: Double,
       availableValues: List<Double>,
-      shouldPreferLargerValue: Boolean = false
+      shouldPreferLargerValue: Boolean = false,
     ): Double? {
       log { "getClosestAvailableNumber(value: $value, availableValues: $availableValues, shouldPreferLargerValue: $shouldPreferLargerValue)" }
       var smallestAbsDelta = Double.POSITIVE_INFINITY
@@ -71,12 +71,12 @@ internal enum class AssetAspectRatio(
     fun getClosest(
       width: Double,
       height: Double,
-      availableValues: List<Double> = allAvailableWidthToHeightNumericValues
+      availableValues: List<Double> = allAvailableWidthToHeightNumericValues,
     ): AssetAspectRatio {
       log { "getClosest(height: $height, width: $width)" }
       val closestAvailableDouble = getClosestAvailableNumber(
         value = width / height,
-        availableValues = availableValues
+        availableValues = availableValues,
       ) ?: 1.0
       return entries.first { isAlmostEqual(closestAvailableDouble, it.heightToWidthNumericValue) }
     }

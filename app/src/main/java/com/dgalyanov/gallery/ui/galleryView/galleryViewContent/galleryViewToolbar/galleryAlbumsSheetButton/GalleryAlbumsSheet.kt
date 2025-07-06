@@ -48,8 +48,7 @@ private fun GalleryAlbumsSheetContent(sheetState: SheetState, onDidDismiss: () -
     remember { derivedStateOf { galleryViewModel.albumsList.isEmpty() && galleryViewModel.isFetchingAlbums } }
 
   fun hide() {
-    scope.launch { sheetState.hide() }
-      .invokeOnCompletion { onDidDismiss() }
+    scope.launch { sheetState.hide() }.invokeOnCompletion { onDidDismiss() }
   }
 
   Column {
@@ -70,12 +69,12 @@ private fun GalleryAlbumsSheetContent(sheetState: SheetState, onDidDismiss: () -
     if (shouldShowLoader.value) {
       Box(
         modifier = Modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
       ) { CircularProgressIndicator() }
     } else {
       LazyColumn(
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(GalleryStyleConsts.COMMON_HORIZONTAL_PADDING, 8.dp)
+        contentPadding = PaddingValues(GalleryStyleConsts.COMMON_HORIZONTAL_PADDING, 8.dp),
       ) {
         items(galleryViewModel.albumsList, { it.id }) {
           GalleryAlbumPreviewView(it) {

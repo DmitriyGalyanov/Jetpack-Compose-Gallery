@@ -67,7 +67,7 @@ internal class CameraControl(
         CameraControl(
           context = context,
           cameraExecutor = cameraExecutor,
-          lifecycleOwner = lifecycleOwner
+          lifecycleOwner = lifecycleOwner,
         )
       }
 
@@ -130,7 +130,7 @@ internal class CameraControl(
 
   // todo: see this https://developer.android.com/media/camera/camerax/take-photo/options
   fun takePicture(
-    onImageSavedCallback: (outputFileResults: ImageCapture.OutputFileResults) -> Unit
+    onImageSavedCallback: (outputFileResults: ImageCapture.OutputFileResults) -> Unit,
   ) {
     if (!checkIfPermissionsAreGranted()) {
       return log { "useCameraControl.takePicture called w/o Permissions" }
@@ -166,7 +166,7 @@ internal class CameraControl(
         override fun onError(exception: ImageCaptureException) {
           log { "$logTag | onError(exception: $exception) | $logDetails" }
         }
-      }
+      },
     )
   }
 
@@ -176,7 +176,7 @@ internal class CameraControl(
   @SuppressLint("MissingPermission")
     /** permissions are checked with [checkIfPermissionsAreGranted] */
   fun startVideoRecording(
-    onVideoRecordedSuccessfully: (outputResults: OutputResults) -> Unit
+    onVideoRecordedSuccessfully: (outputResults: OutputResults) -> Unit,
   ) {
     val logTag = "startVideoRecording()"
 

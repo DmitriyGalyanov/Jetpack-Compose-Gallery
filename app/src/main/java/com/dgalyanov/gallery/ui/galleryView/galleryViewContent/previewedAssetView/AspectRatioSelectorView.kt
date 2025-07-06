@@ -75,7 +75,7 @@ private val FONT_WEIGHT = FontWeight.W500
 private fun AspectRatioSelectorText(
   text: String,
   modifier: Modifier = Modifier,
-  shouldComposeDivider: Boolean = false
+  shouldComposeDivider: Boolean = false,
 ) {
   Column(
     Modifier
@@ -112,8 +112,7 @@ internal fun AspectRatioSelectorView(isVisible: Boolean) {
     isVisible,
     enter = fadeIn(animationSpec = GalleryViewModel.PREVIEWED_ASSET_SELECTION_RELATED_ANIMATIONS_SPEC),
     exit = fadeOut(animationSpec = GalleryViewModel.PREVIEWED_ASSET_SELECTION_RELATED_ANIMATIONS_SPEC),
-    modifier = Modifier
-      .absoluteOffset(x = 12.dp, y = 12.dp)
+    modifier = Modifier.absoluteOffset(x = 12.dp, y = 12.dp),
   ) {
     galleryViewModel.usedAspectRatio.heightToWidthKey.let {
       Box(
@@ -146,7 +145,7 @@ internal fun AspectRatioSelectorView(isVisible: Boolean) {
               val isFirst = index == 0
               val isLast = index == galleryViewModel.availableAspectRatios.size - 1
               AspectRatioSelectorText(
-                aspectRatio.heightToWidthKey,
+                text = aspectRatio.heightToWidthKey,
                 modifier = Modifier
                   .clickable {
                     galleryViewModel.userSelectedAspectRatio = aspectRatio
@@ -158,7 +157,7 @@ internal fun AspectRatioSelectorView(isVisible: Boolean) {
                     start = SELECTOR_PADDING_START,
                     end = SELECTOR_PADDING_END
                   ),
-                shouldComposeDivider = !isLast
+                shouldComposeDivider = !isLast,
               )
             }
           }

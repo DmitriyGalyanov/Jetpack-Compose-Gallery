@@ -31,7 +31,7 @@ internal fun PreviewedVideoControlsView(
   AnimatedVisibility(
     visible = isVisible,
     enter = fadeIn(animationSpec = GalleryViewModel.PREVIEWED_ASSET_SELECTION_RELATED_ANIMATIONS_SPEC),
-    exit = fadeOut(animationSpec = GalleryViewModel.PREVIEWED_ASSET_SELECTION_RELATED_ANIMATIONS_SPEC)
+    exit = fadeOut(animationSpec = GalleryViewModel.PREVIEWED_ASSET_SELECTION_RELATED_ANIMATIONS_SPEC),
   ) {
     Box(
       modifier = Modifier
@@ -43,11 +43,10 @@ internal fun PreviewedVideoControlsView(
         )
     ) {
       AnimatedVisibility(
-        visible =
-          exoPlayerController.statefulHasMedia &&
-            exoPlayerController.isPlayAllowed &&
-            !exoPlayerController.statefulPlayWhenReady &&
-            !exoPlayerController.isPausedByLifecycle,
+        visible = exoPlayerController.statefulHasMedia &&
+                  exoPlayerController.isPlayAllowed &&
+                  !exoPlayerController.statefulPlayWhenReady &&
+                  !exoPlayerController.isPausedByLifecycle,
         enter = fadeIn(),
         exit = fadeOut(),
         modifier = Modifier

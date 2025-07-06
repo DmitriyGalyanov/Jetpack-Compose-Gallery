@@ -188,7 +188,8 @@ internal fun TransformableAssetView(
               wrapSize = wrapSize,
               cropContainerSize = transformableAssetViewValues.cropContainerSize,
             )
-          }) { contentSizeDp ->
+          },
+        ) { contentSizeDp ->
           FullSizeAssetMediaView(
             asset = asset,
             nextAsset = nextPreviewedAsset,
@@ -201,7 +202,8 @@ internal fun TransformableAssetView(
 
     PreviewedVideoControlsView(
       exoPlayerController = galleryViewModel.exoPlayerController,
-      isVisible = asset.type == GalleryAssetType.Video && nextPreviewedAsset?.type != GalleryAssetType.Image
+      isVisible = asset.type == GalleryAssetType.Video &&
+                  nextPreviewedAsset?.type != GalleryAssetType.Image,
     )
 
     AspectRatioSelectorView(isVisible = asset.type == GalleryAssetType.Image)

@@ -14,7 +14,6 @@ internal fun PreviewedImageView(uri: Uri, sizeDp: AssetSizeDp) {
     model = uri,
     contentDescription = null,
     contentScale = ContentScale.Fit,
-    modifier = Modifier
-      .requiredSize(width = sizeDp.width, height = sizeDp.height),
+    modifier = Modifier.requiredSize(width = sizeDp.width, height = sizeDp.height),
   )
 }

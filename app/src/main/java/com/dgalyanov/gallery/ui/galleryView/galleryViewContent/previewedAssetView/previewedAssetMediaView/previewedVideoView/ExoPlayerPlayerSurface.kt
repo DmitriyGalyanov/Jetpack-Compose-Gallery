@@ -45,6 +45,6 @@ internal fun ExoPlayerPlayerSurface(
     modifier = Modifier.aspectRatio(aspectRatio),
     update = { view ->
       view.resizeMode = resizeMode
-    }
+    },
   )
 }

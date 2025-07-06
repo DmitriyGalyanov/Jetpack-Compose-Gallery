@@ -18,7 +18,7 @@ import androidx.lifecycle.LifecycleOwner
 internal fun CameraPreviewContent(
   cameraController: LifecycleCameraController,
   lifecycleOwner: LifecycleOwner,
-  modifier: Modifier = Modifier
+  modifier: Modifier = Modifier,
 ) {
   Box(modifier.background(Color.Black)) {
     AndroidView(
@@ -35,7 +35,7 @@ internal fun CameraPreviewContent(
           cameraController.bindToLifecycle(lifecycleOwner)
           cameraController.cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
         }
-      }
+      },
     )
   }
 }

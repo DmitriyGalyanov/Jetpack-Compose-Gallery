@@ -6,9 +6,7 @@ import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 
 @Composable
 internal fun GalleryViewProvider(galleryViewModel: GalleryViewModel) {
-  CompositionLocalProvider(
-    GalleryViewModel.LocalGalleryViewModel provides galleryViewModel
-  ) {
+  CompositionLocalProvider(GalleryViewModel.LocalGalleryViewModel provides galleryViewModel) {
     GalleryView(galleryViewModel)
   }
 }

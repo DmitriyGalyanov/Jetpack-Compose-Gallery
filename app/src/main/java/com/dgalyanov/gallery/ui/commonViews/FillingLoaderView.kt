@@ -11,7 +11,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -23,7 +22,8 @@ import androidx.compose.ui.zIndex
 
 @Composable
 internal fun FillingLoaderView(visible: Boolean, enterDelayMs: Int = 200) {
-  val visibleState = remember { MutableTransitionState(false) }.apply { targetState = visible }
+  val visibleState = remember { MutableTransitionState(false) }
+    .apply { targetState = visible }
 
   AnimatedVisibility(
     visibleState = visibleState,
@@ -33,10 +33,13 @@ internal fun FillingLoaderView(visible: Boolean, enterDelayMs: Int = 200) {
       .fillMaxSize()
       .zIndex(10F)
       .clickable(
-        indication = null, interactionSource = remember { MutableInteractionSource() }) { },
+        indication = null,
+        interactionSource = remember { MutableInteractionSource() },
+      ) { }
   ) {
     Box(
-      contentAlignment = Alignment.Center, modifier = Modifier.background(Color(0, 0, 0, 100))
+      contentAlignment = Alignment.Center,
+      modifier = Modifier.background(Color(0, 0, 0, 100))
     ) {
       CircularProgressIndicator(modifier = Modifier.size(28.dp))
     }

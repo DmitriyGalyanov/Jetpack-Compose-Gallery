@@ -17,6 +17,7 @@ internal fun currentWindowContainerSize(): DpSize {
   // ComposeView's configuration changes.
   LocalConfiguration.current
   val density = LocalDensity.current
-  val metrics = WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(LocalContext.current)
+  val metrics =
+    WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(LocalContext.current)
   return with(density) { metrics.bounds.toComposeRect().size.toDpSize() }
 }

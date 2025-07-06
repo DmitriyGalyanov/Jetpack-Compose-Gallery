@@ -4,8 +4,8 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
-import com.dgalyanov.gallery.utils.GalleryLogFactory
 import com.dgalyanov.gallery.MainActivity
+import com.dgalyanov.gallery.utils.GalleryLogFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -45,10 +45,7 @@ internal object GalleryPermissionsHelper {
     log { logTag }
 
     requiredPermissions.forEach {
-      if (
-        mainActivity.applicationContext.checkSelfPermission(it)
-        != PackageManager.PERMISSION_GRANTED
-      ) {
+      if (mainActivity.applicationContext.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED) {
         log { "$logTag | $it is not granted" }
         _arePermissionsGranted.value = false
         return _arePermissionsGranted.value
@@ -77,7 +74,7 @@ internal object GalleryPermissionsHelper {
 
   fun onRequestPermissionsResult(
     requestCode: Int,
-    grantResults: IntArray
+    grantResults: IntArray,
   ): Boolean {
     log { "onRequestPermissionsResult(requestCode: $requestCode, grantResults: $grantResults) | readStorageRequestCode: $READ_STORAGE_REQUEST_CODE" }
 

@@ -18,7 +18,7 @@ internal data class GalleryAssetsAlbum(
         id = RECENTS_ALBUM_ID,
         name = RECENTS_ALBUM_NAME,
         previewUri = null,
-        assetsAmount = 0
+        assetsAmount = 0,
       )
     )
     val RecentsAlbum get() = _RecentsAlbum.value
@@ -27,7 +27,7 @@ internal data class GalleryAssetsAlbum(
       id = RECENTS_ALBUM_ID,
       name = RECENTS_ALBUM_NAME,
       previewUri = previewUri,
-      assetsAmount = assetsAmount
+      assetsAmount = assetsAmount,
     )
 
     fun updateRecentsAlbum(previewUri: Uri?, assetsAmount: Int): GalleryAssetsAlbum {

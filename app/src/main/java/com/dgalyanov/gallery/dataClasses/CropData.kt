@@ -41,17 +41,16 @@ internal class CropData private constructor(val offset: Offset, val finalSize: A
       asset: Asset,
       transformations: Transformations,
       wrapSize: AssetSize,
-      cropContainerSize: AssetSize
+      cropContainerSize: AssetSize,
     ): CropData {
       val assetToWrapAspectRatio = if (asset.isVertical) asset.height / wrapSize.height
       else asset.width / wrapSize.width
 
-      val finalSize =
-        getFinalSize(
-          transformations = transformations,
-          cropContainerSize = cropContainerSize,
-          assetToWrapAspectRatio = assetToWrapAspectRatio
-        )
+      val finalSize = getFinalSize(
+        transformations = transformations,
+        cropContainerSize = cropContainerSize,
+        assetToWrapAspectRatio = assetToWrapAspectRatio
+      )
 
       val offset = getOffset(
         asset = asset,

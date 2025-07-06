@@ -84,11 +84,13 @@ private fun EmittedSelectionSheet(
   ModalBottomSheet(
     sheetState = sheetState,
     onDismissRequest = onDidDismiss,
-    containerColor = Color.Black
+    containerColor = Color.Black,
   ) {
     BoxWithConstraints(
-      modifier = Modifier
-        .padding(horizontal = PADDING_HORIZONTAL, vertical = 8.dp),
+      modifier = Modifier.padding(
+        horizontal = PADDING_HORIZONTAL,
+        vertical = 8.dp,
+      )
     ) {
       FlowRow(
         maxItemsInEachRow = ITEMS_IN_ROW,

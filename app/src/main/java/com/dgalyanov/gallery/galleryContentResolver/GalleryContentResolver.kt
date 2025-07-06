@@ -12,12 +12,12 @@ import android.os.Bundle
 import android.provider.MediaStore
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
-import com.dgalyanov.gallery.utils.GalleryLogFactory
 import com.dgalyanov.gallery.MainActivity
 import com.dgalyanov.gallery.dataClasses.Asset
-import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.dataClasses.GalleryAssetId
+import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
+import com.dgalyanov.gallery.utils.GalleryLogFactory
 import java.io.File
 
 // todo: mark appropriate functions as suspending
@@ -60,11 +60,11 @@ internal object GalleryContentResolver {
 
     if (selectionCondition != null) putString(
       ContentResolver.QUERY_ARG_SQL_SELECTION,
-      selectionCondition
+      selectionCondition,
     )
     if (selectionArgs != null) putStringArray(
       ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
-      selectionArgs
+      selectionArgs,
     )
   }
 
@@ -130,14 +130,13 @@ internal object GalleryContentResolver {
   private fun getAssetsFromCursor(
     cursor: Cursor,
     /** if false -> gets all */
-    shouldGetOnlyFirst: Boolean = false
+    shouldGetOnlyFirst: Boolean = false,
   ): MutableMap<GalleryAssetId, GalleryAsset> {
     val assets = mutableMapOf<GalleryAssetId, GalleryAsset>()
 
     val idColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
     val albumIdColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_ID)
-    val durationColumnIndex =
-      cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DURATION)
+    val durationColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DURATION)
     val rawWidthColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
     val rawHeightColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
     val orientationDegreesColumnIndex =
@@ -198,7 +197,7 @@ internal object GalleryContentResolver {
         albumId = albumId,
         collectionUri = contentUri,
         projection = arrayOf(idColumnName),
-        limit = 1
+        limit = 1,
       )?.use { cursor ->
         log { "getAlbumPreviewMediaUri | cursor.count: ${cursor.count}" }
         if (cursor.moveToFirst()) {
@@ -233,8 +232,7 @@ internal object GalleryContentResolver {
     )?.use { cursor ->
       bucketsCount = cursor.count
 
-      val bucketIdColumnIndex =
-        cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_ID)
+      val bucketIdColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_ID)
       val bucketDisplayNameColumnIndex =
         cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME)
 
@@ -264,11 +262,11 @@ internal object GalleryContentResolver {
     var recentsAlbumAssetsAmount = 0
     result.forEach { recentsAlbumAssetsAmount += it.assetsAmount }
     result.add(
-      0,
+      index = 0,
       GalleryAssetsAlbum.updateRecentsAlbum(
         getAlbumPreviewMediaUri(GalleryAssetsAlbum.RECENTS_ALBUM_ID),
-        assetsAmount = recentsAlbumAssetsAmount
-      )
+        assetsAmount = recentsAlbumAssetsAmount,
+      ),
     )
 
     log { "$logTag finished | Albums Amount: ${result.size} | bucketsCount: $bucketsCount, skippedBucketsCount: $skippedBucketsCount | timeTaken: ${System.currentTimeMillis() - requestStartTimeMs}" }
@@ -311,7 +309,7 @@ internal object GalleryContentResolver {
     val orientationDegrees = contentResolver.openInputStream(uri)?.use {
       return@use when (ExifInterface(it).getAttributeInt(
         ExifInterface.TAG_ORIENTATION,
-        ExifInterface.ORIENTATION_UNDEFINED
+        ExifInterface.ORIENTATION_UNDEFINED,
       )) {
         ExifInterface.ORIENTATION_ROTATE_90 -> 90
         ExifInterface.ORIENTATION_ROTATE_180 -> 180

@@ -61,12 +61,10 @@ internal fun GalleryViewHeader() {
       targetState = galleryViewModel.isPreparingSelectedAssetsForEmission,
       contentAlignment = Alignment.Center,
       transitionSpec = {
-        (fadeIn(
-          animationSpec = tween(
-            300,
-          )
-        )).togetherWith(fadeOut(animationSpec = tween(300)))
-      }) { shouldShowLoader ->
+        val animationSpec = tween<Float>(300)
+        fadeIn(animationSpec = animationSpec).togetherWith(fadeOut(animationSpec = animationSpec))
+      },
+    ) { shouldShowLoader ->
       if (shouldShowLoader) Box(
         // todo: replace with a better (?) size workaround
         modifier = Modifier.conditional(emissionButtonSize != null) {
@@ -77,9 +75,7 @@ internal fun GalleryViewHeader() {
         },
         contentAlignment = Alignment.Center,
       ) {
-        CircularProgressIndicator(
-          strokeWidth = 2.dp, modifier = Modifier.size(20.dp)
-        )
+        CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
       }
       else {
         if (galleryViewModel.anAssetIsSelected) {

@@ -46,7 +46,7 @@ internal fun EmptyGalleryView() {
           },
           onDidRecordVideo = {
             galleryViewModel.populateAllAssetsMap()
-          }
+          },
         ) {
           Text(
             "Gallery is empty, but you could use camera (click!) to fix that!",
@@ -60,7 +60,7 @@ internal fun EmptyGalleryView() {
     } else {
       Column(
         modifier = Modifier.align(Alignment.Center),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
       ) {
         Text("Permissions are not granted")
 

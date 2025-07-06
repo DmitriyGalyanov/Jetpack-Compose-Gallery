@@ -101,8 +101,8 @@ internal class GalleryViewContentNestedScrollConnection(
 
   private fun getApproximateNonStickyGridOffset() =
     ((gridState.firstVisibleItemIndex - gridNonThumbnailsItemsAmount) / gridColumnsAmount) *
-      gridItemHeightPx +
-      gridState.firstVisibleItemScrollOffset
+    gridItemHeightPx +
+    gridState.firstVisibleItemScrollOffset
 
   override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
     if (!gridState.canScrollBackward) isPreviewedAssetLockedAsHidden = false
@@ -111,7 +111,7 @@ internal class GalleryViewContentNestedScrollConnection(
 
     if (available.y > 0 && isPreviewedAssetLockedAsHidden) return super.onPreScroll(
       available,
-      source
+      source,
     )
 
     val previousPreviewedAssetOffset = previewedAssetOffset
@@ -127,7 +127,7 @@ internal class GalleryViewContentNestedScrollConnection(
   override fun onPostScroll(
     consumed: Offset,
     available: Offset,
-    source: NestedScrollSource
+    source: NestedScrollSource,
   ): Offset {
     if (!gridState.canScrollBackward) isPreviewedAssetLockedAsHidden = false
     return super.onPostScroll(consumed, available, source)

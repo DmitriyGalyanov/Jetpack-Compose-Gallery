@@ -203,7 +203,7 @@ internal object AssetCropper {
             postRotate(exifTransformationInfo.rotationDegree.toFloat())
             postScale(
               exifTransformationInfo.scaleX.toFloat(),
-              exifTransformationInfo.scaleY.toFloat()
+              exifTransformationInfo.scaleY.toFloat(),
             )
           }
         } else null

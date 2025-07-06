@@ -35,7 +35,8 @@ internal fun GalleryAlbumsSheetButton() {
           galleryViewModel.refreshAlbumsList()
 
           isSheetDisplayed = true
-        }) {
+        }
+    ) {
       Text(galleryViewModel.selectedAlbum.name, fontWeight = FontWeight.Bold)
 
       // todo: add Icon

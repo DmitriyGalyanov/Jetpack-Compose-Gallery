@@ -105,7 +105,7 @@ internal fun GalleryViewContent() {
 
   fun scrollToAssetByIndex(
     index: Int,
-    /** ignored if [isPreviewEnabled] is `false` */
+    /** ignored if [isPreviewEnabled][GalleryViewModel.isPreviewEnabled] is `false` */
     shouldShowPreview: Boolean = true,
   ) {
     log { "scrollToAssetByIndex(index: $index, shouldShowPreview: $shouldShowPreview) | isPreviewEnabled: $isPreviewEnabled" }
@@ -207,16 +207,15 @@ internal fun GalleryViewContent() {
                 delay(30)
                 galleryViewModel.populateAllAssetsMap()
               }
-            }
+            },
           )
         }
 
         val assetsToShow = galleryViewModel.selectedAlbumAssetsMap.values.toList()
         if (assetsToShow.isEmpty()) item(span = { GridItemSpan(3) }) {
           Box(
-            modifier = Modifier
-              .offset(y = 34.dp),
-            contentAlignment = Alignment.Center
+            modifier = Modifier.offset(y = 34.dp),
+            contentAlignment = Alignment.Center,
           ) {
             Text(
               "Album has no suitable assets",
@@ -225,11 +224,11 @@ internal fun GalleryViewContent() {
             )
           }
         }
-        else itemsIndexed(
-          assetsToShow,
-          key = { _, item -> item.id }) { index, asset ->
+        else itemsIndexed(assetsToShow, key = { _, item -> item.id }) { index, asset ->
           AssetThumbnailView(
-            asset = asset, widthDp = thumbnailWidthDp, heightDp = thumbnailHeightDp
+            asset = asset,
+            widthDp = thumbnailWidthDp,
+            heightDp = thumbnailHeightDp,
           ) {
             if (asset == galleryViewModel.previewedAsset) {
               scrollToAssetByIndex(index)
@@ -242,7 +241,7 @@ internal fun GalleryViewContent() {
 
     var scrollToPreviewedAssetJob by remember { mutableStateOf<Job?>(null) }
     CreativityTypeSelector { selected: CreativityType, isByClick ->
-      log { "selected (isByClick: $isByClick) creativityType ($selected) (lastSelected is: ${galleryViewModel.selectedCreativityType}" }
+      log { "selected (isByClick: $isByClick) creativityType ($selected) (lastSelected is: ${galleryViewModel.selectedCreativityType})" }
 
       galleryViewModel.selectedCreativityType = selected
 
@@ -265,7 +264,7 @@ internal fun GalleryViewContent() {
 @Composable
 private fun InnerSpacer(
   previewedAssetContainerHeightPx: Int,
-  nestedScrollConnection: GalleryViewContentNestedScrollConnection
+  nestedScrollConnection: GalleryViewContentNestedScrollConnection,
 ) {
   val density = LocalDensity.current
 

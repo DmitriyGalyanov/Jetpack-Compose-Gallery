@@ -3,9 +3,6 @@ package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewConte
 import androidx.activity.compose.LocalActivity
 import androidx.camera.core.ImageCapture
 import androidx.camera.video.OutputResults
-import androidx.compose.runtime.Composable
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -20,6 +17,7 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,12 +29,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewModelScope
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.utils.galleryGenericLog
 import com.dgalyanov.gallery.utils.openAppSettings
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
@@ -58,7 +55,7 @@ internal fun CameraSheetButton(
   label: @Composable BoxScope.(modifier: Modifier) -> Unit = {
     // todo: add Icon
     Text("Camera", modifier = it)
-  }
+  },
 ) {
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   var isSheetDisplayed by remember { mutableStateOf(false) }
@@ -89,7 +86,8 @@ internal fun CameraSheetButton(
         } else if (activity != null) {
           openAppSettings(activity)
         }
-      }, contentAlignment = Alignment.Center
+      },
+    contentAlignment = Alignment.Center,
   ) {
     label(labelModifier)
 
@@ -165,7 +163,9 @@ private fun CameraSheet(
                 onDidTakePicture?.invoke(capturedImage)
               }
             }
-          }, enabled = !cameraControl.isRecording, modifier = Modifier.weight(1F)
+          },
+          enabled = !cameraControl.isRecording,
+          modifier = Modifier.weight(1F)
         ) {
           Text("Capture Picture")
         }
@@ -180,7 +180,7 @@ private fun CameraSheet(
               }
             } else cameraControl.finishVideoRecording()
           },
-          modifier = Modifier.weight(1F),
+          modifier = Modifier.weight(1F)
         ) {
           // todo: show current recording duration
           Text(if (cameraControl.isRecording) "Stop recording" else "Record Video")

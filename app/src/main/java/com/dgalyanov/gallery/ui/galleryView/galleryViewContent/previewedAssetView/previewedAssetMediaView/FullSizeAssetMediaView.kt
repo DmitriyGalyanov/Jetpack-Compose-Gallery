@@ -8,8 +8,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.dgalyanov.gallery.dataClasses.AssetSizeDp
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
-import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.dataClasses.GalleryAssetType
+import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.previewedAssetMediaView.previewedVideoView.PreviewedVideoView
 
 @Composable
@@ -47,10 +47,7 @@ internal fun FullSizeAssetMediaView(
   if (asset.type == GalleryAssetType.Image) {
     PreviewedImageView(asset.uri, sizeDp = sizeDp)
   } else {
-    Box(
-      Modifier
-        .requiredSize(width = sizeDp.width, height = sizeDp.height),
-    ) {
+    Box(Modifier.requiredSize(width = sizeDp.width, height = sizeDp.height)) {
       PreviewedVideoView(
         exoPlayerController = exoPlayerController,
         aspectRatio = asset.actualNumericWidthToHeightRatio.toFloat()

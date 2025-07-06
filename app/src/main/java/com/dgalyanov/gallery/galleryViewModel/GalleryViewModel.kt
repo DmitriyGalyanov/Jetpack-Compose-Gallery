@@ -19,14 +19,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dgalyanov.gallery.cropper.AssetCropper
 import com.dgalyanov.gallery.dataClasses.Asset
-import com.dgalyanov.gallery.galleryContentResolver.GalleryContentResolver
 import com.dgalyanov.gallery.dataClasses.AssetAspectRatio
 import com.dgalyanov.gallery.dataClasses.AssetSize
 import com.dgalyanov.gallery.dataClasses.CreativityType
-import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.dataClasses.GalleryAssetId
 import com.dgalyanov.gallery.dataClasses.GalleryAssetType
+import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
+import com.dgalyanov.gallery.galleryContentResolver.GalleryContentResolver
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.clampAssetTransformationsAndCropData
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import kotlinx.coroutines.CoroutineScope
@@ -43,7 +43,7 @@ import kotlinx.coroutines.launch
 
 // todo: add Content Modes (post, story, reels, aiFilters)
 internal class GalleryViewModel(
-  @SuppressLint("StaticFieldLeak") private val context: Context
+  @SuppressLint("StaticFieldLeak") private val context: Context,
 ) : ViewModel() {
   companion object {
     val LocalGalleryViewModel =

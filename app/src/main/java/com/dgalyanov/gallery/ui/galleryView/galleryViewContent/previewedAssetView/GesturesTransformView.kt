@@ -43,12 +43,11 @@ import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
 
-private fun getCropContainerTopLeftOffset(
-  wrapSize: AssetSize, cropContainerSize: AssetSize
-) = Offset(
-  x = ((wrapSize.width - cropContainerSize.width) / 2).toFloat(),
-  y = ((wrapSize.height - cropContainerSize.height) / 2).toFloat(),
-)
+private fun getCropContainerTopLeftOffset(wrapSize: AssetSize, cropContainerSize: AssetSize) =
+  Offset(
+    x = ((wrapSize.width - cropContainerSize.width) / 2).toFloat(),
+    y = ((wrapSize.height - cropContainerSize.height) / 2).toFloat(),
+  )
 
 private const val TRANSFORMATION_CLAMP_ANIMATION_DURATION_MS = 250
 
@@ -129,14 +128,10 @@ internal fun GesturesTransformView(
     )
 
     var displayedContentScale by remember {
-      mutableFloatStateOf(
-        initialTransformations?.scale ?: minScale
-      )
+      mutableFloatStateOf(initialTransformations?.scale ?: minScale)
     }
     var displayedContentOffset by remember {
-      mutableStateOf(
-        initialTransformations?.offset ?: Offset.Zero
-      )
+      mutableStateOf(initialTransformations?.offset ?: Offset.Zero)
     }
 
     val scope = rememberCoroutineScope()
@@ -166,7 +161,7 @@ internal fun GesturesTransformView(
         if (displayedContentScale != clampedTransformations.scale) {
           animatableScale.animateTo(
             clampedTransformations.scale,
-            animationSpec = tween(TRANSFORMATION_CLAMP_ANIMATION_DURATION_MS)
+            animationSpec = tween(TRANSFORMATION_CLAMP_ANIMATION_DURATION_MS),
           ) { displayedContentScale = this.value }
         }
       }
@@ -174,7 +169,7 @@ internal fun GesturesTransformView(
         if (displayedContentOffset != clampedTransformations.offset) {
           animatableOffset.animateTo(
             clampedTransformations.offset,
-            animationSpec = tween(TRANSFORMATION_CLAMP_ANIMATION_DURATION_MS)
+            animationSpec = tween(TRANSFORMATION_CLAMP_ANIMATION_DURATION_MS),
           ) { displayedContentOffset = this.value }
         }
       }
@@ -248,7 +243,7 @@ internal fun GesturesTransformView(
             translationX = cropContainerTopLeftOffset.x + displayedContentOffset.x
             translationY = cropContainerTopLeftOffset.y + displayedContentOffset.y
           }
-          .conditional(isEnabled) { transformable(state = transformableState) },
+          .conditional(isEnabled) { transformable(state = transformableState) }
       )
 
       Grid(
@@ -338,7 +333,8 @@ private fun Grid(
   }
 
   FlowRow(
-    maxLines = GRID_ROWS_AMOUNT, maxItemsInEachRow = GRID_COLUMNS_AMOUNT,
+    maxLines = GRID_ROWS_AMOUNT,
+    maxItemsInEachRow = GRID_COLUMNS_AMOUNT,
     modifier = modifier,
   ) {
     repeat(GRID_CELLS_AMOUNT) { index ->

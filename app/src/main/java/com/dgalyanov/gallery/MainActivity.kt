@@ -33,16 +33,12 @@ class MainActivity : ComponentActivity() {
     requestCode: Int,
     permissions: Array<out String>,
     grantResults: IntArray,
-    deviceId: Int
+    deviceId: Int,
   ) {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
     log { "onRequestPermissionsResult(requestCode: $requestCode, permissions: $permissions, grantResults: $grantResults, deviceId: $deviceId)" }
 
-    if (GalleryPermissionsHelper.onRequestPermissionsResult(
-        requestCode,
-        grantResults
-      )
-    ) {
+    if (GalleryPermissionsHelper.onRequestPermissionsResult(requestCode, grantResults)) {
       galleryViewModel.populateAllAssetsMap()
     }
   }
@@ -59,7 +55,7 @@ class MainActivity : ComponentActivity() {
     galleryViewModel.updateWindowMetrics(
       density = displayMetrics.density,
       width = displayMetrics.widthPixels,
-      height = displayMetrics.heightPixels
+      height = displayMetrics.heightPixels,
     )
 
     GalleryContentResolver.init(this)
