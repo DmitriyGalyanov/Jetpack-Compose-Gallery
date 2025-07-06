@@ -17,17 +17,18 @@ internal fun FullSizeAssetMediaView(
   asset: GalleryAsset,
   nextAsset: GalleryAsset?,
   sizeDp: AssetSizeDp,
+  isPlayable: Boolean,
 ) {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
 
   val exoPlayerController = galleryViewModel.exoPlayerController
 
-  LaunchedEffect(asset, nextAsset) {
+  LaunchedEffect(asset, nextAsset, isPlayable) {
     val assetToApply = nextAsset ?: asset
 
     if (assetToApply.type == GalleryAssetType.Video) {
       exoPlayerController.setMedia(assetToApply.uri)
-      if (nextAsset == null) {
+      if (nextAsset == null && isPlayable) {
         exoPlayerController.allowPlay()
         exoPlayerController.play()
         // making sure requests from other sources will not be fulfilled

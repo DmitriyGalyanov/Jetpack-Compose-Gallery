@@ -130,6 +130,7 @@ internal fun clampAssetTransformationsAndCropData(
 internal fun TransformableAssetView(
   asset: GalleryAsset,
   modifier: Modifier = Modifier,
+  isPlayable: Boolean,
 ) {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
 
@@ -192,6 +193,7 @@ internal fun TransformableAssetView(
             asset = asset,
             nextAsset = nextPreviewedAsset,
             sizeDp = contentSizeDp,
+            isPlayable = isPlayable,
           )
         }
       }

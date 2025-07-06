@@ -5,8 +5,10 @@ import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -29,8 +31,16 @@ internal class GalleryViewContentNestedScrollConnection(
   private val gridNonThumbnailsItemsAmount: Int,
   private val gridColumnsAmount: Int,
   private val gridItemHeightPx: Int,
-  private val onPreviewedAssetDidHide: () -> Unit,
-  private val onPreviewedAssetDidUnhide: () -> Unit,
+  /**
+   * invocation might be skipped if Preview is fully hidden via Scroll Gesture (before Fling)
+   */
+  private val onPreviewedAssetWillHide: (() -> Unit)? = null,
+  /**
+   * invocation might be skipped if Preview is fully shown via Scroll Gesture (before Fling)
+   */
+  private val onPreviewedAssetWillShow: (() -> Unit)? = null,
+  private val onPreviewedAssetDidHide: (() -> Unit)? = null,
+  private val onPreviewedAssetDidShow: (() -> Unit)? = null,
 ) : NestedScrollConnection {
   private val log = GalleryLogFactory("GalleryViewContentNestedScrollConnection")
 
@@ -48,41 +58,42 @@ internal class GalleryViewContentNestedScrollConnection(
     }
   }
 
-  fun showPreviewedAsset() {
-    log { "showPreviewedAsset()" }
-    animatePreviewedAssetOffset(0) {
-      isPreviewedAssetLockedAsHidden = false
-      onPreviewedAssetDidUnhide()
-    }
-  }
-
-  private fun hidePreviewedAsset() {
-    log { "hidePreviewedAsset()" }
-    animatePreviewedAssetOffset(-previewedAssetContainerHeightPx) {
-      isPreviewedAssetLockedAsHidden = true
-      onPreviewedAssetDidHide()
-    }
-  }
-
   /** hidden, but not docked */
-  private val isPreviewedAssetHidden get() = previewedAssetOffset == -previewedAssetContainerHeightPx
+  private val isPreviewedAssetHidden by derivedStateOf { previewedAssetOffset == -previewedAssetContainerHeightPx }
   private var isPreviewedAssetOffsetUnlockedByCurrentFling = false
 
-  private var isPreviewedAssetLockedAsHidden = isPreviewedAssetHidden
-    set(value) {
-      if (value != field) log { "setIsPreviewedAssetLockedAsHidden to $value" }
-      field = value
+  private var isPreviewedAssetLockedAsHidden by mutableStateOf(isPreviewedAssetHidden)
+
+  fun showPreviewedAsset() {
+    log { "showPreviewedAsset()" }
+    onPreviewedAssetWillShow?.invoke()
+    animatePreviewedAssetOffset(0) {
+      isPreviewedAssetLockedAsHidden = false
+      onPreviewedAssetDidShow?.invoke()
     }
+  }
+
+  fun hidePreviewedAsset() {
+    log { "hidePreviewedAsset()" }
+    onPreviewedAssetWillHide?.invoke()
+    animatePreviewedAssetOffset(-previewedAssetContainerHeightPx) {
+      isPreviewedAssetLockedAsHidden = true
+      onPreviewedAssetDidHide?.invoke()
+    }
+  }
 
   private fun requestMarkPreviewedAssetLockedAsHidden() {
     if (isPreviewedAssetOffsetUnlockedByCurrentFling) return
     isPreviewedAssetLockedAsHidden = true
-    onPreviewedAssetDidHide()
+    onPreviewedAssetDidHide?.invoke()
   }
 
   private fun dockPreviewedAssetToClosestPosition() {
     if (isPreviewedAssetHidden) return requestMarkPreviewedAssetLockedAsHidden()
-    if (previewedAssetOffset == 0) return onPreviewedAssetDidUnhide()
+    if (previewedAssetOffset == 0) {
+      onPreviewedAssetDidShow?.invoke()
+      return
+    }
 
     if (previewedAssetOffset >= -previewedAssetContainerHeightPx / 2) showPreviewedAsset()
     else hidePreviewedAsset()

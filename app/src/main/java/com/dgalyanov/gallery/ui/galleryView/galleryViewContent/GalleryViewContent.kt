@@ -82,6 +82,7 @@ internal fun GalleryViewContent() {
 
   val gridFlingDecayAnimationSpec = rememberSplineBasedDecay<Float>()
 
+  var isPreviewPlayable by remember { mutableStateOf(isPreviewEnabled) }
   val nestedScrollConnection = remember(previewedAssetContainerHeightPx) {
     GalleryViewContentNestedScrollConnection(
       previewedAssetContainerHeightPx = previewedAssetContainerHeightPx,
@@ -92,9 +93,14 @@ internal fun GalleryViewContent() {
       gridNonThumbnailsItemsAmount = GRID_NON_THUMBNAILS_ITEMS_AMOUNT,
       gridColumnsAmount = COLUMNS_AMOUNT,
       gridItemHeightPx = thumbnailWidthPx,
-      onPreviewedAssetDidHide = galleryViewModel.exoPlayerController::pause,
-      onPreviewedAssetDidUnhide = galleryViewModel.exoPlayerController::play,
+      onPreviewedAssetWillHide = { isPreviewPlayable = false },
+      onPreviewedAssetDidHide = { isPreviewPlayable = false },
+      onPreviewedAssetDidShow = { isPreviewPlayable = true },
+      onPreviewedAssetWillShow = { isPreviewPlayable = true },
     )
+  }
+  LaunchedEffect(isPreviewEnabled) {
+    if (!isPreviewEnabled) nestedScrollConnection.hidePreviewedAsset()
   }
 
   fun scrollToAssetByIndex(
@@ -143,23 +149,23 @@ internal fun GalleryViewContent() {
   Box(
     Modifier
       .fillMaxSize()
-      .conditional(isPreviewEnabled) { nestedScroll(nestedScrollConnection) }
-  ) {
-    if (isPreviewEnabled) {
-      galleryViewModel.previewedAsset?.let {
-        TransformableAssetView(asset = it, Modifier.offset {
+      .conditional(isPreviewEnabled) { nestedScroll(nestedScrollConnection) }) {
+    galleryViewModel.previewedAsset?.let {
+      TransformableAssetView(
+        asset = it,
+        modifier = Modifier.offset {
           IntOffset(0, nestedScrollConnection.previewedAssetOffset)
-        })
-      }
+        },
+        isPlayable = isPreviewPlayable,
+      )
     }
 
     Column {
-      if (isPreviewEnabled) {
-        InnerSpacer(
-          previewedAssetContainerHeightPx = previewedAssetContainerHeightPx,
-          nestedScrollConnection = nestedScrollConnection
-        )
-      }
+      // todo: check if could be replaced with an offset
+      InnerSpacer(
+        previewedAssetContainerHeightPx = previewedAssetContainerHeightPx,
+        nestedScrollConnection = nestedScrollConnection
+      )
 
       LazyVerticalGrid(
         state = gridState,
