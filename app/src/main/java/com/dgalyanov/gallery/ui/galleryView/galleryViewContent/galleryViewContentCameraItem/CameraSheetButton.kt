@@ -139,6 +139,13 @@ private fun CameraSheet(
       if (cameraControl.isRecordingVideo) cameraControl.finishVideoRecording()
     }
 
+    fun hideSheet(onCompletion: (() -> Unit)? = null) {
+      scope.launch { sheetState.hide() }.invokeOnCompletion {
+        onDidDismiss()
+        onCompletion?.invoke()
+      }
+    }
+
     Box(
       modifier = Modifier
         // sheet's height is capped with available space
@@ -161,6 +168,14 @@ private fun CameraSheet(
           .fillMaxWidth()
           .align(Alignment.TopCenter)
       ) {
+        TextButton(
+          onClick = ::hideSheet,
+          enabled = !cameraControl.isCapturingMedia,
+          modifier = Modifier.weight(1F),
+        ) {
+          Text("Close Camera")
+        }
+
         TextButton(
           onClick = cameraControl::switchImageCaptureFlashMode,
           enabled = !cameraControl.isCapturingMedia,
@@ -188,8 +203,7 @@ private fun CameraSheet(
             onClick = {
               // todo: update UI while loading
               cameraControl.takePicture { capturedImage ->
-                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                  onDidDismiss()
+                hideSheet {
                   onDidTakePicture?.invoke(capturedImage)
                 }
               }
@@ -203,15 +217,14 @@ private fun CameraSheet(
 
         if (isVideoRecordingEnabled) {
           TextButton(
-            {
+            onClick = {
               // todo: update UI while loading
-              // todo: reverse flow
-              if (!cameraControl.isRecordingVideo) cameraControl.startVideoRecording { recordedVideoOutputResults ->
-                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                  onDidDismiss()
+              if (cameraControl.isRecordingVideo) cameraControl.finishVideoRecording()
+              else cameraControl.startVideoRecording { recordedVideoOutputResults ->
+                hideSheet {
                   onDidRecordVideo?.invoke(recordedVideoOutputResults)
                 }
-              } else cameraControl.finishVideoRecording()
+              }
             },
             enabled = !cameraControl.isTakingPicture,
             modifier = Modifier.weight(1F)
