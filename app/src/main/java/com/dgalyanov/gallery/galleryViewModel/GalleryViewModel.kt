@@ -236,10 +236,10 @@ internal class GalleryViewModel(
   private val selectedAssetsIds = mutableStateSetOf<GalleryAssetId>()
   val anAssetIsSelected by derivedStateOf { selectedAssetsIds.isNotEmpty() }
 
-  private fun fixAssetsSelection() {
-    log { "fixAssetsSelection() | selectedAssetsIds: $selectedAssetsIds" }
+  private fun updateSelectedAssetsIndices() {
+    log { "updateSelectedAssetsIndices() | selectedAssetsIds: $selectedAssetsIds" }
     selectedAssetsIds.forEachIndexed { index, id ->
-      selectedAlbumAssetsMap[id]?.setSelectionIndex(index)
+      allAssetsMap[id]?.setSelectionIndex(index)
     }
   }
 
@@ -250,11 +250,11 @@ internal class GalleryViewModel(
 
     selectedAssetsIds.forEach {
       log { "$logTag | iterating with $it" }
-      if (it != assetToRemain?.id) selectedAlbumAssetsMap[it]?.deselect()
+      if (it != assetToRemain?.id) allAssetsMap[it]?.deselect()
     }
     selectedAssetsIds.retainAll(listOf(assetToRemain?.id).toSet())
 
-    fixAssetsSelection()
+    updateSelectedAssetsIndices()
 
     log { "$logTag | amountOnEnd: ${selectedAssetsIds.size}" }
   }
@@ -265,7 +265,9 @@ internal class GalleryViewModel(
   @Suppress("FunctionName")
   private fun _setIsMultiselectEnabled(value: Boolean) {
     log { "_setIsMultiselectEnabled(value: $value)" }
-    if (!value) clearSelectedAssets(previewedAsset)
+    if (!value) clearSelectedAssets(
+      if (allowedAssetsTypes.contains(previewedAsset?.type)) previewedAsset else null
+    )
     isMultiselectEnabled = value
   }
 
@@ -320,7 +322,7 @@ internal class GalleryViewModel(
 
     _setPreviewedAsset(asset)
 
-    fixAssetsSelection()
+    updateSelectedAssetsIndices()
   }
 
   private fun deselectAsset(asset: GalleryAsset) {
@@ -336,7 +338,7 @@ internal class GalleryViewModel(
       _setPreviewedAsset(newPreviewedAsset)
     }
 
-    fixAssetsSelection()
+    updateSelectedAssetsIndices()
   }
 
   private fun deselectDisallowedAssets() {
@@ -351,7 +353,6 @@ internal class GalleryViewModel(
 
     log { "$logTag finished | currentlySelectedAssetsIds: ${selectedAssetsIds.map { allAssetsMap[it] }}" }
   }
-
 
   fun onThumbnailClick(asset: GalleryAsset) {
     log { "onThumbnailClick(asset: $asset)" }
@@ -375,7 +376,6 @@ internal class GalleryViewModel(
     }
   }
 
-  private val selectedAlbumAssetsMapChangeSubscriptionJob: Job
   private fun subscribeToSelectedAlbumAssetsMapChange(): Job {
     log { "subscribeToSelectedAlbumAssetsMapChange()" }
     return viewModelScope.launch {
@@ -383,15 +383,16 @@ internal class GalleryViewModel(
         .collectLatest { result ->
           log { "collected latest selectedAlbumAssetsMap update, result.size: ${result.size}, selectedAlbumAssetsMap.size: ${selectedAlbumAssetsMap.size}" }
 
-          deselectDisallowedAssets()
+          if (isMultiselectEnabled) deselectDisallowedAssets()
+          else clearSelectedAssets()
+
           maybeSelectAppropriateAsset()
         }
     }
   }
 
-  init {
-    selectedAlbumAssetsMapChangeSubscriptionJob = subscribeToSelectedAlbumAssetsMapChange()
-  }
+  private val selectedAlbumAssetsMapChangeSubscriptionJob =
+    subscribeToSelectedAlbumAssetsMapChange()
 
   private fun resetAssetsSelection() {
     log { "resetAssetsSelection()" }
