@@ -5,6 +5,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.MediaStore
+import android.view.Window
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -25,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,6 +40,7 @@ import com.dgalyanov.gallery.utils.MediaMetadataHelper
 import com.dgalyanov.gallery.utils.postToMainThread
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlin.reflect.KProperty
 
 /** todo: enable Volume down button receiver used to trigger shutter */
 // https://github.com/android/camera-samples/blob/main/CameraXBasic/app/src/main/java/com/android/example/cameraxbasic/fragments/CameraFragment.kt
@@ -118,23 +122,143 @@ internal class CameraControl(
     videoCaptureMirrorMode = MirrorMode.MIRROR_MODE_ON_FRONT_ONLY
   }
 
+  private class StatefulImageCaptureFlashMode(private val cameraController: LifecycleCameraController) {
+    private var _statefulImageCaptureFlashMode by mutableIntStateOf(cameraController.imageCaptureFlashMode)
+
+    operator fun setValue(cameraControl: CameraControl, property: KProperty<*>, value: Int) {
+      cameraController.imageCaptureFlashMode = value
+      _statefulImageCaptureFlashMode = value
+    }
+
+    operator fun getValue(cameraControl: CameraControl, property: KProperty<*>): Int {
+      return _statefulImageCaptureFlashMode
+    }
+  }
+
+  private var statefulImageCaptureFlashMode by StatefulImageCaptureFlashMode(cameraController)
+
+  val imageCaptureFlashModeName by derivedStateOf {
+    when (statefulImageCaptureFlashMode) {
+      ImageCapture.FLASH_MODE_OFF -> "OFF"
+      ImageCapture.FLASH_MODE_AUTO -> "Auto"
+      ImageCapture.FLASH_MODE_ON -> "ON"
+      ImageCapture.FLASH_MODE_SCREEN -> "Screen"
+      else -> "OFF"
+    }
+  }
+
+  private var screenFlashWindow: Window? = null
+  private val isScreenFlashAvailable get() = screenFlashWindow != null
+  fun onDidSetPreviewViewScreenFlashWindow(window: Window?) {
+    screenFlashWindow = window
+  }
+
+  fun switchImageCaptureFlashMode() {
+    statefulImageCaptureFlashMode =
+      when (cameraController.cameraSelector) {
+        CameraSelector.DEFAULT_FRONT_CAMERA -> {
+          if (
+            statefulImageCaptureFlashMode == ImageCapture.FLASH_MODE_OFF &&
+            isScreenFlashAvailable
+          ) ImageCapture.FLASH_MODE_SCREEN
+          else ImageCapture.FLASH_MODE_OFF
+        }
+
+        else -> {
+          when (statefulImageCaptureFlashMode) {
+            ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_AUTO
+            ImageCapture.FLASH_MODE_AUTO -> ImageCapture.FLASH_MODE_ON
+            ImageCapture.FLASH_MODE_ON, ImageCapture.FLASH_MODE_SCREEN -> ImageCapture.FLASH_MODE_OFF
+            else -> ImageCapture.FLASH_MODE_OFF
+          }
+        }
+      }
+  }
+
   fun switchCamera() {
     log { "switchCamera()" }
+
+    val capturedImageCaptureFlashMode = statefulImageCaptureFlashMode
+    statefulImageCaptureFlashMode = ImageCapture.FLASH_MODE_OFF
 
     cameraController.cameraSelector = when (cameraController.cameraSelector) {
       CameraSelector.DEFAULT_BACK_CAMERA -> CameraSelector.DEFAULT_FRONT_CAMERA
       CameraSelector.DEFAULT_FRONT_CAMERA -> CameraSelector.DEFAULT_BACK_CAMERA
       else -> CameraSelector.DEFAULT_BACK_CAMERA
     }
+
+    if (
+      cameraController.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA &&
+      capturedImageCaptureFlashMode == ImageCapture.FLASH_MODE_SCREEN
+    ) {
+      statefulImageCaptureFlashMode = ImageCapture.FLASH_MODE_ON
+    }
+
+    if (
+      cameraController.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA &&
+      (
+        capturedImageCaptureFlashMode == ImageCapture.FLASH_MODE_ON ||
+        capturedImageCaptureFlashMode == ImageCapture.FLASH_MODE_AUTO
+      )
+    ) {
+      statefulImageCaptureFlashMode =
+        if (isScreenFlashAvailable) ImageCapture.FLASH_MODE_SCREEN
+        else ImageCapture.FLASH_MODE_OFF
+    }
   }
+
+  private val shouldEnableTorchWhileRecordingVideo by derivedStateOf {
+    statefulImageCaptureFlashMode == ImageCapture.FLASH_MODE_ON ||
+    statefulImageCaptureFlashMode == ImageCapture.FLASH_MODE_AUTO
+  }
+  private val shouldFlashPreviewWhileRecordingVideo by derivedStateOf {
+    statefulImageCaptureFlashMode == ImageCapture.FLASH_MODE_SCREEN
+  }
+
+  var shouldFlashPreview by mutableStateOf(false)
+  private var brightnessBeforeLightEnabled: Float? = null
+  private fun enableAppropriateForVideoRecordingLightIfNeeded() = postToMainThread {
+    if (shouldEnableTorchWhileRecordingVideo) cameraController.enableTorch(true)
+    if (shouldFlashPreviewWhileRecordingVideo) {
+      screenFlashWindow?.let { window ->
+        brightnessBeforeLightEnabled = window.attributes.screenBrightness
+        window.attributes = window.attributes.apply {
+          screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL
+        }
+      }
+      shouldFlashPreview = true
+    }
+  }
+
+  private fun disableAppropriateForVideoRecordingLight() = postToMainThread {
+    cameraController.enableTorch(false)
+
+    shouldFlashPreview = false
+    brightnessBeforeLightEnabled?.let { brightnessBeforeLightEnabled ->
+      screenFlashWindow?.let { window ->
+        window.attributes = window.attributes.apply {
+          screenBrightness = brightnessBeforeLightEnabled
+        }
+      }
+    }
+  }
+
+  var isTakingPicture by mutableStateOf(false)
+    private set
+  private var currentRecording by mutableStateOf<Recording?>(null)
+  val isRecordingVideo by derivedStateOf { currentRecording != null }
+
+  val isCapturingMedia by derivedStateOf { isTakingPicture || isRecordingVideo }
 
   // todo: see this https://developer.android.com/media/camera/camerax/take-photo/options
   fun takePicture(
     onImageSavedCallback: (outputFileResults: ImageCapture.OutputFileResults) -> Unit,
   ) {
-    if (!checkIfPermissionsAreGranted()) {
-      return log { "useCameraControl.takePicture called w/o Permissions" }
-    }
+    val logTag = "takePicture(...)"
+    if (!checkIfPermissionsAreGranted()) return log { "$logTag called w/o Permissions, aborting" }
+
+    if (isCapturingMedia) return log { "$logTag called when isCapturingMedia, aborting" }
+    isTakingPicture = true
 
     val contentValues = MediaMetadataHelper.createContentValuesForPicture()
 
@@ -144,7 +268,6 @@ internal class CameraControl(
       contentValues,
     ).build()
 
-    val logTag = "takePicture()"
     val logDetails =
       "name: ${contentValues.get(MediaStore.MediaColumns.DISPLAY_NAME)}, contentValues: $contentValues, outputOptions: $outputOptions"
     log { "$logTag | $logDetails" }
@@ -161,17 +284,16 @@ internal class CameraControl(
         override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
           log { "$logTag | onImageSaved(outputFileResults.savedUri: ${outputFileResults.savedUri}) | $logDetails" }
           onImageSavedCallback(outputFileResults)
+          isTakingPicture = false
         }
 
         override fun onError(exception: ImageCaptureException) {
           log { "$logTag | onError(exception: $exception) | $logDetails" }
+          isTakingPicture = false
         }
       },
     )
   }
-
-  private var currentRecording by mutableStateOf<Recording?>(null)
-  val isRecording by derivedStateOf { currentRecording != null }
 
   @SuppressLint("MissingPermission")
     /** permissions are checked with [checkIfPermissionsAreGranted] */
@@ -181,7 +303,7 @@ internal class CameraControl(
     val logTag = "startVideoRecording()"
 
     if (!checkIfPermissionsAreGranted()) return log { "$logTag called w/o Permissions" }
-    if (isRecording) return log { "$logTag called while recording" }
+    if (isCapturingMedia) return log { "$logTag called when isCapturingMedia, aborting" }
 
     val contentValues = MediaMetadataHelper.createContentValuesForVideo()
 
@@ -196,6 +318,7 @@ internal class CameraControl(
     fun logWithDetails(message: String) = log { "$logTag | $message | $logDetails" }
 
     cameraController.setEnabledUseCases(CameraController.VIDEO_CAPTURE)
+    enableAppropriateForVideoRecordingLightIfNeeded()
     currentRecording = cameraController.startRecording(
       mediaStoreOutputOptions,
       AudioConfig.create(true),
@@ -224,6 +347,7 @@ internal class CameraControl(
               onVideoRecordedSuccessfully(event.outputResults)
             }
           }
+          disableAppropriateForVideoRecordingLight()
         }
       }
     }

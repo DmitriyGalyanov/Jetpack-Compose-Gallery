@@ -140,6 +140,8 @@ private fun CameraSheet(
       CameraPreviewContent(
         cameraController = cameraControl.cameraController,
         lifecycleOwner = cameraControl.lifecycleOwner,
+        onDidSetScreenFlashWindow = cameraControl::onDidSetPreviewViewScreenFlashWindow,
+        shouldFlashPreview = cameraControl.shouldFlashPreview,
         modifier = Modifier
           .align(Alignment.TopCenter)
           .fillMaxWidth()
@@ -150,11 +152,25 @@ private fun CameraSheet(
       Row(
         modifier = Modifier
           .fillMaxWidth()
+          .align(Alignment.TopCenter)
+      ) {
+        TextButton(
+          onClick = cameraControl::switchImageCaptureFlashMode,
+          enabled = !cameraControl.isCapturingMedia,
+          modifier = Modifier.weight(1F),
+        ) {
+          Text("Flash: ${cameraControl.imageCaptureFlashModeName}")
+        }
+      }
+
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
           .align(Alignment.BottomCenter),
       ) {
         TextButton(
           onClick = cameraControl::switchCamera,
-          enabled = !cameraControl.isRecording,
+          enabled = !cameraControl.isCapturingMedia,
           modifier = Modifier.weight(1F)
         ) {
           Text("Switch Camera")
@@ -171,7 +187,7 @@ private fun CameraSheet(
                 }
               }
             },
-            enabled = !cameraControl.isRecording,
+            enabled = !cameraControl.isCapturingMedia,
             modifier = Modifier.weight(1F)
           ) {
             Text("Capture Picture")
@@ -182,17 +198,19 @@ private fun CameraSheet(
           TextButton(
             {
               // todo: update UI while loading
-              if (!cameraControl.isRecording) cameraControl.startVideoRecording { recordedVideoOutputResults ->
+              // todo: reverse flow
+              if (!cameraControl.isRecordingVideo) cameraControl.startVideoRecording { recordedVideoOutputResults ->
                 scope.launch { sheetState.hide() }.invokeOnCompletion {
                   onDidDismiss()
                   onDidRecordVideo?.invoke(recordedVideoOutputResults)
                 }
               } else cameraControl.finishVideoRecording()
             },
+            enabled = !cameraControl.isTakingPicture,
             modifier = Modifier.weight(1F)
           ) {
             // todo: show current recording duration
-            Text(if (cameraControl.isRecording) "Stop recording" else "Record Video")
+            Text(if (cameraControl.isRecordingVideo) "Stop recording" else "Record Video")
           }
         }
       }
