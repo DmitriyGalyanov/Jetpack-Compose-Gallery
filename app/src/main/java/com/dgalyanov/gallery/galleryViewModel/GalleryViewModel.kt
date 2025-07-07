@@ -43,7 +43,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 // todo: come up with a better name
-private typealias OnAssetsEmission = (assets: List<Asset>) -> Unit
+private typealias OnAssetsEmission = (
+  assets: List<Asset>,
+  aspectRatio: AssetAspectRatio,
+  creativityType: CreativityType,
+) -> Unit
+
 private typealias OnNeuroStoriesProceedRequest = () -> Unit
 
 // todo: add Content Modes (post, story, reels, aiFilters)
@@ -419,7 +424,7 @@ internal class GalleryViewModel(
 
   private fun emitAssets(assets: List<Asset>) {
     log { "emitAssets(assets: $assets)" }
-    onAssetsEmission?.invoke(assets)
+    onAssetsEmission?.invoke(assets, usedAspectRatio, selectedCreativityType)
     resetAssetsSelection()
   }
 

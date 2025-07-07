@@ -4,9 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -35,6 +39,8 @@ import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.dgalyanov.gallery.dataClasses.Asset
+import com.dgalyanov.gallery.dataClasses.AssetAspectRatio
+import com.dgalyanov.gallery.dataClasses.CreativityType
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
@@ -46,11 +52,20 @@ import kotlin.time.DurationUnit
 @Composable
 internal fun EmittedSelectionView(galleryViewModel: GalleryViewModel) {
 
-  var emittedAssets by remember { mutableStateOf(listOf<Asset>()) }
+  var emittedAssets by remember { mutableStateOf<List<Asset>?>(null) }
+  var emittedAspectRatio by remember { mutableStateOf<AssetAspectRatio?>(null) }
+  var emittedCreativityType by remember { mutableStateOf<CreativityType?>(null) }
+  fun resetState() {
+    emittedAssets = null
+    emittedAspectRatio = null
+    emittedCreativityType = null
+  }
 
   LaunchedEffect(Unit) {
-    galleryViewModel.setOnAssetsEmission {
-      emittedAssets = it
+    galleryViewModel.setOnAssetsEmission { assets, aspectRatio, creativityType ->
+      emittedAssets = assets
+      emittedAspectRatio = aspectRatio
+      emittedCreativityType = creativityType
     }
   }
 
@@ -58,15 +73,17 @@ internal fun EmittedSelectionView(galleryViewModel: GalleryViewModel) {
 
   var isSheetDisplayed by remember { mutableStateOf(false) }
   LaunchedEffect(emittedAssets) {
-    if (emittedAssets.isNotEmpty()) isSheetDisplayed = true
+    if (!emittedAssets.isNullOrEmpty()) isSheetDisplayed = true
   }
 
   if (isSheetDisplayed) EmittedSelectionSheet(
     sheetState = sheetState,
-    assets = emittedAssets,
+    assets = emittedAssets ?: listOf(),
+    aspectRatioHeightToWidthKey = emittedAspectRatio?.heightToWidthKey ?: "NONE",
+    creativityTypeName = emittedCreativityType?.name ?: "NONE",
   ) {
     isSheetDisplayed = false
-    emittedAssets = listOf()
+    resetState()
   }
 }
 
@@ -79,6 +96,8 @@ private const val ITEMS_IN_ROW = 3
 private fun EmittedSelectionSheet(
   sheetState: SheetState,
   assets: List<Asset>,
+  aspectRatioHeightToWidthKey: String,
+  creativityTypeName: String,
   onDidDismiss: () -> Unit,
 ) {
   ModalBottomSheet(
@@ -92,41 +111,52 @@ private fun EmittedSelectionSheet(
         vertical = 8.dp,
       )
     ) {
-      FlowRow(
-        maxItemsInEachRow = ITEMS_IN_ROW,
-        verticalArrangement = Arrangement.spacedBy(SPACE_BETWEEN_ITEMS),
-        horizontalArrangement = Arrangement.spacedBy(SPACE_BETWEEN_ITEMS),
-        modifier = Modifier
-          .wrapContentSize()
-          .verticalScroll(rememberScrollState())
-      ) {
-        assets.map {
-          Box(
-            modifier = Modifier
-              .width(this@BoxWithConstraints.maxWidth / ITEMS_IN_ROW - SPACE_BETWEEN_ITEMS)
-              .clip(RoundedCornerShape(8.dp))
-              .background(Color.Gray)
-              .aspectRatio(9F / 16F)
-          ) {
-            GlideImage(
-              model = it.uri,
-              contentDescription = null,
-              contentScale = ContentScale.Fit,
-              modifier = Modifier.fillMaxSize()
-            )
-
-            if (it.durationMs > 0) {
-              Text(
-                it.durationMs.milliseconds.toString(DurationUnit.SECONDS),
-                fontSize = 20.sp,
-                lineHeight = 24.sp,
-                modifier = Modifier
-                  .offset((-4).dp, (-4).dp)
-                  .clip(RoundedCornerShape(2.dp))
-                  .align(Alignment.BottomEnd)
-                  .background(Color(0, 0, 0, 160))
-                  .padding(horizontal = 4.dp)
+      Column {
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(40.dp),
+          horizontalArrangement = Arrangement.SpaceAround
+        ) {
+          Text("Aspect Ratio HxW Key: $aspectRatioHeightToWidthKey")
+          Text("CreativityType: $creativityTypeName")
+        }
+        FlowRow(
+          maxItemsInEachRow = ITEMS_IN_ROW,
+          verticalArrangement = Arrangement.spacedBy(SPACE_BETWEEN_ITEMS),
+          horizontalArrangement = Arrangement.spacedBy(SPACE_BETWEEN_ITEMS),
+          modifier = Modifier
+            .wrapContentSize()
+            .verticalScroll(rememberScrollState())
+        ) {
+          assets.map {
+            Box(
+              modifier = Modifier
+                .width(this@BoxWithConstraints.maxWidth / ITEMS_IN_ROW - SPACE_BETWEEN_ITEMS)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.Gray)
+                .aspectRatio(9F / 16F)
+            ) {
+              GlideImage(
+                model = it.uri,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize()
               )
+
+              if (it.durationMs > 0) {
+                Text(
+                  it.durationMs.milliseconds.toString(DurationUnit.SECONDS),
+                  fontSize = 20.sp,
+                  lineHeight = 24.sp,
+                  modifier = Modifier
+                    .offset((-4).dp, (-4).dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .align(Alignment.BottomEnd)
+                    .background(Color(0, 0, 0, 160))
+                    .padding(horizontal = 4.dp)
+                )
+              }
             }
           }
         }
