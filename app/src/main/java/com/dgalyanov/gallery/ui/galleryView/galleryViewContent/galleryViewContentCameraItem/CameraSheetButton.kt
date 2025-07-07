@@ -1,5 +1,6 @@
 package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.camera.core.ImageCapture
 import androidx.camera.video.OutputResults
@@ -132,6 +133,12 @@ private fun CameraSheet(
     shape = RoundedCornerShape(0.dp),
     dragHandle = null,
   ) {
+    BackHandler(cameraControl.isCapturingMedia) {
+      // assuming Picture Capturing doesn't hang
+//      if (cameraControl.isTakingPicture)
+      if (cameraControl.isRecordingVideo) cameraControl.finishVideoRecording()
+    }
+
     Box(
       modifier = Modifier
         // sheet's height is capped with available space
