@@ -235,7 +235,9 @@ internal object AssetCropper {
   }
 
   private suspend fun getCroppedImage(
-    asset: GalleryAsset, context: Context, shouldSaveToGallery: Boolean = false
+    asset: GalleryAsset,
+    context: Context,
+    shouldSaveToGallery: Boolean = false,
   ): Asset? = withContext(Dispatchers.IO) {
     val startTime = System.currentTimeMillis()
     val logTag =
