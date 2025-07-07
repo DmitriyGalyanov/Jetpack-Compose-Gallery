@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -65,10 +66,16 @@ class MainActivity : ComponentActivity() {
       galleryViewModel.populateAllAssetsMap()
     }
 
-    enableEdgeToEdge()
+    enableEdgeToEdge(
+      statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+      navigationBarStyle = SystemBarStyle.dark(
+        android.graphics.Color.argb(0x80, 0x1b, 0x1b, 0x1b),
+      ),
+    )
 
     setContent {
-      GalleryTheme {
+      // force dark theme
+      GalleryTheme(darkTheme = true) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPaddings ->
           LaunchedEffect(innerPaddings) {
             galleryViewModel.updateInnerPaddings(innerPaddings)
