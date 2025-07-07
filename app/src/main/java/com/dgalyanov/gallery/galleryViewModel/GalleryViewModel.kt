@@ -29,6 +29,7 @@ import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
 import com.dgalyanov.gallery.galleryContentResolver.GalleryContentResolver
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.clampAssetTransformationsAndCropData
 import com.dgalyanov.gallery.utils.GalleryLogFactory
+import com.dgalyanov.gallery.utils.showToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -40,6 +41,10 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+
+// todo: come up with a better name
+private typealias OnAssetsEmission = (assets: List<Asset>) -> Unit
+private typealias OnNeuroStoriesProceedRequest = () -> Unit
 
 // todo: add Content Modes (post, story, reels, aiFilters)
 internal class GalleryViewModel(
@@ -393,11 +398,21 @@ internal class GalleryViewModel(
 
   val exoPlayerController = ExoPlayerController(context)
 
+  var onNeuroStoriesProceedRequest: OnNeuroStoriesProceedRequest = {
+    showToast(context, "NeuroStoriesProceedRequest")
+  }
+    private set
+
+  // will be exposed to React
+  fun setOnNeuroStoriesProceedRequest(value: OnNeuroStoriesProceedRequest) {
+    log { "setOnNeuroStoriesProceedRequest(...)" }
+    onNeuroStoriesProceedRequest = value
+  }
+
   /** Selection Emission -- START */
-  // todo: come up with a better name
-  // todo: emit aspectRatio
-  private var onAssetsEmission: ((assets: List<Asset>) -> Unit)? = null
-  fun setOnAssetsEmission(value: (assets: List<Asset>) -> Unit) {
+  // todo: emit aspectRatio and selectedCreativityType
+  private var onAssetsEmission: OnAssetsEmission? = null
+  fun setOnAssetsEmission(value: OnAssetsEmission) {
     log { "setOnAssetsEmission(...)" }
     onAssetsEmission = value
   }

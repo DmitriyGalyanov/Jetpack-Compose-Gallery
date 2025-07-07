@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.dgalyanov.gallery.dataClasses.CreativityType
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.ui.styleConsts.GalleryStyleConsts
 import com.dgalyanov.gallery.ui.utils.modifiers.conditional
@@ -65,26 +66,32 @@ internal fun GalleryViewHeader() {
         fadeIn(animationSpec = animationSpec).togetherWith(fadeOut(animationSpec = animationSpec))
       },
     ) { shouldShowLoader ->
-      if (shouldShowLoader) Box(
-        // todo: replace with a better (?) size workaround
-        modifier = Modifier.conditional(emissionButtonSize != null) {
-          size(
-            width = (emissionButtonSize!!.width.toFloat() / density).dp,
-            height = (emissionButtonSize!!.height.toFloat() / density).dp
-          )
-        },
-        contentAlignment = Alignment.Center,
-      ) {
-        CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
-      }
-      else {
-        if (galleryViewModel.anAssetIsSelected) {
-          Text(
-            "Emit selected",
-            modifier = Modifier
-              .clickable(onClick = galleryViewModel::emitCurrentlySelectedAssets)
-              .onSizeChanged { emissionButtonSize = it })
+      if (shouldShowLoader) {
+        Box(
+          // todo: replace with a better (?) size workaround
+          modifier = Modifier.conditional(emissionButtonSize != null) {
+            size(
+              width = (emissionButtonSize!!.width.toFloat() / density).dp,
+              height = (emissionButtonSize!!.height.toFloat() / density).dp
+            )
+          },
+          contentAlignment = Alignment.Center,
+        ) {
+          CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
         }
+      } else if (
+        galleryViewModel.anAssetIsSelected ||
+        galleryViewModel.selectedCreativityType == CreativityType.NeuroStory
+      ) {
+        Text(
+          "Proceed",
+          modifier = Modifier
+            .clickable(onClick = {
+              if (galleryViewModel.selectedCreativityType == CreativityType.NeuroStory) {
+                galleryViewModel.onNeuroStoriesProceedRequest()
+              } else galleryViewModel.emitCurrentlySelectedAssets()
+            })
+            .onSizeChanged { emissionButtonSize = it })
       }
     }
   }

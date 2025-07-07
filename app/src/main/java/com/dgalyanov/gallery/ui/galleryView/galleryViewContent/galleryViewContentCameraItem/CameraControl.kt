@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.provider.MediaStore
 import android.view.Window
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -42,7 +41,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.reflect.KProperty
 
-/** todo: enable Volume down button receiver used to trigger shutter */
+/** todo: capture Picture on a Volume Button Press */
 // https://github.com/android/camera-samples/blob/main/CameraXBasic/app/src/main/java/com/android/example/cameraxbasic/fragments/CameraFragment.kt
 //private val volumeDownReceiver = object : BroadcastReceiver() {
 //  override fun onReceive(context: Context, intent: Intent) {
@@ -88,8 +87,6 @@ internal class CameraControl(
 
   private val log = GalleryLogFactory("CameraControl")
 
-  private fun showToast(message: String) =
-    postToMainThread { Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
 
   private fun checkIfPermissionsAreGranted(): Boolean =
     listOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO).all {

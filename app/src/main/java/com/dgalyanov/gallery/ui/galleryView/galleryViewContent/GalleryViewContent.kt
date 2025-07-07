@@ -236,6 +236,8 @@ internal fun GalleryViewContent() {
       }
     }
 
+    NeuroStoriesView(galleryViewModel.selectedCreativityType == CreativityType.NeuroStory)
+
     var scrollToPreviewedAssetJob by remember { mutableStateOf<Job?>(null) }
     CreativityTypeSelector { selected: CreativityType, isByClick ->
       log { "selected (isByClick: $isByClick) creativityType ($selected) (lastSelected is: ${galleryViewModel.selectedCreativityType})" }
