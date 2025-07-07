@@ -1,6 +1,7 @@
 package com.dgalyanov.gallery.galleryViewModel
 
 import android.content.Context
+import android.media.AudioManager
 import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -17,27 +18,48 @@ import com.dgalyanov.gallery.utils.GalleryLogFactory
 import com.dgalyanov.gallery.utils.postToMainThread
 
 internal class ExoPlayerController(context: Context) {
-  companion object {
-    private const val DEFAULT_IS_MUTED = false
-  }
-
   private val log = GalleryLogFactory("ExoPlayerController")
 
+  private val wasRingStreamMutedOnInit =
+    (context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager)
+      ?.isStreamMute(AudioManager.STREAM_RING)
+    ?: true
+
   val exoPlayer = ExoPlayer.Builder(context).build().apply {
-    volume = if (DEFAULT_IS_MUTED) 0F else 1F
+    volume = if (wasRingStreamMutedOnInit) 0F else 1F
     repeatMode = Player.REPEAT_MODE_ALL
   }
 
   private fun applySettingsToExoPlayer() =
     postToMainThread { exoPlayer.volume = if (isMuted) 0F else 1F }
 
-  var isMuted by mutableStateOf(DEFAULT_IS_MUTED)
+  var isMuted by mutableStateOf(wasRingStreamMutedOnInit)
     private set
 
-  fun toggleMute() {
-    isMuted = !isMuted
+  @Suppress("FunctionName")
+  private fun _setIsMuted(value: Boolean) {
+    isMuted = value
     applySettingsToExoPlayer()
   }
+
+  fun toggleMute() = _setIsMuted(!isMuted)
+
+  private fun maybeSubscribeToVolumeEvents(context: Context) =
+    VolumeEventsReceiver.createAndRegister(
+      context = context,
+//      onVolumeChanged = { prevVolumeLevel: Int, volumeLevel: Int ->
+//        if (volumeLevel == 0) _setIsMuted(true)
+//        else _setIsMuted(volumeLevel < prevVolumeLevel)
+//      },
+      onVolumeChanged = { _, _ ->
+        _setIsMuted(false)
+      },
+      onRingerModeChange = { ringerMode ->
+        _setIsMuted(ringerMode != AudioManager.RINGER_MODE_NORMAL)
+      }
+    )
+
+  private val volumeEventsReceiver = maybeSubscribeToVolumeEvents(context)
 
   private var videoUri: Uri? = null
   var statefulHasMedia by mutableStateOf(false)
@@ -126,5 +148,6 @@ internal class ExoPlayerController(context: Context) {
 
   fun onDispose() {
     exoPlayer.release()
+    volumeEventsReceiver.unregister()
   }
 }
