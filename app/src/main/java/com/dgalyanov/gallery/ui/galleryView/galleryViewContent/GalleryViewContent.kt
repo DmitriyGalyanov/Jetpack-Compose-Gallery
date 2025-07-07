@@ -6,11 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -22,7 +19,6 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -161,83 +157,81 @@ internal fun GalleryViewContent() {
       )
     }
 
-    Column {
-      // todo: check if could be replaced with an offset
-      InnerSpacer(
-        previewedAssetContainerHeightPx = previewedAssetContainerHeightPx,
-        nestedScrollConnection = nestedScrollConnection
-      )
+    LazyVerticalGrid(
+      state = gridState,
+      columns = GridCells.Fixed(COLUMNS_AMOUNT),
+      horizontalArrangement = Arrangement.spacedBy(2.dp),
+      verticalArrangement = Arrangement.spacedBy(2.dp),
+      contentPadding = PaddingValues(
+        bottom = galleryViewModel.innerPaddings.calculateBottomPadding()
+      ),
+      modifier = Modifier.offset {
+        IntOffset(
+          x = 0,
+          y = previewedAssetContainerHeightPx + nestedScrollConnection.previewedAssetOffset
+        )
+      }
+    ) {
+      stickyHeader(key = TOOLBAR_ITEM_KEY) { GalleryViewToolbar() }
 
-      LazyVerticalGrid(
-        state = gridState,
-        columns = GridCells.Fixed(COLUMNS_AMOUNT),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-        contentPadding = PaddingValues(
-          bottom = galleryViewModel.innerPaddings.calculateBottomPadding()
-        ),
-      ) {
-        stickyHeader(key = TOOLBAR_ITEM_KEY) { GalleryViewToolbar() }
+      item(key = CAMERA_BUTTON_ITEM_KEY) {
+        CameraSheetButton(
+          modifier = Modifier
+            .size(width = thumbnailWidthDp, height = thumbnailHeightDp)
+            .background(Color.Black),
+          onSheetGoingToDisplay = {
+            scope.launch {
+              // todo: pause before request
+              /**
+               * Delay is required to Request Pause after Lifecycle-based Play Request
+               * (Permissions Request pauses current Lifecycle)
+               */
+              delay(10)
+              galleryViewModel.exoPlayerController.pause()
+            }
+          },
+          onSheetDidDismiss = galleryViewModel.exoPlayerController::play,
+          enabled = !galleryViewModel.isMultiselectEnabled,
+          isImageCapturingEnabled = galleryViewModel.allowedAssetsTypes.contains(GalleryAssetType.Image),
+          isVideoRecordingEnabled = galleryViewModel.allowedAssetsTypes.contains(GalleryAssetType.Video),
+          onDidTakePicture = {
+            galleryViewModel.emitCapturedImage(it) {
+              delay(30)
+              galleryViewModel.populateAllAssetsMap()
+            }
+          },
+          onDidRecordVideo = {
+            galleryViewModel.emitRecordedVideo(it) {
+              delay(30)
+              galleryViewModel.populateAllAssetsMap()
+            }
+          },
+        )
+      }
 
-        item(key = CAMERA_BUTTON_ITEM_KEY) {
-          CameraSheetButton(
-            modifier = Modifier
-              .size(width = thumbnailWidthDp, height = thumbnailHeightDp)
-              .background(Color.Black),
-            onSheetGoingToDisplay = {
-              scope.launch {
-                // todo: pause before request
-                /**
-                 * Delay is required to Request Pause after Lifecycle-based Play Request
-                 * (Permissions Request pauses current Lifecycle)
-                 */
-                delay(10)
-                galleryViewModel.exoPlayerController.pause()
-              }
-            },
-            onSheetDidDismiss = galleryViewModel.exoPlayerController::play,
-            enabled = !galleryViewModel.isMultiselectEnabled,
-            isImageCapturingEnabled = galleryViewModel.allowedAssetsTypes.contains(GalleryAssetType.Image),
-            isVideoRecordingEnabled = galleryViewModel.allowedAssetsTypes.contains(GalleryAssetType.Video),
-            onDidTakePicture = {
-              galleryViewModel.emitCapturedImage(it) {
-                delay(30)
-                galleryViewModel.populateAllAssetsMap()
-              }
-            },
-            onDidRecordVideo = {
-              galleryViewModel.emitRecordedVideo(it) {
-                delay(30)
-                galleryViewModel.populateAllAssetsMap()
-              }
-            },
+      val assetsToShow = galleryViewModel.selectedAlbumAssetsMap.values.toList()
+      if (assetsToShow.isEmpty()) item(span = { GridItemSpan(3) }) {
+        Box(
+          modifier = Modifier.offset(y = 34.dp),
+          contentAlignment = Alignment.Center,
+        ) {
+          Text(
+            "Album has no suitable assets",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium,
           )
         }
-
-        val assetsToShow = galleryViewModel.selectedAlbumAssetsMap.values.toList()
-        if (assetsToShow.isEmpty()) item(span = { GridItemSpan(3) }) {
-          Box(
-            modifier = Modifier.offset(y = 34.dp),
-            contentAlignment = Alignment.Center,
-          ) {
-            Text(
-              "Album has no suitable assets",
-              fontSize = 18.sp,
-              fontWeight = FontWeight.Medium,
-            )
+      }
+      else itemsIndexed(assetsToShow, key = { _, item -> item.id }) { index, asset ->
+        AssetThumbnailView(
+          asset = asset,
+          widthDp = thumbnailWidthDp,
+          heightDp = thumbnailHeightDp,
+        ) {
+          if (asset == galleryViewModel.previewedAsset) {
+            scrollToAssetByIndex(index)
           }
-        }
-        else itemsIndexed(assetsToShow, key = { _, item -> item.id }) { index, asset ->
-          AssetThumbnailView(
-            asset = asset,
-            widthDp = thumbnailWidthDp,
-            heightDp = thumbnailHeightDp,
-          ) {
-            if (asset == galleryViewModel.previewedAsset) {
-              scrollToAssetByIndex(index)
-            }
-            galleryViewModel.onThumbnailClick(asset)
-          }
+          galleryViewModel.onThumbnailClick(asset)
         }
       }
     }
@@ -263,22 +257,3 @@ internal fun GalleryViewContent() {
     }
   }
 }
-
-@Composable
-private fun InnerSpacer(
-  previewedAssetContainerHeightPx: Int,
-  nestedScrollConnection: GalleryViewContentNestedScrollConnection,
-) {
-  val density = LocalDensity.current
-
-  val spacerHeight by remember(density) {
-    derivedStateOf {
-      with(density) {
-        (previewedAssetContainerHeightPx + nestedScrollConnection.previewedAssetOffset).toDp()
-      }
-    }
-  }
-
-  Spacer(Modifier.height(spacerHeight))
-}
-
