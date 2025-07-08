@@ -1,5 +1,6 @@
 package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.galleryAlbumsSheetButton
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,7 +30,12 @@ import com.dgalyanov.gallery.utils.galleryGenericLog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun GalleryAlbumsSheetButton() {
+internal fun GalleryAlbumsSheetButton(
+  /**
+   * returns isConsumed (if true, default handler will not be invoked)
+   */
+  onClick: (() -> Boolean)? = null,
+) {
   val sheetState = rememberModalBottomSheetState()
   var isSheetDisplayed by remember { mutableStateOf(false) }
 
@@ -40,6 +47,8 @@ internal fun GalleryAlbumsSheetButton() {
       modifier = Modifier
         .fillMaxHeight()
         .clickable {
+          if (onClick != null && onClick()) return@clickable
+
           galleryViewModel.refreshAlbumsList()
 
           isSheetDisplayed = true
@@ -53,11 +62,14 @@ internal fun GalleryAlbumsSheetButton() {
         modifier = Modifier.padding(end = 4.dp)
       )
 
+      val iconAlpha by animateFloatAsState(if (galleryViewModel.isSelectingDraft) 0f else 1f)
       Icon(
         contentDescription = "bold bodyless Arrow pointing down",
         painter = painterResource(R.drawable.bodyless_arrow_down_bold),
         tint = LocalContentColor.current,
-        modifier = Modifier.size(14.dp),
+        modifier = Modifier
+          .size(14.dp)
+          .graphicsLayer { alpha = iconAlpha },
       )
     }
 

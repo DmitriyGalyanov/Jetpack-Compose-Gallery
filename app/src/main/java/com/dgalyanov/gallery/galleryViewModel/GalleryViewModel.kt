@@ -27,6 +27,7 @@ import com.dgalyanov.gallery.dataClasses.GalleryAssetId
 import com.dgalyanov.gallery.dataClasses.GalleryAssetType
 import com.dgalyanov.gallery.dataClasses.GalleryAssetsAlbum
 import com.dgalyanov.gallery.galleryContentResolver.GalleryContentResolver
+import com.dgalyanov.gallery.mocks.MockDrafts
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.clampAssetTransformationsAndCropData
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import com.dgalyanov.gallery.utils.showToast
@@ -41,6 +42,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+
+internal typealias ImmutableAllDraftsMap = Map<CreativityType, Map<GalleryAssetId, GalleryAsset>>
+internal typealias MutableAllDraftsMap = MutableMap<CreativityType, Map<GalleryAssetId, GalleryAsset>>
 
 // todo: come up with a better name
 private typealias OnAssetsEmission = (
@@ -69,6 +73,10 @@ internal class GalleryViewModel(
   }
 
   private val log = GalleryLogFactory("GalleryViewModel")
+
+  init {
+    log { "init" }
+  }
 
   /** Layout Data -- START */
   var innerPaddings by mutableStateOf(PaddingValues())
@@ -112,7 +120,16 @@ internal class GalleryViewModel(
   /** CreativityType -- START */
   val availableCreativityTypes = CreativityType.entries
   var selectedCreativityType by mutableStateOf(availableCreativityTypes.first())
+    private set
 
+  /**
+   * w/o "_" clashes with internal setter
+   */
+  @Suppress("FunctionName")
+  fun _setSelectedCreativityType(value: CreativityType) {
+    log { "setSelectedCreativityType(value: $value)" }
+    setIsSelectingDraft(false)
+    selectedCreativityType = value
   }
 
   val thumbnailAspectRatio by derivedStateOf { selectedCreativityType.thumbnailAspectRatio }
@@ -133,6 +150,36 @@ internal class GalleryViewModel(
   val allowedAssetsTypes by derivedStateOf { selectedCreativityType.supportedAssetTypes }
 
   /** CreativityType -- END */
+
+  /** Drafts -- START */
+  private var _allDraftsMap by mutableStateOf<ImmutableAllDraftsMap?>(null)
+
+  // will come from React
+  fun setAllDraftsMap(drafts: ImmutableAllDraftsMap?) {
+    log { "setAllDrafts(drafts: $drafts)" }
+    _allDraftsMap = drafts
+  }
+
+  private fun getAppropriateDrafts(creativityType: CreativityType): Map<GalleryAssetId, GalleryAsset>? =
+    _allDraftsMap?.get(creativityType)?.filter { (_, draft) ->
+      creativityType.supportedAssetTypes.contains(draft.type)
+    }
+
+  val selectedCreativityTypeHasDrafts by derivedStateOf {
+    getAppropriateDrafts(selectedCreativityType)?.isNotEmpty() ?: false
+  }
+
+  var isSelectingDraft by mutableStateOf(false)
+    private set
+
+  fun setIsSelectingDraft(value: Boolean) {
+    log { "setIsSelectingDraft(value: $value) | current: $isSelectingDraft" }
+    if (value == isSelectingDraft) return
+
+    clearSelectedAssets()
+    isSelectingDraft = value
+  }
+  /** Drafts -- END */
 
   /** Albums -- START */
   var albumsList by mutableStateOf(listOf<GalleryAssetsAlbum>())
@@ -165,6 +212,8 @@ internal class GalleryViewModel(
   var isFetchingAllAssets by mutableStateOf(false)
     private set
   private var allAssetsMap by mutableStateOf(mapOf<GalleryAssetId, GalleryAsset>())
+
+  /** assuming drafts don't exist when Gallery is empty */
   val isGalleryEmpty by derivedStateOf { allAssetsMap.isEmpty() }
 
   fun populateAllAssetsMap() {
@@ -185,15 +234,24 @@ internal class GalleryViewModel(
 
       isFetchingAllAssets = false
       log { "$logTag finished, time taken: ${System.currentTimeMillis() - startTimeMs}" }
+
+      if (_allDraftsMap == null) {
+        setAllDraftsMap(MockDrafts.createMockDrafts(allAssetsMap.values.toList()))
+        showToast(context, "USING MOCK DRAFTS, THIS SHOULD NOT HAPPEN IN PRODUCTION")
+      }
     }
   }
 
   /**
-   * filtered with [allowedAssetsTypes]
+   * considers [isSelectingDraft], [allowedAssetsTypes]
    */
-  val selectedAlbumAssetsMap by derivedStateOf {
+  val assetsToDisplay: List<GalleryAsset> by derivedStateOf {
+    if (isSelectingDraft) {
+      return@derivedStateOf getAppropriateDrafts(selectedCreativityType)?.values?.toList()
+                            ?: listOf()
+    }
+
     val shouldFilterByAssetType = allowedAssetsTypes.size != GalleryAssetType.entries.size
-    log { "shouldFilterByAssetType:$shouldFilterByAssetType" }
 
     val result = if (selectedAlbum.id == GalleryAssetsAlbum.RecentsAlbum.id) {
       if (shouldFilterByAssetType) allAssetsMap.filter { allowedAssetsTypes.contains(it.value.type) }
@@ -204,8 +262,8 @@ internal class GalleryViewModel(
       ))
     }
 
-    log { "calculated selectedAlbumAssetsMap, allowedAssetsTypes: $allowedAssetsTypes, selectedAlbum: $selectedAlbum, allAssetsMap.size: ${allAssetsMap.size} result.size: ${result.size}" }
-    return@derivedStateOf result
+    log { "calculated assetsToShow, allowedAssetsTypes: $allowedAssetsTypes, selectedAlbum: $selectedAlbum, allAssetsMap.size: ${allAssetsMap.size} result.size: ${result.size}" }
+    return@derivedStateOf result.values.toList()
   }
 
   /** Albums -- END */
@@ -236,9 +294,24 @@ internal class GalleryViewModel(
       "clearSelectedAssets(assetToRemain: $assetToRemain) | amountOnStart: ${selectedAssetsIds.size}"
     log { logTag }
 
+//    val allDraftsFlattenedMap = mutableMapOf<GalleryAssetId, GalleryAsset>().let {
+//      _allDraftsMap?.forEach { (_, drafts) ->
+//        drafts.forEach { (_, draft) ->
+//          it[draft.id] = draft
+//        }
+//      }
+//      it.toMap()
+//    }
+
     selectedAssetsIds.forEach {
       log { "$logTag | iterating with $it" }
-      if (it != assetToRemain?.id) allAssetsMap[it]?.deselect()
+      if (it != assetToRemain?.id) {
+        allAssetsMap[it]?.deselect()
+//        allDraftsFlattenedMap[it]?.deselect()
+        _allDraftsMap?.forEach { (_, drafts) ->
+          drafts[it]?.deselect()
+        }
+      }
     }
     selectedAssetsIds.retainAll(listOf(assetToRemain?.id).toSet())
 
@@ -247,16 +320,29 @@ internal class GalleryViewModel(
     log { "$logTag | amountOnEnd: ${selectedAssetsIds.size}" }
   }
 
+  private val isMultiselectDisallowed by derivedStateOf { isSelectingDraft }
+
   var isMultiselectEnabled by mutableStateOf(false)
     private set
 
   @Suppress("FunctionName")
   private fun _setIsMultiselectEnabled(value: Boolean) {
-    log { "_setIsMultiselectEnabled(value: $value)" }
+    log { "_setIsMultiselectEnabled(value: $value) | isMultiselectDisallowed: $isMultiselectDisallowed" }
+
+    if (value && isMultiselectDisallowed) return
+
     if (!value) clearSelectedAssets(
       if (allowedAssetsTypes.contains(previewedAsset?.type)) previewedAsset else null
     )
     isMultiselectEnabled = value
+  }
+
+  private fun subscribeToIsMultiselectAllowedJob(): Job = viewModelScope.launch {
+    snapshotFlow { isMultiselectDisallowed }.cancellable().distinctUntilChanged()
+      .collectLatest { result ->
+        log { "collected latest isMultiselectDisallowed, result: $result" }
+        _setIsMultiselectEnabled(false)
+      }
   }
 
   fun toggleIsMultiselectEnabled() {
@@ -301,7 +387,7 @@ internal class GalleryViewModel(
 
   private fun selectAsset(asset: GalleryAsset) {
     log { "selectAsset(asset: $asset)" }
-    if (asset.isSelected) return
+//    if (asset.isSelected) return
 
     if (!isMultiselectEnabled) clearSelectedAssets()
 
@@ -369,28 +455,22 @@ internal class GalleryViewModel(
 
   private fun maybeSelectAppropriateAsset() {
     log { "maybeSelectAppropriateAsset() | isMultiselectEnabled: $isMultiselectEnabled, selectedAssetsIds.isEmpty(): ${selectedAssetsIds.isEmpty()}, allowedAssetsTypes: $allowedAssetsTypes" }
-    if (selectedAlbumAssetsMap.isNotEmpty() && (!isMultiselectEnabled || selectedAssetsIds.isEmpty())) {
-      selectAsset(selectedAlbumAssetsMap.values.first { allowedAssetsTypes.contains(it.type) })
+    if (assetsToDisplay.isNotEmpty() && (!isMultiselectEnabled || selectedAssetsIds.isEmpty())) {
+      selectAsset(assetsToDisplay.first { allowedAssetsTypes.contains(it.type) })
     }
   }
 
-  private fun subscribeToSelectedAlbumAssetsMapChange(): Job {
-    log { "subscribeToSelectedAlbumAssetsMapChange()" }
-    return viewModelScope.launch {
-      snapshotFlow { selectedAlbumAssetsMap }.cancellable().distinctUntilChanged()
-        .collectLatest { result ->
-          log { "collected latest selectedAlbumAssetsMap update, result.size: ${result.size}, selectedAlbumAssetsMap.size: ${selectedAlbumAssetsMap.size}" }
+  private fun subscribeToAssetsToShowChange(): Job = viewModelScope.launch {
+    snapshotFlow { assetsToDisplay }.cancellable().distinctUntilChanged()
+      .collectLatest { result ->
+        log { "collected latest assetsToShow, result.size: ${result.size}, assetsToShow.size: ${assetsToDisplay.size}" }
 
-          if (isMultiselectEnabled) deselectDisallowedAssets()
-          else clearSelectedAssets()
+        if (isMultiselectEnabled) deselectDisallowedAssets()
+        else clearSelectedAssets()
 
-          maybeSelectAppropriateAsset()
-        }
-    }
+        maybeSelectAppropriateAsset()
+      }
   }
-
-  private val selectedAlbumAssetsMapChangeSubscriptionJob =
-    subscribeToSelectedAlbumAssetsMapChange()
 
   private fun resetAssetsSelection() {
     log { "resetAssetsSelection()" }
@@ -421,9 +501,9 @@ internal class GalleryViewModel(
     onAssetsEmission = value
   }
 
-  private fun emitAssets(assets: List<Asset>) {
-    log { "emitAssets(assets: $assets)" }
-    onAssetsEmission?.invoke(assets, usedAspectRatio, selectedCreativityType)
+  private fun emitAssets(assets: List<Asset>, aspectRatio: AssetAspectRatio = usedAspectRatio) {
+    log { "emitAssets(assets: $assets, aspectRatio: $aspectRatio)" }
+    onAssetsEmission?.invoke(assets, aspectRatio, selectedCreativityType)
     resetAssetsSelection()
   }
 
@@ -435,6 +515,15 @@ internal class GalleryViewModel(
       log { "emitCurrentlySelected() | isPreparingSelectedAssetsForEmission: $isPreparingSelectedAssetsForEmission, selectedAssetsIds: $selectedAssetsIds" }
       if (isPreparingSelectedAssetsForEmission) return@launch
       isPreparingSelectedAssetsForEmission = true
+
+      if (selectedAssetsIds.isEmpty()) return@launch
+
+      if (isSelectingDraft) {
+        val asset = getAppropriateDrafts(selectedCreativityType)?.get(selectedAssetsIds.first())
+                    ?: return@launch
+        emitAssets(listOf(asset), asset.closestAspectRatio)
+        return@launch
+      }
 
       val croppedSelectedAssets = selectedAssetsIds.map { selectedAssetId ->
         async {
@@ -497,10 +586,16 @@ internal class GalleryViewModel(
 
   /** Selection Emission -- END */
 
+  private val selectedAlbumAssetsMapChangeSubscriptionJob = subscribeToAssetsToShowChange()
+  private val isMultiselectAllowedJob = subscribeToIsMultiselectAllowedJob()
+
   override fun onCleared() {
     super.onCleared()
     log { "onCleared()" }
+
     exoPlayerController.onDispose()
+
     selectedAlbumAssetsMapChangeSubscriptionJob.cancel()
+    isMultiselectAllowedJob.cancel()
   }
 }

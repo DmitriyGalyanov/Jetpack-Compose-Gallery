@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -44,6 +45,7 @@ import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolba
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.TransformableAssetView
 import com.dgalyanov.gallery.ui.utils.modifiers.conditional
 import com.dgalyanov.gallery.utils.GalleryLogFactory
+import com.dgalyanov.gallery.utils.showToast
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -100,14 +102,18 @@ internal fun GalleryViewContent() {
     if (!isPreviewEnabled) nestedScrollConnection.hidePreviewedAsset()
   }
 
+  val isCameraButtonPresent = !galleryViewModel.isSelectingDraft
+
   fun scrollToAssetByIndex(
     index: Int,
     /** ignored if [isPreviewEnabled][GalleryViewModel.isPreviewEnabled] is `false` */
     shouldShowPreview: Boolean = true,
   ) {
     log { "scrollToAssetByIndex(index: $index, shouldShowPreview: $shouldShowPreview) | isPreviewEnabled: $isPreviewEnabled" }
+    val presentNonThumbnailsItemsAmount =
+      GRID_NON_THUMBNAILS_ITEMS_AMOUNT - (if (isCameraButtonPresent) 0 else 1)
     // minus 1 is to allow user to scroll backwards selecting first asset in a row
-    val listItemIndex = index + GRID_NON_THUMBNAILS_ITEMS_AMOUNT - 1
+    val listItemIndex = index + presentNonThumbnailsItemsAmount - 1
     val stickyHeaderOffset = (GALLERY_VIEW_TOOLBAR_HEIGHT.value * density.density).toInt()
 
 //            https://issuetracker.google.com/issues/240449680
@@ -139,7 +145,7 @@ internal fun GalleryViewContent() {
     if (galleryViewModel.nextPreviewedAsset == null) return@LaunchedEffect
 
     val previewedAssetIndex =
-      galleryViewModel.selectedAlbumAssetsMap.values.indexOf(galleryViewModel.nextPreviewedAsset)
+      galleryViewModel.assetsToDisplay.indexOf(galleryViewModel.nextPreviewedAsset)
     scrollToAssetByIndex(previewedAssetIndex)
   }
 
@@ -156,6 +162,8 @@ internal fun GalleryViewContent() {
         isPlayable = isPreviewPlayable,
       )
     }
+
+    val context = LocalContext.current
 
     LazyVerticalGrid(
       state = gridState,
@@ -174,7 +182,7 @@ internal fun GalleryViewContent() {
     ) {
       stickyHeader(key = TOOLBAR_ITEM_KEY) { GalleryViewToolbar() }
 
-      item(key = CAMERA_BUTTON_ITEM_KEY) {
+      if (isCameraButtonPresent) item(key = CAMERA_BUTTON_ITEM_KEY) {
         CameraSheetButton(
           modifier = Modifier
             .size(width = thumbnailWidthDp, height = thumbnailHeightDp)
@@ -209,7 +217,7 @@ internal fun GalleryViewContent() {
         )
       }
 
-      val assetsToShow = galleryViewModel.selectedAlbumAssetsMap.values.toList()
+      val assetsToShow = galleryViewModel.assetsToDisplay
       if (assetsToShow.isEmpty()) item(span = { GridItemSpan(3) }) {
         Box(
           modifier = Modifier.offset(y = 34.dp),
@@ -228,7 +236,11 @@ internal fun GalleryViewContent() {
           widthDp = thumbnailWidthDp,
           heightDp = thumbnailHeightDp,
           onLongClick = {
-            galleryViewModel.onThumbnailLongClick(asset)
+            if (asset.isDraft) showToast(
+              context,
+              "Long click on Draft Cell. Drafts are controlled outside, Handler is required",
+            )
+            else galleryViewModel.onThumbnailLongClick(asset)
           },
           onClick = {
             if (asset == galleryViewModel.previewedAsset) {
@@ -246,7 +258,7 @@ internal fun GalleryViewContent() {
     CreativityTypeSelector { selected: CreativityType, isByClick ->
       log { "selected (isByClick: $isByClick) creativityType ($selected) (lastSelected is: ${galleryViewModel.selectedCreativityType})" }
 
-      galleryViewModel.selectedCreativityType = selected
+      galleryViewModel._setSelectedCreativityType(selected)
 
       scrollToPreviewedAssetJob?.cancel()
       scrollToPreviewedAssetJob = scope.launch {
@@ -255,7 +267,7 @@ internal fun GalleryViewContent() {
 
         if (selected != galleryViewModel.selectedCreativityType) return@launch
 
-        val assetToScrollToIndex = galleryViewModel.selectedAlbumAssetsMap.values.indexOf(
+        val assetToScrollToIndex = galleryViewModel.assetsToDisplay.indexOf(
           galleryViewModel.nextPreviewedAsset ?: galleryViewModel.previewedAsset
         )
         scrollToAssetByIndex(assetToScrollToIndex, false)

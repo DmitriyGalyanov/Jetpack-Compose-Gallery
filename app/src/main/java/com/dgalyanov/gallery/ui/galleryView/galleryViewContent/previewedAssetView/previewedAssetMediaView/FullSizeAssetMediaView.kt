@@ -16,7 +16,7 @@ import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetVie
 internal fun FullSizeAssetMediaView(
   asset: GalleryAsset,
   nextAsset: GalleryAsset?,
-  sizeDp: AssetSizeDp,
+  sizeDp: AssetSizeDp?,
   isPlayable: Boolean,
 ) {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
@@ -47,7 +47,11 @@ internal fun FullSizeAssetMediaView(
   if (asset.type == GalleryAssetType.Image) {
     PreviewedImageView(asset.uri, sizeDp = sizeDp)
   } else {
-    Box(Modifier.requiredSize(width = sizeDp.width, height = sizeDp.height)) {
+    Box(
+      modifier = if (sizeDp != null) {
+        Modifier.requiredSize(width = sizeDp.width, height = sizeDp.height)
+      } else Modifier
+    ) {
       PreviewedVideoView(
         exoPlayerController = exoPlayerController,
         aspectRatio = asset.actualNumericWidthToHeightRatio.toFloat()

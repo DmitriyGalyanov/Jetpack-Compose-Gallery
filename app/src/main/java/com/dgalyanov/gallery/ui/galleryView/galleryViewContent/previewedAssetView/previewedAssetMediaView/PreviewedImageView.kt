@@ -9,11 +9,13 @@ import coil3.compose.AsyncImage
 import com.dgalyanov.gallery.dataClasses.AssetSizeDp
 
 @Composable
-internal fun PreviewedImageView(uri: Uri, sizeDp: AssetSizeDp) {
+internal fun PreviewedImageView(uri: Uri, sizeDp: AssetSizeDp?) {
   AsyncImage(
     model = uri,
     contentDescription = null,
     contentScale = ContentScale.Fit,
-    modifier = Modifier.requiredSize(width = sizeDp.width, height = sizeDp.height),
+    modifier = if (sizeDp != null) {
+      Modifier.requiredSize(width = sizeDp.width, height = sizeDp.height)
+    } else Modifier,
   )
 }

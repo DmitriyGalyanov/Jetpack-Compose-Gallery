@@ -1,15 +1,19 @@
 package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import com.dgalyanov.gallery.dataClasses.AssetAspectRatio
@@ -126,6 +130,9 @@ internal fun clampAssetTransformationsAndCropData(
   }
 }
 
+/**
+ * detects if [asset] is [a draft][GalleryAsset.isDraft] and acts accordingly
+ */
 @Composable
 internal fun TransformableAssetView(
   asset: GalleryAsset,
@@ -137,12 +144,7 @@ internal fun TransformableAssetView(
   val wrapSize = galleryViewModel.previewedAssetViewWrapSize
   val wrapSizeDp = wrapSize.toDp(LocalDensity.current.density)
 
-  val assetSize = AssetSize(width = asset.width, height = asset.height)
-  val transformableAssetViewValues = TransformableAssetViewValues.rememberBy(
-    assetSize = assetSize,
-    wrapSize = wrapSize,
-    cropContainerAspectRatio = galleryViewModel.usedAspectRatio,
-  )
+  val isEnabled = asset.type == GalleryAssetType.Image && !asset.isDraft
 
   Box(
     modifier
@@ -172,30 +174,52 @@ internal fun TransformableAssetView(
       }
 
       Box(Modifier.graphicsLayer { alpha = animatedAlpha.value }) {
-        GesturesTransformView(
-          isEnabled = asset.type == GalleryAssetType.Image,
-          initialTransformations = asset.transformations,
-          minScale = transformableAssetViewValues.minScale,
-          maxScale = transformableAssetViewValues.maxScale,
-          displayedContentSize = transformableAssetViewValues.assetSizeScaledToFitWrap,
-          cropContainerSize = transformableAssetViewValues.cropContainerSize,
-          onTransformationsDidClamp = { transformations ->
-            log { "onTransformationDidClamp(transformations: $transformations)" }
-            asset.transformations = transformations
-            asset.cropData = CropData.create(
+        if (asset.isDraft) {
+          Box(
+            modifier = Modifier
+              .fillMaxSize()
+              .background(Color.Black),
+            contentAlignment = Alignment.Center,
+          ) {
+            FullSizeAssetMediaView(
               asset = asset,
-              transformations = transformations,
-              wrapSize = wrapSize,
-              cropContainerSize = transformableAssetViewValues.cropContainerSize,
+              nextAsset = nextPreviewedAsset,
+              sizeDp = null,
+              isPlayable = isPlayable,
             )
-          },
-        ) { contentSizeDp ->
-          FullSizeAssetMediaView(
-            asset = asset,
-            nextAsset = nextPreviewedAsset,
-            sizeDp = contentSizeDp,
-            isPlayable = isPlayable,
+          }
+        } else {
+          val transformableAssetViewValues = TransformableAssetViewValues.rememberBy(
+            assetSize = AssetSize(width = asset.width, height = asset.height),
+            wrapSize = wrapSize,
+            cropContainerAspectRatio = galleryViewModel.usedAspectRatio,
           )
+
+          GesturesTransformView(
+            isEnabled = isEnabled,
+            initialTransformations = asset.transformations,
+            minScale = transformableAssetViewValues.minScale,
+            maxScale = transformableAssetViewValues.maxScale,
+            displayedContentSize = transformableAssetViewValues.assetSizeScaledToFitWrap,
+            cropContainerSize = transformableAssetViewValues.cropContainerSize,
+            onTransformationsDidClamp = { transformations ->
+              log { "onTransformationDidClamp(transformations: $transformations)" }
+              asset.transformations = transformations
+              asset.cropData = CropData.create(
+                asset = asset,
+                transformations = transformations,
+                wrapSize = wrapSize,
+                cropContainerSize = transformableAssetViewValues.cropContainerSize,
+              )
+            },
+          ) { contentSizeDp ->
+            FullSizeAssetMediaView(
+              asset = asset,
+              nextAsset = nextPreviewedAsset,
+              sizeDp = contentSizeDp,
+              isPlayable = isPlayable,
+            )
+          }
         }
       }
     }
@@ -206,6 +230,6 @@ internal fun TransformableAssetView(
                   nextPreviewedAsset?.type != GalleryAssetType.Image,
     )
 
-    AspectRatioSelectorView(isVisible = asset.type == GalleryAssetType.Image)
+    AspectRatioSelectorView(isVisible = isEnabled)
   }
 }

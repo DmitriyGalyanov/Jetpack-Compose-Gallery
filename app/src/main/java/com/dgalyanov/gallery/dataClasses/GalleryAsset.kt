@@ -11,6 +11,7 @@ typealias GalleryAssetId = Long
 internal class GalleryAsset(
   val id: GalleryAssetId,
   val albumId: Long,
+  val isDraft: Boolean = false,
   uri: Uri,
   durationMs: Int,
   rawHeight: Double,
@@ -49,7 +50,7 @@ internal class GalleryAsset(
     setSelectionIndex(NOT_SELECTED_INDEX)
   }
 
-  fun copy() = GalleryAsset(
+  fun copy(asDraft: Boolean = false) = GalleryAsset(
     id = this.id,
     albumId = this.albumId,
     uri = this.uri,
@@ -57,9 +58,12 @@ internal class GalleryAsset(
     rawHeight = this.rawHeight,
     rawWidth = this.rawWidth,
     orientationDegrees = this.orientationDegrees,
+    isDraft = asDraft,
   ).let {
-    it.transformations = this.transformations
-    it.cropData = this.cropData
+    if (!asDraft) {
+      it.transformations = this.transformations
+      it.cropData = this.cropData
+    }
     it
   }
 
