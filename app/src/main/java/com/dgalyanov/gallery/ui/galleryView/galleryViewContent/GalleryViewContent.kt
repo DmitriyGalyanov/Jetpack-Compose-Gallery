@@ -227,12 +227,16 @@ internal fun GalleryViewContent() {
           asset = asset,
           widthDp = thumbnailWidthDp,
           heightDp = thumbnailHeightDp,
-        ) {
-          if (asset == galleryViewModel.previewedAsset) {
-            scrollToAssetByIndex(index)
-          }
-          galleryViewModel.onThumbnailClick(asset)
-        }
+          onLongClick = {
+            galleryViewModel.onThumbnailLongClick(asset)
+          },
+          onClick = {
+            if (asset == galleryViewModel.previewedAsset) {
+              scrollToAssetByIndex(index)
+            }
+            galleryViewModel.onThumbnailClick(asset)
+          },
+        )
       }
     }
 

@@ -357,6 +357,16 @@ internal class GalleryViewModel(
     }
   }
 
+  fun onThumbnailLongClick(asset: GalleryAsset) {
+    log { "onThumbnailLongClick(asset: $asset)" }
+
+    if (isMultiselectEnabled) onThumbnailClick(asset)
+    else {
+      selectAsset(asset)
+      _setIsMultiselectEnabled(true)
+    }
+  }
+
   private fun maybeSelectAppropriateAsset() {
     log { "maybeSelectAppropriateAsset() | isMultiselectEnabled: $isMultiselectEnabled, selectedAssetsIds.isEmpty(): ${selectedAssetsIds.isEmpty()}, allowedAssetsTypes: $allowedAssetsTypes" }
     if (selectedAlbumAssetsMap.isNotEmpty() && (!isMultiselectEnabled || selectedAssetsIds.isEmpty())) {

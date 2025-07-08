@@ -1,7 +1,7 @@
 package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.assetThumbnailView
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -29,12 +29,13 @@ internal fun AssetThumbnailView(
   asset: GalleryAsset,
   widthDp: Dp,
   heightDp: Dp,
+  onLongClick: () -> Unit,
   onClick: () -> Unit,
 ) {
   Box(
     modifier = Modifier
       .size(width = widthDp, height = heightDp)
-      .clickable(onClick = onClick)
+      .combinedClickable(onLongClick = onLongClick, onClick = onClick)
   ) {
     GlideImage(
       model = asset.uri,
