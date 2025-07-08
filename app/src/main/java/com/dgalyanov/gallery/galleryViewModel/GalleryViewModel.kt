@@ -113,17 +113,11 @@ internal class GalleryViewModel(
   val availableCreativityTypes = CreativityType.entries
   var selectedCreativityType by mutableStateOf(availableCreativityTypes.first())
 
-  val thumbnailAspectRatio by derivedStateOf {
-    when {
-      (selectedCreativityType == CreativityType.Post || selectedCreativityType == CreativityType.Neuro) -> AssetAspectRatio._1x1
-      (selectedCreativityType == CreativityType.Story || selectedCreativityType == CreativityType.Reel) -> AssetAspectRatio._16x9
-      else -> AssetAspectRatio._1x1
-    }
   }
 
-  val isPreviewEnabled by derivedStateOf {
-    selectedCreativityType == CreativityType.Post || selectedCreativityType == CreativityType.Neuro
-  }
+  val thumbnailAspectRatio by derivedStateOf { selectedCreativityType.thumbnailAspectRatio }
+
+  val isPreviewEnabled by derivedStateOf { selectedCreativityType.isPreviewEnabled }
 
   /**
    * enabled at all, independent of [selectedCreativityType]
@@ -136,14 +130,8 @@ internal class GalleryViewModel(
   /**
    * enabled for [selectedCreativityType]
    */
-  val allowedAssetsTypes by derivedStateOf {
-    val list = enabledAssetsTypes.toMutableSet()
+  val allowedAssetsTypes by derivedStateOf { selectedCreativityType.supportedAssetTypes }
 
-    if (selectedCreativityType == CreativityType.Reel) list -= GalleryAssetType.Image
-    if (selectedCreativityType == CreativityType.Neuro) list -= GalleryAssetType.Video
-
-    return@derivedStateOf list
-  }
   /** CreativityType -- END */
 
   /** Albums -- START */
