@@ -57,7 +57,11 @@ internal class GalleryAsset(
     rawHeight = this.rawHeight,
     rawWidth = this.rawWidth,
     orientationDegrees = this.orientationDegrees,
-  )
+  ).let {
+    it.transformations = this.transformations
+    it.cropData = this.cropData
+    it
+  }
 
   override fun toString() =
     "GalleryAsset(id: $id, albumId: $albumId, uri: $uri, durationMs: $durationMs, type: $type,\ntransformations: $transformations, cropData: $cropData,\norientationDegrees: $orientationDegrees, rawHeight: $rawHeight, rotatedHeight: $height, rawWidth: $rawWidth, rotatedWidth: $width,\nclosestAspectRatio: $closestAspectRatio,\nactualNumericWidthToHeightRatio: $actualNumericWidthToHeightRatio, isVertical: $isVertical)"
