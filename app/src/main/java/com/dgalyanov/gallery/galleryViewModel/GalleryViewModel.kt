@@ -428,9 +428,10 @@ internal class GalleryViewModel(
 
       val croppedSelectedAssets = selectedAssetsIds.map { selectedAssetId ->
         async {
-          val asset = allAssetsMap[selectedAssetId] ?: GalleryContentResolver.getGalleryAssetById(
-            selectedAssetId
-          )?.copy()
+          val asset =
+            allAssetsMap[selectedAssetId]?.copy() ?: GalleryContentResolver.getGalleryAssetById(
+              selectedAssetId
+            )
 
           if (asset != null) {
             clampAssetTransformationsAndCropData(
