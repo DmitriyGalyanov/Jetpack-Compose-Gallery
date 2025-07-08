@@ -35,6 +35,12 @@ import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.ui.styleConsts.GalleryStyleConsts
 import com.dgalyanov.gallery.ui.utils.modifiers.conditional
 
+private enum class RightButtonState {
+  Loader,
+  ProceedButton,
+  Empty,
+}
+
 @Composable
 internal fun GalleryViewHeader() {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
@@ -59,39 +65,52 @@ internal fun GalleryViewHeader() {
     Text("Gallery", fontWeight = FontWeight.Bold)
 
     AnimatedContent(
-      targetState = galleryViewModel.isPreparingSelectedAssetsForEmission,
+      targetState = if (galleryViewModel.isPreparingSelectedAssetsForEmission) {
+        RightButtonState.Loader
+      } else if (
+        galleryViewModel.anAssetIsSelected ||
+        galleryViewModel.selectedCreativityType == CreativityType.NeuroStories
+      ) {
+        RightButtonState.ProceedButton
+      } else {
+        RightButtonState.Empty
+      },
       contentAlignment = Alignment.Center,
       transitionSpec = {
         val animationSpec = tween<Float>(300)
         fadeIn(animationSpec = animationSpec).togetherWith(fadeOut(animationSpec = animationSpec))
       },
-    ) { shouldShowLoader ->
-      if (shouldShowLoader) {
-        Box(
-          // todo: replace with a better (?) size workaround
-          modifier = Modifier.conditional(emissionButtonSize != null) {
-            size(
-              width = (emissionButtonSize!!.width.toFloat() / density).dp,
-              height = (emissionButtonSize!!.height.toFloat() / density).dp
-            )
-          },
-          contentAlignment = Alignment.Center,
-        ) {
-          CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+    ) { state ->
+      val sizeModifier = Modifier.conditional(emissionButtonSize != null) {
+        size(
+          width = (emissionButtonSize!!.width.toFloat() / density).dp,
+          height = (emissionButtonSize!!.height.toFloat() / density).dp
+        )
+      }
+      when (state) {
+        RightButtonState.Loader -> {
+          Box(
+            // todo: replace with a better (?) size workaround
+            modifier = sizeModifier,
+            contentAlignment = Alignment.Center,
+          ) {
+            CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+          }
         }
-      } else if (
-        galleryViewModel.anAssetIsSelected ||
-        galleryViewModel.selectedCreativityType == CreativityType.NeuroStories
-      ) {
-        Text(
-          "Proceed",
-          modifier = Modifier
-            .clickable(onClick = {
-              if (galleryViewModel.selectedCreativityType == CreativityType.NeuroStories) {
-                galleryViewModel.onNeuroStoriesProceedRequest()
-              } else galleryViewModel.emitCurrentlySelectedAssets()
-            })
-            .onSizeChanged { emissionButtonSize = it })
+
+        RightButtonState.ProceedButton -> {
+          Text(
+            "Proceed",
+            modifier = Modifier
+              .clickable(onClick = {
+                if (galleryViewModel.selectedCreativityType == CreativityType.NeuroStories) {
+                  galleryViewModel.onNeuroStoriesProceedRequest()
+                } else galleryViewModel.emitCurrentlySelectedAssets()
+              })
+              .onSizeChanged { emissionButtonSize = it })
+        }
+
+        RightButtonState.Empty -> Box(modifier = sizeModifier) {}
       }
     }
   }
