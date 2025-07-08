@@ -29,6 +29,13 @@ class MainActivity : ComponentActivity() {
   }
 
   private lateinit var galleryViewModel: GalleryViewModel
+  private val ensuredGalleryViewModel
+    get(): GalleryViewModel {
+      if (!::galleryViewModel.isInitialized) {
+        galleryViewModel = GalleryViewModel(applicationContext)
+      }
+      return galleryViewModel
+    }
 
   override fun onRequestPermissionsResult(
     requestCode: Int,
@@ -40,7 +47,7 @@ class MainActivity : ComponentActivity() {
     log { "onRequestPermissionsResult(requestCode: $requestCode, permissions: $permissions, grantResults: $grantResults, deviceId: $deviceId)" }
 
     if (GalleryPermissionsHelper.onRequestPermissionsResult(requestCode, grantResults)) {
-      galleryViewModel.populateAllAssetsMap()
+      ensuredGalleryViewModel.populateAllAssetsMap()
     }
   }
 
@@ -48,12 +55,8 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     log { "onCreate" }
 
-    if (!::galleryViewModel.isInitialized) {
-      galleryViewModel = GalleryViewModel(applicationContext)
-    }
-
     updateStoredDisplayMetrics()
-    galleryViewModel.updateWindowMetrics(
+    ensuredGalleryViewModel.updateWindowMetrics(
       density = displayMetrics.density,
       width = displayMetrics.widthPixels,
       height = displayMetrics.heightPixels,
@@ -63,7 +66,7 @@ class MainActivity : ComponentActivity() {
 
     GalleryPermissionsHelper.init(this).requestPermissionsIfNeeded()
     if (GalleryPermissionsHelper.arePermissionsGranted.value) {
-      galleryViewModel.populateAllAssetsMap()
+      ensuredGalleryViewModel.populateAllAssetsMap()
     }
 
     enableEdgeToEdge(
@@ -78,12 +81,12 @@ class MainActivity : ComponentActivity() {
       GalleryTheme(darkTheme = true) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPaddings ->
           LaunchedEffect(innerPaddings) {
-            galleryViewModel.updateInnerPaddings(innerPaddings)
+            ensuredGalleryViewModel.updateInnerPaddings(innerPaddings)
           }
 
-          GalleryViewProvider(galleryViewModel)
+          GalleryViewProvider(ensuredGalleryViewModel)
 
-          EmittedSelectionView(galleryViewModel)
+          EmittedSelectionView(ensuredGalleryViewModel)
         }
       }
     }
@@ -93,12 +96,8 @@ class MainActivity : ComponentActivity() {
     super.onWindowAttributesChanged(params)
     log { "onWindowAttributesChanged(params: $params)" }
 
-    if (!::galleryViewModel.isInitialized) {
-      galleryViewModel = GalleryViewModel(applicationContext)
-    }
-
     updateStoredDisplayMetrics()
-    galleryViewModel.updateWindowMetrics(
+    ensuredGalleryViewModel.updateWindowMetrics(
       density = displayMetrics.density,
       width = displayMetrics.widthPixels,
       height = displayMetrics.heightPixels
@@ -110,7 +109,7 @@ class MainActivity : ComponentActivity() {
     log { "onResume" }
 
     if (GalleryPermissionsHelper.checkIfPermissionsAreGranted()) {
-      galleryViewModel.populateAllAssetsMap()
+      ensuredGalleryViewModel.populateAllAssetsMap()
     }
   }
 }
