@@ -236,7 +236,7 @@ internal fun GalleryViewContent() {
       }
     }
 
-    NeuroStoriesView(galleryViewModel.selectedCreativityType == CreativityType.NeuroStory)
+    NeuroStoriesView(galleryViewModel.selectedCreativityType == CreativityType.NeuroStories)
 
     var scrollToPreviewedAssetJob by remember { mutableStateOf<Job?>(null) }
     CreativityTypeSelector { selected: CreativityType, isByClick ->

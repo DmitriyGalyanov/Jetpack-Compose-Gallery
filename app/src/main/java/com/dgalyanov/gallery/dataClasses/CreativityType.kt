@@ -5,5 +5,5 @@ internal enum class CreativityType {
   Story,
   Reel,
   Neuro,
-  NeuroStory,
+  NeuroStories,
 }

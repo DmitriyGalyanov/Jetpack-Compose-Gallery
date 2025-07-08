@@ -81,13 +81,13 @@ internal fun GalleryViewHeader() {
         }
       } else if (
         galleryViewModel.anAssetIsSelected ||
-        galleryViewModel.selectedCreativityType == CreativityType.NeuroStory
+        galleryViewModel.selectedCreativityType == CreativityType.NeuroStories
       ) {
         Text(
           "Proceed",
           modifier = Modifier
             .clickable(onClick = {
-              if (galleryViewModel.selectedCreativityType == CreativityType.NeuroStory) {
+              if (galleryViewModel.selectedCreativityType == CreativityType.NeuroStories) {
                 galleryViewModel.onNeuroStoriesProceedRequest()
               } else galleryViewModel.emitCurrentlySelectedAssets()
             })
