@@ -5,14 +5,19 @@ import androidx.activity.compose.LocalActivity
 import androidx.camera.core.ImageCapture
 import androidx.camera.video.OutputResults
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
@@ -30,8 +35,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.keepScreenOn
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.dgalyanov.gallery.R
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
+import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForNonText
 import com.dgalyanov.gallery.utils.galleryGenericLog
 import com.dgalyanov.gallery.utils.openAppSettings
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -168,22 +176,48 @@ private fun CameraSheet(
       Row(
         modifier = Modifier
           .fillMaxWidth()
-          .align(Alignment.TopCenter)
+          .padding(8.dp)
+          .align(Alignment.TopCenter),
+        horizontalArrangement = Arrangement.SpaceBetween,
       ) {
-        TextButton(
-          onClick = ::hideSheet,
+        val topRowIconSize = 32.withCoercedFontScaleForNonText()
+        IconButton(
           enabled = !cameraControl.isCapturingMedia,
-          modifier = Modifier.weight(1F),
+          onClick = ::hideSheet,
         ) {
-          Text("Close Camera")
+          Icon(
+            contentDescription = "Bold cross",
+            painter = painterResource(R.drawable.cross_bold),
+            modifier = Modifier.size(topRowIconSize),
+          )
         }
 
-        TextButton(
-          onClick = cameraControl::switchImageCaptureFlashMode,
+        IconButton(
           enabled = !cameraControl.isCapturingMedia,
-          modifier = Modifier.weight(1F),
+          onClick = cameraControl::switchImageCaptureFlashMode,
         ) {
-          Text("Flash: ${cameraControl.imageCaptureFlashModeName}")
+          val flashOffIconPainter = painterResource(R.drawable.flash_off)
+          val flashOnIconPainter = painterResource(R.drawable.flash_on)
+          // todo: use actual Flash_Auto Icon when it will be ready
+          val flashAutoIconPainter = painterResource(R.drawable.flash_on)
+
+          Icon(
+            contentDescription = when (cameraControl.statefulImageCaptureFlashMode) {
+              ImageCapture.FLASH_MODE_OFF -> "Flash is off"
+              ImageCapture.FLASH_MODE_AUTO -> "Flash is in auto mode"
+              ImageCapture.FLASH_MODE_ON -> "Flash is on"
+              ImageCapture.FLASH_MODE_SCREEN -> "Screen would be used to enlighten the scene"
+              else -> "Flash is off"
+            },
+            painter = when (cameraControl.statefulImageCaptureFlashMode) {
+              ImageCapture.FLASH_MODE_OFF -> flashOffIconPainter
+              ImageCapture.FLASH_MODE_AUTO -> flashAutoIconPainter
+              ImageCapture.FLASH_MODE_ON -> flashOnIconPainter
+              ImageCapture.FLASH_MODE_SCREEN -> flashOnIconPainter
+              else -> flashOffIconPainter
+            },
+            modifier = Modifier.size(topRowIconSize),
+          )
         }
       }
 

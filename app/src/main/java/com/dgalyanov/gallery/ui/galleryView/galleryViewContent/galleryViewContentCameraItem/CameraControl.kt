@@ -132,17 +132,8 @@ internal class CameraControl(
     }
   }
 
-  private var statefulImageCaptureFlashMode by StatefulImageCaptureFlashMode(cameraController)
-
-  val imageCaptureFlashModeName by derivedStateOf {
-    when (statefulImageCaptureFlashMode) {
-      ImageCapture.FLASH_MODE_OFF -> "OFF"
-      ImageCapture.FLASH_MODE_AUTO -> "Auto"
-      ImageCapture.FLASH_MODE_ON -> "ON"
-      ImageCapture.FLASH_MODE_SCREEN -> "Screen"
-      else -> "OFF"
-    }
-  }
+  var statefulImageCaptureFlashMode by StatefulImageCaptureFlashMode(cameraController)
+    private set
 
   private var screenFlashWindow: Window? = null
   private val isScreenFlashAvailable get() = screenFlashWindow != null
