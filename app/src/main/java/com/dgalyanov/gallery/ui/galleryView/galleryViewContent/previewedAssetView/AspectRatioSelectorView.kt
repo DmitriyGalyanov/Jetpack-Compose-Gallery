@@ -44,11 +44,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.dgalyanov.gallery.R
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
+import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForText
 
 private val SELECTOR_WIDTH = 72.dp
 private val SELECTOR_BORDER_RADIUS = 6.dp
@@ -77,8 +77,7 @@ private fun Modifier.buttonModifier(onClick: () -> Unit): Modifier {
   return this.then(buttonModifier)
 }
 
-private val FONT_SIZE = 12.sp
-private val LINE_HEIGHT = FONT_SIZE * 1.2
+private const val FONT_SIZE = 12
 private val FONT_WEIGHT = FontWeight.W500
 
 @Composable
@@ -94,8 +93,7 @@ private fun AspectRatioSelectorText(
   ) {
     Text(
       text = text,
-      fontSize = FONT_SIZE,
-      lineHeight = LINE_HEIGHT,
+      fontSize = FONT_SIZE.withCoercedFontScaleForText(),
       fontWeight = FONT_WEIGHT,
     )
     if (shouldComposeDivider) {
@@ -139,8 +137,7 @@ internal fun AspectRatioSelectorView(isVisible: Boolean) {
         ) {
           Text(
             text = it,
-            fontSize = FONT_SIZE,
-            lineHeight = LINE_HEIGHT,
+            fontSize = FONT_SIZE.withCoercedFontScaleForText(),
             fontWeight = FONT_WEIGHT,
           )
 

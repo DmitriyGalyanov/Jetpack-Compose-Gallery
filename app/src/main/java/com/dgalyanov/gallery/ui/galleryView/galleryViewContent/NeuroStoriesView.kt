@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dgalyanov.gallery.R
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
+import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForText
 
 private const val BANNER_ASPECT_RATIO = 106f / 478f
 
@@ -104,7 +105,7 @@ internal fun NeuroStoriesView(isVisible: Boolean) {
         ) {
           Text(
             text = "Create your set",
-            fontSize = 18.sp,
+            fontSize = 18.withCoercedFontScaleForText(),
             letterSpacing = 0.sp,
             fontWeight = FontWeight.W500,
             textAlign = TextAlign.Center,

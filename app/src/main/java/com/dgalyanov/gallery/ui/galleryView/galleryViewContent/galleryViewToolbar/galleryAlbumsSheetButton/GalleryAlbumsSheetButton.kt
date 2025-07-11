@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dgalyanov.gallery.R
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
+import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForNonText
+import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForText
 import com.dgalyanov.gallery.utils.galleryGenericLog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,10 +58,10 @@ internal fun GalleryAlbumsSheetButton(
     ) {
       Text(
         galleryViewModel.selectedAlbum.name,
-        fontSize = 16.sp,
+        fontSize = 16.withCoercedFontScaleForText(),
         fontWeight = FontWeight.W600,
         letterSpacing = 0.sp,
-        modifier = Modifier.padding(end = 4.dp)
+        modifier = Modifier.padding(end = 4.withCoercedFontScaleForNonText())
       )
 
       val iconAlpha by animateFloatAsState(if (galleryViewModel.isSelectingDraft) 0f else 1f)

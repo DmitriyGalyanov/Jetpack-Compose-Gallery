@@ -35,13 +35,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.dgalyanov.gallery.dataClasses.Asset
 import com.dgalyanov.gallery.dataClasses.AssetAspectRatio
 import com.dgalyanov.gallery.dataClasses.CreativityType
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
+import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForText
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
 
@@ -147,8 +147,7 @@ private fun EmittedSelectionSheet(
               if (it.durationMs > 0) {
                 Text(
                   it.durationMs.milliseconds.toString(DurationUnit.SECONDS),
-                  fontSize = 20.sp,
-                  lineHeight = 24.sp,
+                  fontSize = 20.withCoercedFontScaleForText(),
                   modifier = Modifier
                     .offset((-4).dp, (-4).dp)
                     .clip(RoundedCornerShape(2.dp))

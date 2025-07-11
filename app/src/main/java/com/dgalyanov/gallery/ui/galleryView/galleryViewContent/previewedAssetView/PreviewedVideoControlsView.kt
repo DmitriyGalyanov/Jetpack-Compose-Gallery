@@ -19,9 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.dgalyanov.gallery.galleryViewModel.ExoPlayerController
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
+import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForText
 
 @Composable
 internal fun PreviewedVideoControlsView(
@@ -64,7 +64,10 @@ internal fun PreviewedVideoControlsView(
         onClick = exoPlayerController::toggleMute,
         modifier = Modifier.align(Alignment.BottomEnd),
       ) {
-        Text(if (exoPlayerController.isMuted) "unmute" else "mute", fontSize = 18.sp)
+        Text(
+          text = if (exoPlayerController.isMuted) "unmute" else "mute",
+          fontSize = 18.withCoercedFontScaleForText()
+        )
       }
     }
   }

@@ -16,10 +16,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
+import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForText
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit
 
@@ -51,8 +51,7 @@ internal fun AssetThumbnailView(
     if (asset.durationMs > 0) {
       Text(
         asset.durationMs.milliseconds.toString(DurationUnit.SECONDS),
-        fontSize = 12.sp,
-        lineHeight = (12 * 1.2).sp,
+        fontSize = 12.withCoercedFontScaleForText(),
         modifier = Modifier
           .offset((-4).dp, (-4).dp)
           .clip(RoundedCornerShape(2.dp))
@@ -63,4 +62,3 @@ internal fun AssetThumbnailView(
     }
   }
 }
-

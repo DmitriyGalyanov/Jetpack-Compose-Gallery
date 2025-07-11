@@ -18,9 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.galleryAlbumsSheetButton.GalleryAlbumsSheetButton
+import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForText
 
 internal val GALLERY_VIEW_TOOLBAR_HEIGHT = 48.dp
 
@@ -60,7 +60,7 @@ internal fun GalleryViewToolbar() {
         Text(
           "Drafts",
           color = if (isSelectingDrafts) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-          fontSize = 16.sp,
+          fontSize = 16.withCoercedFontScaleForText(),
           fontWeight = FontWeight.W500,
           modifier = Modifier.clickable {
             galleryViewModel.setIsSelectingDraft(!isSelectingDrafts)

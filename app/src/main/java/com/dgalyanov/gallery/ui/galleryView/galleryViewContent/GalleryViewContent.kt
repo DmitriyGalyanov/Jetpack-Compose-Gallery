@@ -33,7 +33,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.dgalyanov.gallery.dataClasses.CreativityType
 import com.dgalyanov.gallery.dataClasses.GalleryAssetType
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
@@ -43,6 +42,7 @@ import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewConten
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GALLERY_VIEW_TOOLBAR_HEIGHT
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GalleryViewToolbar
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.TransformableAssetView
+import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForText
 import com.dgalyanov.gallery.ui.utils.modifiers.conditional
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import com.dgalyanov.gallery.utils.showToast
@@ -225,7 +225,7 @@ internal fun GalleryViewContent() {
         ) {
           Text(
             "Album has no suitable assets",
-            fontSize = 18.sp,
+            fontSize = 18.withCoercedFontScaleForText(),
             fontWeight = FontWeight.Medium,
           )
         }

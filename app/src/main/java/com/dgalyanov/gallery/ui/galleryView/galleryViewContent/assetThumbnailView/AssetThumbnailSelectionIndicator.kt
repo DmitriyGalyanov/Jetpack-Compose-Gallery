@@ -16,12 +16,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
+import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForNonText
+import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForText
 import com.dgalyanov.gallery.ui.utils.modifiers.conditional
+
+private const val WRAP_SIZE = 18
 
 @Composable
 internal fun AssetThumbnailSelectionIndicator(selectionIndex: Int) {
@@ -35,20 +39,22 @@ internal fun AssetThumbnailSelectionIndicator(selectionIndex: Int) {
       .conditional(isSelected) { background(Color(255, 255, 255, 120)) },
   ) {
     Box(
-      contentAlignment = Alignment.Center,
       modifier = Modifier
         .align(Alignment.TopEnd)
         .offset((-8).dp, 8.dp)
         .clip(CircleShape)
         .conditional(isMultiselectEnabled) { border(2.dp, Color.White, CircleShape) }
-        .size(18.dp)
+        .size(WRAP_SIZE.withCoercedFontScaleForNonText())
         .conditional(isSelected) { background(Color.White) }
     ) {
       if (isSelected) {
         Text(
+          // todo: use Icon instead of "✓"
           text = if (isMultiselectEnabled) (selectionIndex + 1).toString() else "✓",
-          modifier = Modifier.offset(y = (-2.5).dp),
-          fontSize = 10.sp,
+          modifier = Modifier.fillMaxSize(),
+          textAlign = TextAlign.Center,
+          fontSize = 10.withCoercedFontScaleForText(),
+          lineHeight = WRAP_SIZE.withCoercedFontScaleForText(),
           color = Color.Black,
         )
       }
