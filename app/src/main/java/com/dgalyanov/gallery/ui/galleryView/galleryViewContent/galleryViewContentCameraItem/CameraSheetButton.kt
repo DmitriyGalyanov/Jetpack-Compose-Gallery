@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.utils.galleryGenericLog
@@ -150,6 +151,7 @@ private fun CameraSheet(
       modifier = Modifier
         // sheet's height is capped with available space
         .height(galleryViewModel.windowHeightDp.dp)
+        .keepScreenOn()
     ) {
       CameraPreviewContent(
         cameraController = cameraControl.cameraController,
