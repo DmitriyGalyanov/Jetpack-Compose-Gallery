@@ -1,4 +1,4 @@
-package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem
+package com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem.ui
 
 import android.app.Activity
 import android.content.Context
