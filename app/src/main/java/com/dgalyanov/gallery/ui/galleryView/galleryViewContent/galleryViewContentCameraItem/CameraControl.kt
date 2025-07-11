@@ -27,6 +27,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -60,6 +61,8 @@ internal class CameraControl(
   val lifecycleOwner: LifecycleOwner,
 ) {
   companion object {
+    const val MAX_VIDEO_DURATION_MS = 60 * 1000f
+
     @Composable
     internal fun use(onDispose: (() -> Unit)? = null): CameraControl {
       val context = LocalContext.current
@@ -111,6 +114,7 @@ internal class CameraControl(
 //    .setMirrorMode(MirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
 //    .build()
 
+  // todo: set with PerformanceClass
   private val defaultCameraUseCases = CameraController.IMAGE_CAPTURE
 
   val cameraController = LifecycleCameraController(context).apply {
@@ -234,6 +238,8 @@ internal class CameraControl(
   var isTakingPicture by mutableStateOf(false)
     private set
   private var currentRecording by mutableStateOf<Recording?>(null)
+  var currentRecordingDurationMs by mutableLongStateOf(0)
+    private set
   val isRecordingVideo by derivedStateOf { currentRecording != null }
 
   val isCapturingMedia by derivedStateOf { isTakingPicture || isRecordingVideo }
@@ -321,6 +327,14 @@ internal class CameraControl(
           logWithDetails("Recording started")
         }
 
+        is VideoRecordEvent.Status -> {
+//          logWithDetails("Recording.Status | recordingStats: ${event.recordingStats}")
+          currentRecordingDurationMs = event.recordingStats.recordedDurationNanos / (1_000_000)
+          if (currentRecordingDurationMs >= MAX_VIDEO_DURATION_MS) {
+            finishVideoRecording()
+          }
+        }
+
         is VideoRecordEvent.Finalize -> {
           if (event.error != VideoRecordEvent.Finalize.ERROR_NONE) {
             currentRecording?.stop()
@@ -335,6 +349,9 @@ internal class CameraControl(
               onVideoRecordedSuccessfully(event.outputResults)
             }
           }
+
+          // todo: animate
+          currentRecordingDurationMs = 0
           disableAppropriateForVideoRecordingLight()
         }
       }

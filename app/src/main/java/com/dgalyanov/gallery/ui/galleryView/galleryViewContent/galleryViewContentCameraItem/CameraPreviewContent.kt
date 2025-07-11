@@ -13,10 +13,13 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.viewinterop.AndroidView
@@ -41,10 +44,13 @@ internal fun CameraPreviewContent(
   onDidSetScreenFlashWindow: (window: Window?) -> Unit,
   shouldFlashPreview: Boolean,
   modifier: Modifier = Modifier,
+  content: @Composable BoxScope.() -> Unit = {},
 ) {
   Box(modifier.background(Color.Black)) {
     AndroidView(
-      modifier = modifier.fillMaxSize(),
+      modifier = modifier
+        .fillMaxSize()
+        .clip(RoundedCornerShape(32F)),
       factory = { context ->
         PreviewView(context).apply {
           layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
@@ -70,6 +76,8 @@ internal fun CameraPreviewContent(
         onDidSetScreenFlashWindow(window)
       }
     )
+
+    Box(modifier = Modifier.fillMaxSize(), content = content)
 
     val flashAlpha by animateFloatAsState(
       targetValue = if (shouldFlashPreview) 0.9f else 0f,
