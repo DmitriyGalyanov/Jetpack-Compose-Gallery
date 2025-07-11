@@ -53,6 +53,8 @@ internal fun CameraPreviewContent(
           implementationMode = PreviewView.ImplementationMode.PERFORMANCE
           scaleType = PreviewView.ScaleType.FILL_START
 
+          keepScreenOn = true
+
           val window = context.getWindow()
           setScreenFlashWindow(window)
           onDidSetScreenFlashWindow(window)
