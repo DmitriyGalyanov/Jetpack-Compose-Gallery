@@ -447,7 +447,7 @@ internal class GalleryViewModel(
     if (isMultiselectEnabled) onThumbnailClick(asset)
     else {
       selectAsset(asset)
-      _setIsMultiselectEnabled(true)
+      if (!isMultiselectDisallowed) _setIsMultiselectEnabled(true)
     }
   }
 
