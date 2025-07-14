@@ -49,7 +49,10 @@ class MainActivity : ComponentActivity() {
       // force dark theme
       GalleryTheme(darkTheme = true) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPaddings ->
-          LaunchedEffect(innerPaddings) {
+          LaunchedEffect(
+            innerPaddings.calculateTopPadding(),
+            innerPaddings.calculateBottomPadding(),
+          ) {
             ensuredGalleryViewModel.updateInnerStaticPaddings(innerPaddings)
           }
 
