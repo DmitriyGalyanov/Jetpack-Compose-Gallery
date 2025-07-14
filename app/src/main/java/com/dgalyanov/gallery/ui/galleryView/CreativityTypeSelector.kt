@@ -90,7 +90,7 @@ internal fun BoxScope.CreativityTypeSelector(
       .offset {
         IntOffset(
           x = draggableState.requireOffset().toInt(),
-          y = (-galleryViewModel.innerPaddings.calculateBottomPadding() - 12.dp).toPx().toInt()
+          y = (-galleryViewModel.innerStaticPaddings.bottom - 12.dp).toPx().toInt()
         )
       }
       .clip(RoundedCornerShape(4.dp))

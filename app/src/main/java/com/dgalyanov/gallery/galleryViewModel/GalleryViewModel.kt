@@ -6,6 +6,8 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.video.OutputResults
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -15,6 +17,9 @@ import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dgalyanov.gallery.cropper.AssetCropper
@@ -54,6 +59,22 @@ private typealias OnAssetsEmission = (
 
 private typealias OnNeuroStoriesProceedRequest = () -> Unit
 
+internal data class StaticPaddings(
+  val start: Dp = 0.dp,
+  val top: Dp = 0.dp,
+  val end: Dp = 0.dp,
+  val bottom: Dp = 0.dp,
+) {
+  companion object {
+    fun fromPaddingValues(paddingValues: PaddingValues): StaticPaddings = StaticPaddings(
+      start = paddingValues.calculateStartPadding(LayoutDirection.Ltr),
+      top = paddingValues.calculateTopPadding(),
+      end = paddingValues.calculateEndPadding(LayoutDirection.Ltr),
+      bottom = paddingValues.calculateBottomPadding(),
+    )
+  }
+}
+
 internal class GalleryViewModel(
   @SuppressLint("StaticFieldLeak") private val context: Context,
 ) : ViewModel() {
@@ -77,13 +98,14 @@ internal class GalleryViewModel(
   }
 
   /** Layout Data -- START */
-  var innerPaddings by mutableStateOf(PaddingValues())
+  var innerStaticPaddings by mutableStateOf(StaticPaddings())
     private set
 
-  fun updateInnerPaddings(newPaddingValues: PaddingValues) {
-    log { "updateInnerPaddings(newPaddingValues: $newPaddingValues) | current: $innerPaddings" }
-    if (innerPaddings == newPaddingValues) return
-    innerPaddings = newPaddingValues
+  fun updateInnerStaticPaddings(newPaddingValues: PaddingValues) {
+    log { "updateInnerStaticPaddings(newPaddingValues: $newPaddingValues) | current: $innerStaticPaddings" }
+    val newStaticPaddings = StaticPaddings.fromPaddingValues(newPaddingValues)
+    if (innerStaticPaddings == newStaticPaddings) return
+    innerStaticPaddings = newStaticPaddings
   }
 
   private var density by mutableFloatStateOf(1F)

@@ -170,9 +170,7 @@ internal fun GalleryViewContent() {
       columns = GridCells.Fixed(COLUMNS_AMOUNT),
       horizontalArrangement = Arrangement.spacedBy(2.dp),
       verticalArrangement = Arrangement.spacedBy(2.dp),
-      contentPadding = PaddingValues(
-        bottom = galleryViewModel.innerPaddings.calculateBottomPadding()
-      ),
+      contentPadding = PaddingValues(bottom = galleryViewModel.innerStaticPaddings.bottom),
       modifier = Modifier.offset {
         IntOffset(
           x = 0,

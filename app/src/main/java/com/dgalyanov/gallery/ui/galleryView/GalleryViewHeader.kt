@@ -53,9 +53,9 @@ internal fun GalleryViewHeader() {
       .fillMaxWidth()
       .background(Color.Black)
       .zIndex(1F)
-      .height(galleryViewModel.innerPaddings.calculateTopPadding() + 40.dp)
+      .height(galleryViewModel.innerStaticPaddings.top + 40.dp)
       .padding(
-        top = galleryViewModel.innerPaddings.calculateTopPadding(),
+        top = galleryViewModel.innerStaticPaddings.top,
         start = GalleryStyleConsts.COMMON_HORIZONTAL_PADDING,
         end = GalleryStyleConsts.COMMON_HORIZONTAL_PADDING,
       ),

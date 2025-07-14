@@ -57,7 +57,7 @@ internal fun NeuroStoriesView(isVisible: Boolean) {
           start = 12.dp,
           end = 12.dp,
           top = 16.dp,
-          bottom = galleryViewModel.innerPaddings.calculateBottomPadding() + 62.dp,
+          bottom = galleryViewModel.innerStaticPaddings.bottom + 62.dp,
         )
     ) {
       Box(
