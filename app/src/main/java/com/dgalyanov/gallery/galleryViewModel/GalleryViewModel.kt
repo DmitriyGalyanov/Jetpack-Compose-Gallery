@@ -8,6 +8,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -17,6 +19,8 @@ import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -102,8 +106,8 @@ internal class GalleryViewModel(
     private set
 
   fun updateInnerStaticPaddings(newPaddingValues: PaddingValues) {
-    log { "updateInnerStaticPaddings(newPaddingValues: $newPaddingValues) | current: $innerStaticPaddings" }
     val newStaticPaddings = StaticPaddings.fromPaddingValues(newPaddingValues)
+    log { "updateInnerStaticPaddings(newStaticPaddings: $newStaticPaddings) | current: $innerStaticPaddings" }
     if (innerStaticPaddings == newStaticPaddings) return
     innerStaticPaddings = newStaticPaddings
   }
@@ -111,6 +115,7 @@ internal class GalleryViewModel(
   private var density by mutableFloatStateOf(1F)
 
   var windowWidthPx by mutableIntStateOf(0)
+    private set
 
   private val previewedAssetContainerWidthPx by derivedStateOf { windowWidthPx }
   private val previewedAssetContainerAspectRatio = AssetAspectRatio._1x1
@@ -128,12 +133,15 @@ internal class GalleryViewModel(
   private var windowHeightPx by mutableIntStateOf(0)
   val windowHeightDp by derivedStateOf { windowHeightPx / density }
 
-  fun updateWindowMetrics(density: Float, width: Int, height: Int) {
-    log { "updateWindowMetrics(density: $density, width: $width, height: $height)" }
-
-    this.density = density
-    this.windowWidthPx = width
-    this.windowHeightPx = height
+  @Composable
+  fun UseWindowMetricsSetterEffect() {
+    val containerSize = LocalWindowInfo.current.containerSize
+    val density = LocalDensity.current.density
+    LaunchedEffect(containerSize, density) {
+      this@GalleryViewModel.density = density
+      this@GalleryViewModel.windowWidthPx = containerSize.width
+      this@GalleryViewModel.windowHeightPx = containerSize.height
+    }
   }
   /** Layout Data -- END */
 

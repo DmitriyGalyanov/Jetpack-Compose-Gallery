@@ -1,8 +1,6 @@
 package com.dgalyanov.gallery
 
 import android.os.Bundle
-import android.util.DisplayMetrics
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -21,13 +19,7 @@ import com.dgalyanov.gallery.utils.PerformanceClass
 private val log = GalleryLogFactory("MainActivity")
 
 class MainActivity : ComponentActivity() {
-  private val displayMetrics: DisplayMetrics = DisplayMetrics()
-
-  /** don't call before onCreate */
-  private fun updateStoredDisplayMetrics() {
-    windowManager.defaultDisplay.getMetrics(displayMetrics)
-  }
-
+  // todo: should use viewModelStore?
   private lateinit var galleryViewModel: GalleryViewModel
   private val ensuredGalleryViewModel
     get(): GalleryViewModel {
@@ -43,13 +35,6 @@ class MainActivity : ComponentActivity() {
 
     PerformanceClass.determinePerformanceClass(this)
 
-    updateStoredDisplayMetrics()
-    ensuredGalleryViewModel.updateWindowMetrics(
-      density = displayMetrics.density,
-      width = displayMetrics.widthPixels,
-      height = displayMetrics.heightPixels,
-    )
-
     GalleryContentResolver.init(this.contentResolver)
 
     enableEdgeToEdge(
@@ -60,11 +45,12 @@ class MainActivity : ComponentActivity() {
     )
 
     setContent {
+      ensuredGalleryViewModel.UseWindowMetricsSetterEffect()
       // force dark theme
       GalleryTheme(darkTheme = true) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPaddings ->
           LaunchedEffect(innerPaddings) {
-            ensuredGalleryViewModel.updateInnerPaddings(innerPaddings)
+            ensuredGalleryViewModel.updateInnerStaticPaddings(innerPaddings)
           }
 
           GalleryViewProvider(ensuredGalleryViewModel)
@@ -73,17 +59,5 @@ class MainActivity : ComponentActivity() {
         }
       }
     }
-  }
-
-  override fun onWindowAttributesChanged(params: WindowManager.LayoutParams?) {
-    super.onWindowAttributesChanged(params)
-    log { "onWindowAttributesChanged(params: $params)" }
-
-    updateStoredDisplayMetrics()
-    ensuredGalleryViewModel.updateWindowMetrics(
-      density = displayMetrics.density,
-      width = displayMetrics.widthPixels,
-      height = displayMetrics.heightPixels
-    )
   }
 }
