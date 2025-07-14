@@ -2,7 +2,6 @@ package com.dgalyanov.gallery.galleryContentResolver
 
 import android.content.ContentResolver
 import android.content.ContentUris
-import android.content.Context
 import android.database.Cursor
 import android.media.ExifInterface
 import android.media.MediaMetadataRetriever
@@ -12,7 +11,6 @@ import android.os.Bundle
 import android.provider.MediaStore
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
-import com.dgalyanov.gallery.MainActivity
 import com.dgalyanov.gallery.dataClasses.Asset
 import com.dgalyanov.gallery.dataClasses.GalleryAsset
 import com.dgalyanov.gallery.dataClasses.GalleryAssetId
@@ -24,15 +22,10 @@ import java.io.File
 internal object GalleryContentResolver {
   private val log = GalleryLogFactory("GalleryContentResolver")
 
-  private lateinit var mainActivity: MainActivity
-  val context: Context get() = mainActivity.applicationContext
-  val contentResolver: ContentResolver get() = context.contentResolver
-
-  fun init(mainActivity: MainActivity): GalleryContentResolver {
-    if (::mainActivity.isInitialized) return this
-
-    this.mainActivity = mainActivity
-    return this
+  private lateinit var contentResolver: ContentResolver
+  fun init(resolver: ContentResolver) {
+    log { "init" }
+    contentResolver = resolver
   }
 
   private val collectionUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

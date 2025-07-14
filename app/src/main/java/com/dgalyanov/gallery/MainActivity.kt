@@ -65,7 +65,7 @@ class MainActivity : ComponentActivity() {
       height = displayMetrics.heightPixels,
     )
 
-    GalleryContentResolver.init(this)
+    GalleryContentResolver.init(this.contentResolver)
 
     GalleryPermissionsHelper.init(this).requestPermissionsIfNeeded()
     if (GalleryPermissionsHelper.arePermissionsGranted.value) {
