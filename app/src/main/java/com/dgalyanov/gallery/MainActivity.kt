@@ -12,7 +12,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.dgalyanov.gallery.galleryContentResolver.GalleryContentResolver
-import com.dgalyanov.gallery.galleryContentResolver.GalleryPermissionsHelper
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.ui.galleryView.GalleryViewProvider
 import com.dgalyanov.gallery.ui.theme.GalleryTheme
@@ -38,20 +37,6 @@ class MainActivity : ComponentActivity() {
       return galleryViewModel
     }
 
-  override fun onRequestPermissionsResult(
-    requestCode: Int,
-    permissions: Array<out String>,
-    grantResults: IntArray,
-    deviceId: Int,
-  ) {
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
-    log { "onRequestPermissionsResult(requestCode: $requestCode, permissions: $permissions, grantResults: $grantResults, deviceId: $deviceId)" }
-
-    if (GalleryPermissionsHelper.onRequestPermissionsResult(requestCode, grantResults)) {
-      ensuredGalleryViewModel.populateAllAssetsMap()
-    }
-  }
-
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     log { "onCreate" }
@@ -66,11 +51,6 @@ class MainActivity : ComponentActivity() {
     )
 
     GalleryContentResolver.init(this.contentResolver)
-
-    GalleryPermissionsHelper.init(this).requestPermissionsIfNeeded()
-    if (GalleryPermissionsHelper.arePermissionsGranted.value) {
-      ensuredGalleryViewModel.populateAllAssetsMap()
-    }
 
     enableEdgeToEdge(
       statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
@@ -105,14 +85,5 @@ class MainActivity : ComponentActivity() {
       width = displayMetrics.widthPixels,
       height = displayMetrics.heightPixels
     )
-  }
-
-  override fun onResume() {
-    super.onResume()
-    log { "onResume" }
-
-    if (GalleryPermissionsHelper.checkIfPermissionsAreGranted()) {
-      ensuredGalleryViewModel.populateAllAssetsMap()
-    }
   }
 }

@@ -1,14 +1,17 @@
 package com.dgalyanov.gallery.galleryContentResolver
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Build
-import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
-import com.dgalyanov.gallery.MainActivity
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import com.dgalyanov.gallery.utils.GalleryLogFactory
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.accompanist.permissions.shouldShowRationale
 
+// todo: rename to PermissionsHelper
 internal object GalleryPermissionsHelper {
   private val log = GalleryLogFactory("GalleryPermissionsHelper")
 
@@ -21,77 +24,29 @@ internal object GalleryPermissionsHelper {
     )
   }
 
-  private val _arePermissionsGranted = MutableStateFlow(false)
-  val arePermissionsGranted = _arePermissionsGranted.asStateFlow()
+  @OptIn(ExperimentalPermissionsApi::class)
+  @Composable
+  fun useMediaAccessPermissionsState(
+    onPermissionsResult: (Map<String, Boolean>) -> Unit = { },
+    onGranted: () -> Unit,
+  ): MultiplePermissionsState {
+    val logTag = "useMediaAccessPermissionsState"
 
-  private val _didUserForbidPermissionsRequest = MutableStateFlow(false)
-  val didUserForbidPermissionsRequest = _didUserForbidPermissionsRequest.asStateFlow()
-
-  private lateinit var mainActivity: MainActivity
-  fun init(mainActivity: MainActivity): GalleryPermissionsHelper {
-    if (::mainActivity.isInitialized) return this
-
-    log { "init" }
-
-    this.mainActivity = mainActivity
-
-    _arePermissionsGranted.value = checkIfPermissionsAreGranted()
-
-    return this
-  }
-
-  fun checkIfPermissionsAreGranted(): Boolean {
-    val logTag = "checkIfPermissionsAreGranted"
-    log { logTag }
-
-    requiredPermissions.forEach {
-      if (mainActivity.applicationContext.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED) {
-        log { "$logTag | $it is not granted" }
-        _arePermissionsGranted.value = false
-        return _arePermissionsGranted.value
+    val permissionsState =
+      rememberMultiplePermissionsState(requiredPermissions) {
+        log { "$logTag.onPermissionResult($it)" }
+        onPermissionsResult(it)
       }
+    log { "$logTag.permissionsState: ${permissionsState.permissions.map { "{ permission: ${it.permission}, status: { isGranted: ${it.status.isGranted}, shouldShowRationale: ${it.status.shouldShowRationale} }}" }}" }
+
+    LaunchedEffect(permissionsState.allPermissionsGranted) {
+      if (!permissionsState.allPermissionsGranted) {
+        permissionsState.launchMultiplePermissionRequest()
+        return@LaunchedEffect
+      }
+      onGranted()
     }
 
-    log { "$logTag | permissions are granted" }
-    _arePermissionsGranted.value = true
-    return _arePermissionsGranted.value
-  }
-
-  private const val READ_STORAGE_REQUEST_CODE = 0
-
-  private fun requestPermissions() {
-    log { "requestPermissions" }
-    mainActivity.requestPermissions(requiredPermissions.toTypedArray(), READ_STORAGE_REQUEST_CODE)
-  }
-
-  fun requestPermissionsIfNeeded() {
-    if (checkIfPermissionsAreGranted()) return
-
-    requestPermissions()
-  }
-
-  fun openAppSettings() = com.dgalyanov.gallery.utils.openAppSettings(mainActivity)
-
-  fun onRequestPermissionsResult(
-    requestCode: Int,
-    grantResults: IntArray,
-  ): Boolean {
-    log { "onRequestPermissionsResult(requestCode: $requestCode, grantResults: $grantResults) | readStorageRequestCode: $READ_STORAGE_REQUEST_CODE" }
-
-    if (requestCode == READ_STORAGE_REQUEST_CODE) {
-      if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-        _arePermissionsGranted.value = true
-        return _arePermissionsGranted.value
-      } else {
-        requiredPermissions.forEach {
-          if (!shouldShowRequestPermissionRationale(mainActivity, it)) {
-            _didUserForbidPermissionsRequest.value = true
-            return false
-          }
-        }
-      }
-    }
-
-    return checkIfPermissionsAreGranted()
+    return permissionsState
   }
 }

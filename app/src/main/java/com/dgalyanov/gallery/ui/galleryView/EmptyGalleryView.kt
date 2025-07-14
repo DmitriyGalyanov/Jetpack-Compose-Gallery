@@ -11,6 +11,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,18 +23,25 @@ import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.galleryContentResolver.GalleryPermissionsHelper
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem.CameraSheetButton
+import com.dgalyanov.gallery.utils.useOpenAppSettings
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 internal fun EmptyGalleryView() {
-  val arePermissionsGranted = GalleryPermissionsHelper.arePermissionsGranted.collectAsState().value
-  val didUserForbidPermissionsRequest =
-    GalleryPermissionsHelper.didUserForbidPermissionsRequest.collectAsState().value
-
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
   val isLoading = galleryViewModel.isFetchingAllAssets
 
+  val openAppSettings = useOpenAppSettings()
+
+  val mediaAccessPermissionsState = GalleryPermissionsHelper.useMediaAccessPermissionsState {
+    galleryViewModel.populateAllAssetsMap()
+  }
+
+  val didUserForbidPermissionsRequest = !mediaAccessPermissionsState.shouldShowRationale
+
   Box(modifier = Modifier.fillMaxSize()) {
-    if (arePermissionsGranted) {
+    if (mediaAccessPermissionsState.allPermissionsGranted) {
       if (isLoading) CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
       else {
         CameraSheetButton(
@@ -69,11 +77,11 @@ internal fun EmptyGalleryView() {
         Spacer(Modifier.size(8.dp))
 
         if (didUserForbidPermissionsRequest) {
-          Button(GalleryPermissionsHelper::openAppSettings) {
+          Button(openAppSettings) {
             Text("Open App Settings")
           }
         } else {
-          Button(GalleryPermissionsHelper::requestPermissionsIfNeeded) {
+          Button(mediaAccessPermissionsState::launchMultiplePermissionRequest) {
             Text("Grant Permissions")
           }
         }
