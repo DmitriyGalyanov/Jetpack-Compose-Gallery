@@ -59,7 +59,7 @@ internal fun GalleryAlbumsSheetButton(
       Text(
         galleryViewModel.selectedAlbum.name,
         fontSize = 16.withCoercedFontScaleForText(),
-        fontWeight = FontWeight.W600,
+        fontWeight = FontWeight.SemiBold,
         letterSpacing = 0.sp,
         modifier = Modifier.padding(end = 4.withCoercedFontScaleForNonText())
       )

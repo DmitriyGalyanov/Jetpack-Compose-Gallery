@@ -107,7 +107,7 @@ internal fun NeuroStoriesView(isVisible: Boolean) {
             text = "Create your set",
             fontSize = 18.withCoercedFontScaleForText(),
             letterSpacing = 0.sp,
-            fontWeight = FontWeight.W500,
+            fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
           )
 

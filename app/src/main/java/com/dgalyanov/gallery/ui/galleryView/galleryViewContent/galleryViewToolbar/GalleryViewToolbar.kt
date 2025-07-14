@@ -66,7 +66,7 @@ internal fun GalleryViewToolbar() {
           "Drafts",
           color = if (isSelectingDrafts) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
           fontSize = 16.withCoercedFontScaleForText(),
-          fontWeight = FontWeight.W500,
+          fontWeight = FontWeight.Medium,
           modifier = Modifier.clickable {
             galleryViewModel.setIsSelectingDraft(!isSelectingDrafts)
           }

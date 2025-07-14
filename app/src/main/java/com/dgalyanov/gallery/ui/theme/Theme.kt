@@ -13,9 +13,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.dgalyanov.gallery.fonts.interFontFamily
 
 private val DarkColorScheme = darkColorScheme(
   primary = Purple80,
@@ -57,7 +57,6 @@ internal fun GalleryTheme(
   }
 
   val userPreferredFontScale = LocalDensity.current.fontScale
-  // todo: apply Custom Font Family
   val typography = remember(userPreferredFontScale) {
     val coercedDefaultFontSize = DEFAULT_FONT_SIZE.withCoercedFontScale(
       userPreferredFontScale = userPreferredFontScale,
@@ -70,7 +69,7 @@ internal fun GalleryTheme(
     ).sp
     Typography(
       bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = interFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = coercedDefaultFontSize,
         lineHeight = coercedDefaultLineHeight,

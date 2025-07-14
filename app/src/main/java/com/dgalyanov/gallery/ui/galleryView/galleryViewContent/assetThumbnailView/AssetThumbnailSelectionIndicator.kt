@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -54,6 +55,7 @@ internal fun AssetThumbnailSelectionIndicator(selectionIndex: Int) {
           modifier = Modifier.fillMaxSize(),
           textAlign = TextAlign.Center,
           fontSize = 10.withCoercedFontScaleForText(),
+          fontWeight = FontWeight.Black,
           lineHeight = WRAP_SIZE.withCoercedFontScaleForText(),
           color = Color.Black,
         )

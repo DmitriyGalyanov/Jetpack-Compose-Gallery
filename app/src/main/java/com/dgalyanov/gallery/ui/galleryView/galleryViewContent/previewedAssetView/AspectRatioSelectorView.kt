@@ -78,7 +78,7 @@ private fun Modifier.buttonModifier(onClick: () -> Unit): Modifier {
 }
 
 private const val FONT_SIZE = 12
-private val FONT_WEIGHT = FontWeight.W500
+private val FONT_WEIGHT = FontWeight.Medium
 
 @Composable
 private fun AspectRatioSelectorText(
