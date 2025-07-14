@@ -115,7 +115,7 @@ internal fun BoxScope.CreativityTypeSelector(
               itemsOffsetsX[creativityType] = offset
             }
           }
-          .padding(horizontal = 10.dp, vertical = 8.dp)
+          .padding(8.dp)
           .clickable(
             interactionSource = itemInteractionSource, indication = null
           ) {
