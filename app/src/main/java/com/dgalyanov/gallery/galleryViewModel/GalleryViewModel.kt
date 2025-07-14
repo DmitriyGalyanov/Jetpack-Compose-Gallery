@@ -46,7 +46,6 @@ import kotlinx.coroutines.launch
 internal typealias ImmutableAllDraftsMap = Map<CreativityType, Map<GalleryAssetId, GalleryAsset>>
 internal typealias MutableAllDraftsMap = MutableMap<CreativityType, Map<GalleryAssetId, GalleryAsset>>
 
-// todo: come up with a better name
 private typealias OnAssetsEmission = (
   assets: List<Asset>,
   aspectRatio: AssetAspectRatio,
@@ -55,7 +54,6 @@ private typealias OnAssetsEmission = (
 
 private typealias OnNeuroStoriesProceedRequest = () -> Unit
 
-// todo: add Content Modes (post, story, reels, aiFilters)
 internal class GalleryViewModel(
   @SuppressLint("StaticFieldLeak") private val context: Context,
 ) : ViewModel() {
@@ -494,7 +492,6 @@ internal class GalleryViewModel(
   }
 
   /** Selection Emission -- START */
-  // todo: emit aspectRatio and selectedCreativityType
   private var onAssetsEmission: OnAssetsEmission? = null
   fun setOnAssetsEmission(value: OnAssetsEmission) {
     log { "setOnAssetsEmission(...)" }

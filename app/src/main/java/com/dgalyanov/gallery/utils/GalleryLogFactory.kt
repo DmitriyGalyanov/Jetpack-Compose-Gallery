@@ -12,7 +12,6 @@ internal fun GalleryLogFactory(
   messagePrefix: String = "",
   isEnabled: Boolean = true,
 ): (messageGetter: () -> String) -> Unit {
-  // todo: use message getter
   return fun(messageGetter: () -> String) {
     if (!DEBUG || !isEnabled) return
     // long Tags cause Formatting Problems in Studio's Logcat
