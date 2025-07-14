@@ -6,8 +6,9 @@ import androidx.camera.video.OutputResults
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -17,8 +18,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem.ui.CameraCaptureButton
+import androidx.compose.ui.res.painterResource
+import com.dgalyanov.gallery.R
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewContentCameraItem.ui.CameraSheet
+import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForNonText
 import com.dgalyanov.gallery.utils.galleryGenericLog
 import com.dgalyanov.gallery.utils.openAppSettings
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -43,8 +46,11 @@ internal fun CameraSheetButton(
    */
   onDidRecordVideo: ((recordedVideoOutputResults: OutputResults) -> Unit)? = null,
   label: @Composable BoxScope.(modifier: Modifier) -> Unit = {
-    // todo: add Icon
-    Text("Camera", modifier = it)
+    Icon(
+      contentDescription = "Camera Icon",
+      painter = painterResource(R.drawable.camera),
+      modifier = Modifier.size(40.withCoercedFontScaleForNonText())
+    )
   },
 ) {
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
