@@ -11,9 +11,8 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.shouldShowRationale
 
-// todo: rename to PermissionsHelper
-internal object GalleryPermissionsHelper {
-  private val log = GalleryLogFactory("GalleryPermissionsHelper")
+internal object PermissionsHelper {
+  private val log = GalleryLogFactory("PermissionsHelper")
 
   private val requiredPermissions = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
     listOf(Manifest.permission.READ_EXTERNAL_STORAGE)
