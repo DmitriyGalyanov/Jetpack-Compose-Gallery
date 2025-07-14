@@ -70,7 +70,7 @@ internal fun GalleryAlbumsSheetButton(
         painter = painterResource(R.drawable.bodyless_arrow_down_bold),
         tint = LocalContentColor.current,
         modifier = Modifier
-          .size(14.dp)
+          .size(14.withCoercedFontScaleForNonText())
           .graphicsLayer { alpha = iconAlpha },
       )
     }
