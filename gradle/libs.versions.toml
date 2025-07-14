@@ -14,6 +14,10 @@ cameraCore = "1.5.0-beta01"
 media3Exoplayer = "1.7.1"
 media3Ui = "1.7.1"
 
+# performance class
+corePerformance = "1.0.0"
+corePerformancePlayServices = "1.0.0"
+
 agp = "8.9.0"
 kotlin = "2.0.21"
 coreKtx = "1.16.0"
@@ -46,6 +50,10 @@ androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.r
 # video
 androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3Exoplayer" }
 androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3Ui" }
+
+# performance class
+androidx-core-performance = { group = "androidx.core", name = "core-performance", version.ref = "corePerformance" }
+androidx-core-performance-play-services = { group = "androidx.core", name = "core-performance-play-services", version.ref = "corePerformancePlayServices" }
 
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

@@ -59,6 +59,10 @@ dependencies {
   implementation(libs.androidx.media3.exoplayer)
   implementation(libs.androidx.media3.ui)
 
+  // performance class
+  implementation(libs.androidx.core.performance)
+  implementation(libs.androidx.core.performance.play.services)
+
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
   implementation(libs.androidx.activity.compose)

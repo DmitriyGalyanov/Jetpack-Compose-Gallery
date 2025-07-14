@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Looper
 import android.provider.MediaStore
 import android.view.Window
 import android.view.WindowManager
@@ -37,7 +38,10 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import com.dgalyanov.gallery.utils.MediaMetadataHelper
+import com.dgalyanov.gallery.utils.PerformanceClass
 import com.dgalyanov.gallery.utils.postToMainThread
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.reflect.KProperty
@@ -114,13 +118,44 @@ internal class CameraControl(
 //    .setMirrorMode(MirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
 //    .build()
 
-  // todo: set with PerformanceClass
-  private val defaultCameraUseCases = CameraController.IMAGE_CAPTURE
+  // todo: check if Level 2 is enough to enable Both Modes by default
+  // todo: think what should be enabled by default on lower-end devices
+  private val defaultCameraUseCases = if (PerformanceClass.performanceClass <= 1) {
+    CameraController.IMAGE_CAPTURE
+//    CameraController.VIDEO_CAPTURE
+  } else CameraController.IMAGE_CAPTURE.or(CameraController.VIDEO_CAPTURE)
+  private val isImageCaptureUseCaseEnabledByDefault =
+    (defaultCameraUseCases and CameraController.IMAGE_CAPTURE) != 0
+  private val isVideoCaptureUseCaseEnabledByDefault =
+    (defaultCameraUseCases and CameraController.VIDEO_CAPTURE) != 0
 
   val cameraController = LifecycleCameraController(context).apply {
     setEnabledUseCases(defaultCameraUseCases)
     videoCaptureQualitySelector = videoQualitySelector
     videoCaptureMirrorMode = MirrorMode.MIRROR_MODE_ON_FRONT_ONLY
+  }
+
+  private fun enableImageCaptureUseCaseIfDisabledByDefault() {
+    log { "enableVideoCaptureUseCaseIfNotEnabledByDefault() | isImageCaptureUseCaseEnabledByDefault: $isImageCaptureUseCaseEnabledByDefault" }
+    if (isImageCaptureUseCaseEnabledByDefault) return
+
+    if (Looper.myLooper() != Looper.getMainLooper()) runBlocking(Dispatchers.Main) {
+      cameraController.setEnabledUseCases(CameraController.IMAGE_CAPTURE)
+    } else cameraController.setEnabledUseCases(CameraController.IMAGE_CAPTURE)
+  }
+
+  private fun enableVideoCaptureUseCaseIfDisabledByDefault() {
+    log { "enableVideoCaptureUseCaseIfNotEnabledByDefault() | isVideoCaptureUseCaseEnabledByDefault: $isVideoCaptureUseCaseEnabledByDefault" }
+    if (isVideoCaptureUseCaseEnabledByDefault) return
+
+    if (Looper.myLooper() != Looper.getMainLooper()) runBlocking(Dispatchers.Main) {
+      cameraController.setEnabledUseCases(CameraController.VIDEO_CAPTURE)
+    } else cameraController.setEnabledUseCases(CameraController.VIDEO_CAPTURE)
+  }
+
+  private fun enableDefaultCameraUseCases() = postToMainThread {
+    log { "enableDefaultCameraUseCases()" }
+    cameraController.setEnabledUseCases(defaultCameraUseCases)
   }
 
   private class StatefulImageCaptureFlashMode(private val cameraController: LifecycleCameraController) {
@@ -266,6 +301,8 @@ internal class CameraControl(
       "name: ${contentValues.get(MediaStore.MediaColumns.DISPLAY_NAME)}, contentValues: $contentValues, outputOptions: $outputOptions"
     log { "$logTag | $logDetails" }
 
+    enableImageCaptureUseCaseIfDisabledByDefault()
+
     cameraController.takePicture(
       outputOptions,
       cameraExecutor,
@@ -279,11 +316,13 @@ internal class CameraControl(
           log { "$logTag | onImageSaved(outputFileResults.savedUri: ${outputFileResults.savedUri}) | $logDetails" }
           onImageSavedCallback(outputFileResults)
           isTakingPicture = false
+          enableDefaultCameraUseCases()
         }
 
         override fun onError(exception: ImageCaptureException) {
           log { "$logTag | onError(exception: $exception) | $logDetails" }
           isTakingPicture = false
+          enableDefaultCameraUseCases()
         }
       },
     )
@@ -311,8 +350,9 @@ internal class CameraControl(
     log { "$logTag | $logDetails" }
     fun logWithDetails(message: String) = log { "$logTag | $message | $logDetails" }
 
-    cameraController.setEnabledUseCases(CameraController.VIDEO_CAPTURE)
+    enableVideoCaptureUseCaseIfDisabledByDefault()
     enableAppropriateForVideoRecordingLightIfNeeded()
+
     currentRecording = cameraController.startRecording(
       mediaStoreOutputOptions,
       AudioConfig.create(true),
@@ -353,6 +393,8 @@ internal class CameraControl(
           // todo: animate
           currentRecordingDurationMs = 0
           disableAppropriateForVideoRecordingLight()
+
+          enableDefaultCameraUseCases()
         }
       }
     }

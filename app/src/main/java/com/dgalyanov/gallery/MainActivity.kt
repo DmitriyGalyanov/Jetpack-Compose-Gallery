@@ -17,6 +17,7 @@ import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
 import com.dgalyanov.gallery.ui.galleryView.GalleryViewProvider
 import com.dgalyanov.gallery.ui.theme.GalleryTheme
 import com.dgalyanov.gallery.utils.GalleryLogFactory
+import com.dgalyanov.gallery.utils.PerformanceClass
 
 private val log = GalleryLogFactory("MainActivity")
 
@@ -54,6 +55,8 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     log { "onCreate" }
+
+    PerformanceClass.determinePerformanceClass(this)
 
     updateStoredDisplayMetrics()
     ensuredGalleryViewModel.updateWindowMetrics(
