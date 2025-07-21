@@ -27,11 +27,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.dataClasses.CreativityType
 import com.dgalyanov.gallery.dataClasses.GalleryAssetType
@@ -157,11 +157,9 @@ internal fun GalleryViewContent() {
       horizontalArrangement = Arrangement.spacedBy(2.dp),
       verticalArrangement = Arrangement.spacedBy(2.dp),
       contentPadding = PaddingValues(bottom = galleryViewModel.innerStaticPaddings.bottom),
-      modifier = Modifier.offset {
-        IntOffset(
-          x = 0,
-          y = previewedAssetContainerHeightPx + nestedScrollConnection.previewedAssetOffset
-        )
+      modifier = Modifier.graphicsLayer {
+        translationY =
+          (previewedAssetContainerHeightPx + nestedScrollConnection.previewedAssetOffset).toFloat()
       }
     ) {
       val thumbnailAspectRatio = galleryViewModel.thumbnailAspectRatio
@@ -300,8 +298,8 @@ private fun PreviewedAssetView(
   galleryViewModel.previewedAsset?.let {
     TransformableAssetView(
       asset = it,
-      modifier = Modifier.offset {
-        IntOffset(0, nestedScrollConnection.previewedAssetOffset)
+      modifier = Modifier.graphicsLayer {
+        translationY = nestedScrollConnection.previewedAssetOffset.toFloat()
       },
       isPlayable = getIsPreviewPlayable(),
     )

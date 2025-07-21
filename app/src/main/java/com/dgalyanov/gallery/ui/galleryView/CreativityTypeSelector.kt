@@ -10,7 +10,6 @@ import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.overscroll
 import androidx.compose.foundation.rememberOverscrollEffect
@@ -29,10 +28,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.dgalyanov.gallery.dataClasses.CreativityType
 import com.dgalyanov.gallery.galleryViewModel.GalleryViewModel
@@ -87,11 +86,9 @@ internal fun BoxScope.CreativityTypeSelector(
   Row(
     modifier = Modifier
       .align(Alignment.BottomStart)
-      .offset {
-        IntOffset(
-          x = draggableState.requireOffset().toInt(),
-          y = (-galleryViewModel.innerStaticPaddings.bottom - 12.dp).toPx().toInt()
-        )
+      .graphicsLayer {
+        translationX = draggableState.requireOffset()
+        translationY = (-galleryViewModel.innerStaticPaddings.bottom - 12.dp).toPx()
       }
       .clip(RoundedCornerShape(4.dp))
       .background(Color(0, 0, 0, 150))

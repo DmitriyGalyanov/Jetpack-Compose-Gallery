@@ -1,6 +1,6 @@
 package com.dgalyanov.gallery.ui.galleryView.galleryViewContent
 
-import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -23,10 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dgalyanov.gallery.R
@@ -46,12 +45,12 @@ internal fun NeuroStoriesView(getIsVisible: () -> Boolean) {
   )
 
   BoxWithConstraints(Modifier.fillMaxSize()) {
-    val offsetX by animateIntAsState(if (getIsVisible()) 0 else constraints.maxWidth)
+    val offsetX by animateFloatAsState(if (getIsVisible()) 0f else constraints.maxWidth.toFloat())
 
     Box(
       Modifier
         .fillMaxSize()
-        .offset { IntOffset(x = offsetX, y = 0) }
+        .graphicsLayer { translationX = offsetX }
         .background(Color(0x0B, 0x0B, 0x0B))
         .padding(
           start = 12.dp,
