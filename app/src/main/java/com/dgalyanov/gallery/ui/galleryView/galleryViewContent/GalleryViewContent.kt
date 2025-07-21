@@ -43,7 +43,6 @@ import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolba
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.galleryViewToolbar.GalleryViewToolbar
 import com.dgalyanov.gallery.ui.galleryView.galleryViewContent.previewedAssetView.TransformableAssetView
 import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForText
-import com.dgalyanov.gallery.ui.utils.modifiers.conditional
 import com.dgalyanov.gallery.utils.GalleryLogFactory
 import com.dgalyanov.gallery.utils.showToast
 import kotlinx.coroutines.Job
@@ -62,17 +61,11 @@ private val log = GalleryLogFactory("GalleryViewContent")
 internal fun GalleryViewContent() {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
 
-  val thumbnailAspectRatio = galleryViewModel.thumbnailAspectRatio
-  val isPreviewEnabled = galleryViewModel.isPreviewEnabled
-
   val density = LocalDensity.current
 
   val thumbnailWidthPx = galleryViewModel.windowWidthPx / COLUMNS_AMOUNT
-  val thumbnailHeightPx =
-    (thumbnailWidthPx * thumbnailAspectRatio.heightToWidthNumericValue).toFloat()
 
   val thumbnailWidthDp = with(density) { thumbnailWidthPx.toDp() }
-  val thumbnailHeightDp = with(density) { thumbnailHeightPx.toDp() }
 
   val previewedAssetContainerHeightPx = galleryViewModel.previewedAssetViewWrapSize.height.toInt()
 
@@ -81,9 +74,11 @@ internal fun GalleryViewContent() {
 
   val gridFlingDecayAnimationSpec = rememberSplineBasedDecay<Float>()
 
-  var isPreviewPlayable by remember { mutableStateOf(isPreviewEnabled) }
+  // don't use delegate, it causes excessive recompositions
+  val isPreviewPlayable = remember { mutableStateOf(galleryViewModel.isPreviewEnabled) }
   val nestedScrollConnection = remember(previewedAssetContainerHeightPx) {
     GalleryViewContentNestedScrollConnection(
+      getIsEnabled = { galleryViewModel.isPreviewEnabled },
       previewedAssetContainerHeightPx = previewedAssetContainerHeightPx,
       scope = scope,
       gridState = gridState,
@@ -92,15 +87,14 @@ internal fun GalleryViewContent() {
       gridNonThumbnailsItemsAmount = GRID_NON_THUMBNAILS_ITEMS_AMOUNT,
       gridColumnsAmount = COLUMNS_AMOUNT,
       gridItemHeightPx = thumbnailWidthPx,
-      onPreviewedAssetWillHide = { isPreviewPlayable = false },
-      onPreviewedAssetDidHide = { isPreviewPlayable = false },
-      onPreviewedAssetDidShow = { isPreviewPlayable = true },
-      onPreviewedAssetWillShow = { isPreviewPlayable = true },
+      onPreviewedAssetWillHide = { isPreviewPlayable.value = false },
+      onPreviewedAssetDidHide = { isPreviewPlayable.value = false },
+      onPreviewedAssetDidShow = { isPreviewPlayable.value = true },
+      onPreviewedAssetWillShow = { isPreviewPlayable.value = true },
     )
   }
-  LaunchedEffect(isPreviewEnabled) {
-    if (!isPreviewEnabled) nestedScrollConnection.hidePreviewedAsset()
-  }
+
+  HidePreviewIfDisabledEffect(galleryViewModel, nestedScrollConnection)
 
   val isCameraButtonPresent = !galleryViewModel.isSelectingDraft
 
@@ -109,7 +103,7 @@ internal fun GalleryViewContent() {
     /** ignored if [isPreviewEnabled][GalleryViewModel.isPreviewEnabled] is `false` */
     shouldShowPreview: Boolean = true,
   ) {
-    log { "scrollToAssetByIndex(index: $index, shouldShowPreview: $shouldShowPreview) | isPreviewEnabled: $isPreviewEnabled" }
+    log { "scrollToAssetByIndex(index: $index, shouldShowPreview: $shouldShowPreview) | isPreviewEnabled: ${galleryViewModel.isPreviewEnabled}" }
     val presentNonThumbnailsItemsAmount =
       GRID_NON_THUMBNAILS_ITEMS_AMOUNT - (if (isCameraButtonPresent) 0 else 1)
     // minus 1 is to allow user to scroll backwards selecting first asset in a row
@@ -118,7 +112,7 @@ internal fun GalleryViewContent() {
 
 //            https://issuetracker.google.com/issues/240449680
 //            https://issuetracker.google.com/issues/203855802
-    if (isPreviewEnabled && shouldShowPreview) nestedScrollConnection.showPreviewedAsset()
+    if (galleryViewModel.isPreviewEnabled && shouldShowPreview) nestedScrollConnection.showPreviewedAsset()
 
     scope.launch {
       gridState.scroll {
@@ -141,27 +135,19 @@ internal fun GalleryViewContent() {
     }
   }
 
-  LaunchedEffect(galleryViewModel.nextPreviewedAsset) {
-    if (galleryViewModel.nextPreviewedAsset == null) return@LaunchedEffect
-
-    val previewedAssetIndex =
-      galleryViewModel.assetsToDisplay.indexOf(galleryViewModel.nextPreviewedAsset)
-    scrollToAssetByIndex(previewedAssetIndex)
-  }
+  ScrollToNextPreviewedAssetEffect(galleryViewModel, ::scrollToAssetByIndex)
 
   Box(
     Modifier
       .fillMaxSize()
-      .conditional(isPreviewEnabled) { nestedScroll(nestedScrollConnection) }) {
-    galleryViewModel.previewedAsset?.let {
-      TransformableAssetView(
-        asset = it,
-        modifier = Modifier.offset {
-          IntOffset(0, nestedScrollConnection.previewedAssetOffset)
-        },
-        isPlayable = isPreviewPlayable,
-      )
-    }
+      .nestedScroll(nestedScrollConnection)
+//      .conditional(galleryViewModel.isPreviewEnabled) { nestedScroll(nestedScrollConnection) }
+  ) {
+    PreviewedAssetView(
+      galleryViewModel = galleryViewModel,
+      nestedScrollConnection = nestedScrollConnection,
+      getIsPreviewPlayable = { isPreviewPlayable.value },
+    )
 
     val context = LocalContext.current
 
@@ -178,6 +164,11 @@ internal fun GalleryViewContent() {
         )
       }
     ) {
+      val thumbnailAspectRatio = galleryViewModel.thumbnailAspectRatio
+      val thumbnailHeightPx =
+        (thumbnailWidthPx * thumbnailAspectRatio.heightToWidthNumericValue).toFloat()
+      val thumbnailHeightDp = with(density) { thumbnailHeightPx.toDp() }
+
       stickyHeader(key = TOOLBAR_ITEM_KEY) { GalleryViewToolbar() }
 
       if (isCameraButtonPresent) item(key = CAMERA_BUTTON_ITEM_KEY) {
@@ -250,7 +241,7 @@ internal fun GalleryViewContent() {
       }
     }
 
-    NeuroStoriesView(galleryViewModel.selectedCreativityType == CreativityType.NeuroStories)
+    NeuroStoriesView { galleryViewModel.selectedCreativityType == CreativityType.NeuroStories }
 
     var scrollToPreviewedAssetJob by remember { mutableStateOf<Job?>(null) }
     CreativityTypeSelector { selected: CreativityType, isByClick ->
@@ -271,5 +262,48 @@ internal fun GalleryViewContent() {
         scrollToAssetByIndex(assetToScrollToIndex, false)
       }
     }
+  }
+}
+
+@Composable
+private fun HidePreviewIfDisabledEffect(
+  galleryViewModel: GalleryViewModel,
+  nestedScrollConnection: GalleryViewContentNestedScrollConnection,
+) {
+  val isPreviewEnabled = galleryViewModel.isPreviewEnabled
+  LaunchedEffect(isPreviewEnabled) {
+    if (!isPreviewEnabled) nestedScrollConnection.hidePreviewedAsset()
+  }
+}
+
+@Composable
+private fun ScrollToNextPreviewedAssetEffect(
+  galleryViewModel: GalleryViewModel,
+  scrollToAssetByIndex: (assetIndex: Int) -> Unit,
+) {
+  val nextPreviewedAsset = galleryViewModel.nextPreviewedAsset
+  LaunchedEffect(nextPreviewedAsset) {
+    if (nextPreviewedAsset == null) return@LaunchedEffect
+
+    val previewedAssetIndex =
+      galleryViewModel.assetsToDisplay.indexOf(nextPreviewedAsset)
+    scrollToAssetByIndex(previewedAssetIndex)
+  }
+}
+
+@Composable
+private fun PreviewedAssetView(
+  galleryViewModel: GalleryViewModel,
+  nestedScrollConnection: GalleryViewContentNestedScrollConnection,
+  getIsPreviewPlayable: () -> Boolean,
+) {
+  galleryViewModel.previewedAsset?.let {
+    TransformableAssetView(
+      asset = it,
+      modifier = Modifier.offset {
+        IntOffset(0, nestedScrollConnection.previewedAssetOffset)
+      },
+      isPlayable = getIsPreviewPlayable(),
+    )
   }
 }

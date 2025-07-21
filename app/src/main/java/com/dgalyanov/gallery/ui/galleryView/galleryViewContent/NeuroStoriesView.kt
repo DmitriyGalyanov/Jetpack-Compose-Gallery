@@ -36,7 +36,7 @@ import com.dgalyanov.gallery.ui.theme.withCoercedFontScaleForText
 private const val BANNER_ASPECT_RATIO = 106f / 478f
 
 @Composable
-internal fun NeuroStoriesView(isVisible: Boolean) {
+internal fun NeuroStoriesView(getIsVisible: () -> Boolean) {
   val galleryViewModel = GalleryViewModel.LocalGalleryViewModel.current
 
   val bannersPainters = listOf(
@@ -46,7 +46,7 @@ internal fun NeuroStoriesView(isVisible: Boolean) {
   )
 
   BoxWithConstraints(Modifier.fillMaxSize()) {
-    val offsetX by animateIntAsState(if (isVisible) 0 else constraints.maxWidth)
+    val offsetX by animateIntAsState(if (getIsVisible()) 0 else constraints.maxWidth)
 
     Box(
       Modifier

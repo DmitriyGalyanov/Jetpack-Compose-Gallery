@@ -24,6 +24,8 @@ internal val AUTO_SCROLL_INT_ANIMATION_SPEC = tween<Int>(AUTO_SCROLL_ANIMATION_D
 internal val AUTO_SCROLL_FLOAT_ANIMATION_SPEC = tween<Float>(AUTO_SCROLL_ANIMATION_DURATION_MS)
 
 internal class GalleryViewContentNestedScrollConnection(
+  // todo: check if is slower than conditional nestedScroll Modifier
+  private val getIsEnabled: () -> Boolean,
   private val previewedAssetContainerHeightPx: Int,
   private val scope: CoroutineScope,
   private val gridState: LazyGridState,
@@ -105,6 +107,8 @@ internal class GalleryViewContentNestedScrollConnection(
     gridState.firstVisibleItemScrollOffset
 
   override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+    if (!getIsEnabled()) return super.onPreScroll(available, source)
+
     if (!gridState.canScrollBackward) isPreviewedAssetLockedAsHidden = false
 
     log { "onPreScroll(available.y: ${available.y}, source: $source), approximateNonStickyGridOffset: ${getApproximateNonStickyGridOffset()}" }
@@ -129,6 +133,8 @@ internal class GalleryViewContentNestedScrollConnection(
     available: Offset,
     source: NestedScrollSource,
   ): Offset {
+    if (!getIsEnabled()) return super.onPostScroll(consumed, available, source)
+
     if (!gridState.canScrollBackward) isPreviewedAssetLockedAsHidden = false
     return super.onPostScroll(consumed, available, source)
   }
@@ -140,6 +146,7 @@ internal class GalleryViewContentNestedScrollConnection(
    * thus it must stay commented and is a todo
    */
 //  override suspend fun onPreFling(available: Velocity): Velocity {
+//    if (!getIsEnabled()) return super.onPreFling(available)
 //    val approximateNonStickyGridOffset = getApproximateNonStickyGridOffset()
 //
 //    val projectedVelocityLeftOver =
@@ -164,6 +171,8 @@ internal class GalleryViewContentNestedScrollConnection(
 //  }
 
   override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+    if (!getIsEnabled()) return super.onPostFling(consumed, available)
+
     log { "onPostFling(consumed.y: ${consumed.y}, available.y: ${available.y})" }
     isPreviewedAssetOffsetUnlockedByCurrentFling = false
     dockPreviewedAssetToClosestPosition()
