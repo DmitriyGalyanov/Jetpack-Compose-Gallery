@@ -40,6 +40,10 @@ android {
 }
 
 dependencies {
+  // compose core
+  implementation(libs.androidx.material3)
+  implementation(libs.androidx.activity.compose)
+
   // permissions
   implementation(libs.accompanist.permissions)
 
@@ -54,6 +58,7 @@ dependencies {
   implementation(libs.androidx.camera.core)
   implementation(libs.androidx.camera.lifecycle)
   implementation(libs.androidx.camera.camera2)
+  implementation(libs.camera.view)
 
   // video
   implementation(libs.androidx.media3.exoplayer)
@@ -63,20 +68,14 @@ dependencies {
   implementation(libs.androidx.core.performance)
   implementation(libs.androidx.core.performance.play.services)
 
-  implementation(libs.androidx.core.ktx)
-  implementation(libs.androidx.lifecycle.runtime.ktx)
-  implementation(libs.androidx.activity.compose)
-  implementation(platform(libs.androidx.compose.bom))
-  implementation(libs.androidx.ui)
-  implementation(libs.androidx.ui.graphics)
-  implementation(libs.androidx.material3)
-  implementation(libs.camera.view)
-  testImplementation(libs.junit)
-  androidTestImplementation(libs.androidx.junit)
-  androidTestImplementation(libs.androidx.espresso.core)
-  androidTestImplementation(platform(libs.androidx.compose.bom))
-  androidTestImplementation(libs.androidx.ui.test.junit4)
+  // debug
   debugImplementation(libs.androidx.ui.tooling)
   debugImplementation(libs.androidx.ui.test.manifest)
   debugImplementation(libs.ui.tooling)
+
+  // tests
+  testImplementation(libs.junit)
+  androidTestImplementation(libs.androidx.junit)
+  androidTestImplementation(libs.androidx.espresso.core)
+  androidTestImplementation(libs.androidx.ui.test.junit4)
 }
